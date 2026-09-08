@@ -90,7 +90,7 @@ async def get_products(
     q: Optional[str] = Query(default=None, description="Search keyword"),
     sort: Optional[str] = Query(
         default="newest",
-        regex="^(newest|price_asc|price_desc)$",
+        pattern="^(newest|price_asc|price_desc)$",
         description="Sort by newest, price_asc, or price_desc",
     ),
     page: int = Query(default=1, ge=1, description="Page number"),
