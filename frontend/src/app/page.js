@@ -1,287 +1,275 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import {
-  Sparkles,
-  ArrowRight,
-  ShieldCheck,
-  Truck,
-  CreditCard,
-  Tag,
-  Star,
-} from "lucide-react";
-import { apiFetch } from "@/lib/api";
-import ProductCard from "@/components/product/ProductCard";
-import Button from "@/components/ui/Button";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
-  const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [onSaleProducts, setOnSaleProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [backendStatus, setBackendStatus] = useState({
+    loading: true,
+    online: false,
+    data: null,
+    error: null,
+  });
+
+  const checkHealth = async () => {
+    setBackendStatus((prev) => ({ ...prev, loading: true, error: null }));
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+    try {
+      const res = await fetch(`${apiUrl}/api/health`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      setBackendStatus({
+        loading: false,
+        online: true,
+        data,
+        error: null,
+      });
+    } catch (err) {
+      setBackendStatus({
+        loading: false,
+        online: false,
+        data: null,
+        error: err.message || "No se pudo conectar con el servidor",
+      });
+    }
+  };
 
   useEffect(() => {
-    async function loadHomeData() {
-      setLoading(true);
-      try {
-        const [featured, onSale, cats] = await Promise.all([
-          apiFetch("/api/products/featured?limit=8").catch(() => []),
-          apiFetch("/api/products/on-sale?limit=8").catch(() => []),
-          apiFetch("/api/categories").catch(() => []),
-        ]);
-
-        if (Array.isArray(featured)) setFeaturedProducts(featured);
-        if (Array.isArray(onSale)) setOnSaleProducts(onSale);
-        if (Array.isArray(cats)) setCategories(cats);
-      } catch (e) {
-        console.error("Error loading home data:", e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadHomeData();
+    checkHealth();
   }, []);
 
-  const sampleCategories = categories.length > 0 ? categories : [
-    { name: "Coloración", slug: "coloracion", icon: "🎨" },
-    { name: "Tratamientos", slug: "tratamientos-capilares", icon: "💆" },
-    { name: "Shampoos", slug: "shampoos-y-acondicionadores", icon: "🧴" },
-    { name: "Barbería", slug: "barberia", icon: "🧔" },
-    { name: "Máquinas", slug: "maquinas-y-herramientas", icon: "✂️" },
-    { name: "Accesorios", slug: "accesorios-de-peluqueria", icon: "🪮" },
-  ];
-
-  const brandLogos = [
-    "Nov",
-    "Plasma",
-    "La Puissance",
-    "Frilayp",
-    "Beauty Color",
-    "Yilho",
-    "Eurostyl",
-    "Jessamy",
-    "Roubaix",
-    "Duga",
+  const phases = [
+    {
+      id: 1,
+      title: "Fase 1: Scaffolding y Conectividad Inicial",
+      desc: "Estructura modular limpia, backend FastAPI con CORS, frontend Next.js con Tailwind v4 y health checks operativos.",
+      status: "completed",
+    },
+    {
+      id: 2,
+      title: "Fase 2: Base de Datos & Supabase",
+      desc: "Modelado relacional en PostgreSQL (Supabase), scripts de migración, índices y datos semilla de marcas y categorías.",
+      status: "next",
+    },
+    {
+      id: 3,
+      title: "Fase 3: Backend — Catálogo y APIs Públicas",
+      desc: "Endpoints de productos con soporte para variantes, filtros por categoría/marca, búsqueda y ordenamiento.",
+      status: "pending",
+    },
+    {
+      id: 4,
+      title: "Fase 4: Frontend — Catálogo y Diseño",
+      desc: "Storefront moderno, grilla de productos interactiva, buscador, filtros laterales y página de detalle con variantes.",
+      status: "pending",
+    },
+    {
+      id: 5,
+      title: "Fase 5: Carrito y Cotizador de Envíos",
+      desc: "Carrito de compras en localStorage (sin registro requerido) y cálculo de tarifas de envío por zonas y códigos postales.",
+      status: "pending",
+    },
+    {
+      id: 6,
+      title: "Fase 6: Checkout, MercadoPago y Webhooks",
+      desc: "Generación de órdenes, integración con MercadoPago Checkout Pro, verificación de pagos e impacto en stock.",
+      status: "pending",
+    },
+    {
+      id: 7,
+      title: "Fase 7: Panel de Administración",
+      desc: "Autenticación segura JWT para admin, CRUD completo de catálogo, gestión de pedidos y configuración de tarifas.",
+      status: "pending",
+    },
+    {
+      id: 8,
+      title: "Fase 8: Deploy y Puesta en Producción",
+      desc: "Despliegue continuo en Render (Backend) y Vercel (Frontend), variables de entorno productivas y pruebas finales.",
+      status: "pending",
+    },
   ];
 
   return (
-    <div className="space-y-16 sm:space-y-24 pb-20">
-      {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-slate-950 text-white py-16 sm:py-24 lg:py-32">
-        {/* Ambient background glows */}
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-rose-600/30 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider animate-in fade-in">
-              <Sparkles size={14} />
-              <span>Distribuidora Oficial • Los Arrayanes</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]">
-              Insumos y Belleza{" "}
-              <span className="bg-gradient-to-r from-rose-400 via-rose-500 to-amber-300 bg-clip-text text-transparent">
-                Profesional
-              </span>{" "}
-              para Salones y Barberías
-            </h1>
-
-            <p className="text-base sm:text-lg text-slate-300 font-normal leading-relaxed max-w-2xl">
-              Más de 650 productos de primeras marcas argentinas e internacionales. Tinturas, oxidantes, máscaras capilares, máquinas de corte y accesorios con entrega a todo el país.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-4 pt-4">
-              <Link href="/productos">
-                <Button variant="primary" size="lg" className="group">
-                  <span>Explorar Catálogo</span>
-                  <ArrowRight
-                    size={18}
-                    className="transition-transform group-hover:translate-x-1"
-                  />
-                </Button>
-              </Link>
-              <Link href="/productos?on_sale=true">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="bg-slate-900/80 text-white border-slate-800 hover:bg-slate-800"
-                >
-                  <Tag size={16} className="text-emerald-400" />
-                  <span>Ver Ofertas</span>
-                </Button>
-              </Link>
-            </div>
-
-            {/* Quick KPIs */}
-            <div className="grid grid-cols-3 gap-6 pt-10 border-t border-slate-800/80">
-              <div>
-                <div className="text-2xl sm:text-3xl font-black text-white">+650</div>
-                <div className="text-xs text-slate-400 mt-0.5">Productos en stock</div>
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-black text-white">25+</div>
-                <div className="text-xs text-slate-400 mt-0.5">Marcas líderes</div>
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-black text-white">48/72h</div>
-                <div className="text-xs text-slate-400 mt-0.5">Envíos a todo el país</div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex flex-col items-center justify-between p-6 sm:p-12">
+      {/* Header / Brand */}
+      <header className="w-full max-w-5xl flex items-center justify-between border-b border-slate-800/80 pb-6 mb-8">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center font-bold text-lg shadow-lg shadow-rose-950/50">
+            LA
           </div>
-        </div>
-      </section>
-
-      {/* 2. CATEGORIES PREVIEW */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Categorías Principales
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Encontrá rápidamente todo lo que tu salón necesita.
+            <h1 className="text-xl font-bold tracking-tight text-white">
+              Los Arrayanes
+            </h1>
+            <p className="text-xs text-slate-400">
+              Cosmética, Barbería & Peluquería Profesional
             </p>
           </div>
-          <Link
-            href="/productos"
-            className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1"
-          >
-            <span>Ver todas</span>
-            <ArrowRight size={14} />
-          </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {sampleCategories.slice(0, 6).map((cat) => (
-            <Link
-              key={cat.slug}
-              href={`/categoria/${cat.slug}`}
-              className="group flex flex-col items-center justify-center text-center p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-rose-300 hover:shadow-lg hover:shadow-rose-500/5 transition-all duration-200"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 group-hover:bg-rose-600 group-hover:text-white text-rose-600 flex items-center justify-center text-xl mb-3 transition-colors">
-                {cat.icon || "✨"}
-              </div>
-              <span className="text-xs font-bold text-slate-800 group-hover:text-rose-600 transition-colors">
-                {cat.name}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* 3. FEATURED PRODUCTS */}
-      {featuredProducts.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
-                <Sparkles size={20} />
-              </div>
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  Productos Destacados
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                  Los más elegidos por profesionales de la peluquería y barbería.
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/productos?featured=true"
-              className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1"
-            >
-              <span>Ver todos</span>
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {featuredProducts.slice(0, 8).map((prod) => (
-              <ProductCard key={prod.id || prod.slug} product={prod} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 4. CALLOUT PROMO BANNER */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-3xl bg-gradient-to-r from-rose-900 via-slate-900 to-slate-950 text-white p-8 sm:p-12 overflow-hidden shadow-xl">
-          <div className="relative z-10 max-w-xl space-y-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-400">
-              Línea Técnica Profesional
-            </span>
-            <h3 className="text-2xl sm:text-3xl font-black leading-tight">
-              Coloración, Decoloración & Oxidantes al Mejor Precio Mayorista
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Equipá tu salón con Nov, Plasma, Roubaix y La Puissance. Formatos individuales y bidones de 1900ml y 3900ml para máxima rentabilidad.
-            </p>
-            <div className="pt-2">
-              <Link href="/categoria/coloracion">
-                <Button variant="primary" size="md">
-                  Ver productos de coloración
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. ON SALE PRODUCTS */}
-      {onSaleProducts.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
-                <Tag size={20} />
-              </div>
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  Ofertas del Mes
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                  Precios especiales en tratamientos, insumos y herramientas.
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/productos?on_sale=true"
-              className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1"
-            >
-              <span>Ver todas las ofertas</span>
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {onSaleProducts.slice(0, 8).map((prod) => (
-              <ProductCard key={prod.id || prod.slug} product={prod} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 6. BRANDS MARQUEE */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="text-center mb-6">
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
-            Marcas que confían en nosotros
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-300 border border-rose-500/20">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+            Fase 1: Scaffolding
           </span>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
-          {brandLogos.map((brand) => (
-            <Link
-              key={brand}
-              href={`/marca/${brand.toLowerCase().replace(/\s+/g, "-")}`}
-              className="px-5 py-3 rounded-2xl bg-white border border-slate-200/80 text-xs sm:text-sm font-black text-slate-700 hover:text-rose-600 hover:border-rose-300 hover:shadow-sm transition-all"
+      </header>
+
+      {/* Main Content */}
+      <main className="w-full max-w-5xl flex-1 space-y-10">
+        {/* Hero Section */}
+        <section className="text-center space-y-3 py-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            E-commerce Modular en Construcción
+          </h2>
+          <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto">
+            Avanzando paso a paso con paciencia y calidad. La base del proyecto ha
+            sido inicializada limpiamente para garantizar un desarrollo sólido y modular.
+          </p>
+        </section>
+
+        {/* Status Card: Backend Connection */}
+        <section className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-3.5 h-3.5 rounded-full ${
+                  backendStatus.loading
+                    ? "bg-amber-400 animate-pulse"
+                    : backendStatus.online
+                    ? "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.6)]"
+                    : "bg-rose-500"
+                }`}
+              />
+              <h3 className="text-base font-semibold text-white">
+                Estado de Conexión con el Backend (FastAPI)
+              </h3>
+            </div>
+
+            <button
+              onClick={checkHealth}
+              disabled={backendStatus.loading}
+              className="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 transition disabled:opacity-50"
             >
-              {brand}
-            </Link>
-          ))}
-        </div>
-      </section>
+              {backendStatus.loading ? "Comprobando..." : "Comprobar conexión"}
+            </button>
+          </div>
+
+          {backendStatus.loading ? (
+            <div className="py-6 text-center text-sm text-slate-400">
+              Conectando con el servidor backend en http://localhost:8000/api/health...
+            </div>
+          ) : backendStatus.online ? (
+            <div className="space-y-3">
+              <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-800/50 text-emerald-300 text-sm">
+                <p className="font-semibold text-emerald-200">
+                  {backendStatus.data?.message || "Servidor backend conectado correctamente."}
+                </p>
+                <div className="mt-2 text-xs text-emerald-400/80 flex flex-wrap gap-x-6 gap-y-1">
+                  <span>API: <strong>{backendStatus.data?.app}</strong></span>
+                  <span>Fase actual: <strong>{backendStatus.data?.phase}</strong></span>
+                  <span>Status: <strong>{backendStatus.data?.status}</strong></span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 text-xs text-slate-400 pt-1">
+                <span>Documentación interactiva disponible en:</span>
+                <a
+                  href="http://localhost:8000/docs"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-rose-400 hover:text-rose-300 underline underline-offset-2"
+                >
+                  http://localhost:8000/docs (Swagger UI)
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-800/50 text-rose-300 text-sm space-y-2">
+              <p className="font-semibold text-rose-200">
+                No se pudo establecer conexión con el backend en http://localhost:8000.
+              </p>
+              <p className="text-xs text-rose-300/80">
+                Asegúrate de que el servidor de FastAPI esté iniciado ejecutando:
+              </p>
+              <pre className="bg-slate-950/80 text-slate-300 text-xs p-2.5 rounded-lg border border-slate-800 font-mono overflow-x-auto">
+                cd backend ; .\venv\Scripts\activate ; uvicorn app.main:app --reload
+              </pre>
+            </div>
+          )}
+        </section>
+
+        {/* Roadmap by Phases */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-white tracking-tight">
+              Hoja de Ruta por Fases
+            </h3>
+            <span className="text-xs text-slate-400">
+              Progreso: 1 de 8 fases listas
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {phases.map((phase) => {
+              const isDone = phase.status === "completed";
+              const isNext = phase.status === "next";
+
+              return (
+                <div
+                  key={phase.id}
+                  className={`p-4 rounded-xl border transition-all ${
+                    isDone
+                      ? "bg-slate-900/80 border-emerald-500/40 text-slate-200 shadow-sm"
+                      : isNext
+                      ? "bg-slate-900/60 border-rose-500/40 text-slate-300 ring-1 ring-rose-500/20"
+                      : "bg-slate-900/30 border-slate-800/60 text-slate-500"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                        isDone
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                          : isNext
+                          ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                          : "bg-slate-800 text-slate-500"
+                      }`}
+                    >
+                      {isDone ? "Completada" : isNext ? "Siguiente Fase" : "Pendiente"}
+                    </span>
+                    <span className="text-xs text-slate-500 font-mono">
+                      #{phase.id}
+                    </span>
+                  </div>
+                  <h4
+                    className={`text-sm font-semibold mb-1 ${
+                      isDone || isNext ? "text-white" : "text-slate-400"
+                    }`}
+                  >
+                    {phase.title}
+                  </h4>
+                  <p className="text-xs leading-relaxed">
+                    {phase.desc}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full max-w-5xl border-t border-slate-800/80 pt-6 mt-8 text-center text-xs text-slate-500">
+        Los Arrayanes E-commerce &bull; Arquitectura Modular &bull; Fase 1
+      </footer>
     </div>
   );
 }

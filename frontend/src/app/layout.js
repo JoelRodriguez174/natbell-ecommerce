@@ -1,9 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { CartProvider } from "@/context/CartContext";
-import { ToastProvider } from "@/components/ui/Toast";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,22 +12,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: {
-    template: "%s | Los Arrayanes — Belleza & Peluquería",
-    default: "Los Arrayanes — Insumos y Productos de Peluquería y Belleza",
-  },
+  title: "Los Arrayanes — Insumos y Productos de Peluquería y Belleza",
   description:
-    "Distribuidora de productos profesionales de belleza, peluquería, coloración, tratamientos capilares, barbería y estética en Argentina. Envíos a todo el país.",
-  keywords: [
-    "peluquería",
-    "belleza",
-    "tinturas",
-    "tratamientos capilares",
-    "barbería",
-    "máquinas de corte",
-    "Los Arrayanes",
-    "Argentina",
-  ],
+    "Distribuidora mayorista y minorista de productos profesionales de peluquería, cosmética y estética en Argentina.",
 };
 
 export default function RootLayout({ children }) {
@@ -40,14 +23,8 @@ export default function RootLayout({ children }) {
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 selection:bg-rose-500 selection:text-white">
-        <ToastProvider>
-          <CartProvider>
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </CartProvider>
-        </ToastProvider>
+      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 selection:bg-rose-500 selection:text-white font-sans">
+        <main className="flex-1 flex flex-col">{children}</main>
       </body>
     </html>
   );

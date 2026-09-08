@@ -1,18 +1,14 @@
+from app.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import settings
-from app.routers.products import router as products_router
-from app.routers.shipping import router as shipping_router
-from app.routers.orders import router as orders_router
-from app.routers.webhooks import router as webhooks_router
-from app.routers.admin.auth import router as admin_auth_router
-from app.routers.admin.products import router as admin_products_router
-from app.routers.admin.orders import router as admin_orders_router
-from app.routers.admin.shipping_zones import router as admin_shipping_zones_router
-from app.routers.admin.dashboard import router as admin_dashboard_router
 
-app = FastAPI(title="Los Arrayanes API", version="1.0.0")
+app = FastAPI(
+    title=settings.app_name,
+    description="API de Backend para Los Arrayanes E-commerce",
+    version="0.1.0",
+)
 
+# Habilitar CORS para permitir peticiones desde el frontend en desarrollo
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -25,17 +21,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(products_router)
-app.include_router(shipping_router)
-app.include_router(orders_router)
-app.include_router(webhooks_router)
-app.include_router(admin_auth_router)
-app.include_router(admin_products_router)
-app.include_router(admin_orders_router)
-app.include_router(admin_shipping_zones_router)
-app.include_router(admin_dashboard_router)
+
+@app.get("/")
+async def root():
+  """Ruta raíz con información general y enlaces útiles."""
+  return {
+      "app": settings.app_name,
+      "version": "0.1.0",
+      "phase": settings.phase,
+      "status": "online",
+      "docs_url": "/docs",
+      "health_url": "/api/health",
+  }
 
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "ok", "service": "Los Arrayanes API"}
+  """Endpoint de salud del backend para verificar conectividad."""
+  return {
+      "status": "ok",
+      "app": settings.app_name,
+      "phase": settings.phase,
+      "message": (
+          "Fase 1 completada con éxito: Backend operativo y listo para"
+          " conectar con el frontend."
+      ),
+  }
