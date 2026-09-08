@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routers.products import router as products_router
 from app.routers.shipping import router as shipping_router
+from app.routers.orders import router as orders_router
+from app.routers.webhooks import router as webhooks_router
 
 app = FastAPI(title="Los Arrayanes API", version="1.0.0")
 
@@ -20,6 +22,8 @@ app.add_middleware(
 
 app.include_router(products_router)
 app.include_router(shipping_router)
+app.include_router(orders_router)
+app.include_router(webhooks_router)
 
 
 @app.get("/api/health")
