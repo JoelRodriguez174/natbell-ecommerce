@@ -43,7 +43,7 @@ async def health_check():
       "app": settings.app_name,
       "phase": settings.phase,
       "message": (
-          "Fase 1 completada con éxito: Backend operativo y listo para"
-          " conectar con el frontend."
+          "Fase 2 activa: Modelado relacional, schemas Pydantic y cliente de"
+          " base de datos operativos."
       ),
   }
