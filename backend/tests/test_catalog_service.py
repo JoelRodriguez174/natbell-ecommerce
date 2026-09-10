@@ -90,3 +90,4 @@ def test_map_product_to_detail():
     assert detail.max_price == Decimal("3600.00")
     assert detail.brand_name == "Plasma"
     assert detail.category_slug == "cuidado-capilar"
+    assert detail.in_stock is False

@@ -61,11 +61,8 @@ class CatalogService:
         min_price = min(prices)
         max_price = max(prices)
 
-        # Determinar disponibilidad de inventario
-        if active_variants:
-            in_stock = any(int(v.get("stock", 0)) > 0 for v in active_variants)
-        else:
-            in_stock = True
+        # Determinar disponibilidad de inventario (False si no hay variantes o todas están en 0)
+        in_stock = any(int(v.get("stock", 0)) > 0 for v in active_variants)
 
         # Extraer taxonomías asociadas
         brand = p.get("brands")
@@ -124,10 +121,8 @@ class CatalogService:
         min_price = min(prices)
         max_price = max(prices)
 
-        if active_variants:
-            in_stock = any(int(v.get("stock", 0)) > 0 for v in active_variants)
-        else:
-            in_stock = True
+        # Determinar disponibilidad de inventario (False si no hay variantes o todas están en 0)
+        in_stock = any(int(v.get("stock", 0)) > 0 for v in active_variants)
 
         brand = p.get("brands")
         brand_dict = brand if isinstance(brand, dict) else {}
