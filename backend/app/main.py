@@ -48,7 +48,7 @@ async def health_check():
       "app": settings.app_name,
       "phase": settings.phase,
       "message": (
-          "Fase 2 activa: Modelado relacional, schemas Pydantic y cliente de"
-          " base de datos operativos."
+          "Fase 3 activa: Catálogo y APIs públicas REST (productos, variantes, "
+          "filtros, categorías y marcas) 100% operativas."
       ),
   }

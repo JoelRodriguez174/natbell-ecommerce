@@ -5,7 +5,7 @@ _BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     app_name: str = "Los Arrayanes API"
-    phase: int = 2
+    phase: int = 3
     frontend_url: str = "http://localhost:3000"
     backend_url: str = "http://localhost:8000"
 
