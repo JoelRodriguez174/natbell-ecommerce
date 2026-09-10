@@ -4,7 +4,8 @@
     "database"
   ],
   "extraPaths": [
-    "backend"
+    "backend",
+    "C:/Users/Enekon/AppData/Local/Programs/Python/Python313/Lib/site-packages"
   ],
   "venvPath": "backend",
   "venv": "venv"
