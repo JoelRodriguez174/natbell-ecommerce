@@ -1,4 +1,6 @@
 from decimal import Decimal
+import logging
+import re
 from typing import Optional, List, Any, Dict
 from supabase import Client
 from app.models.catalog import (
@@ -9,6 +11,8 @@ from app.models.catalog import (
     PaginationMetadata,
 )
 from app.models.product import ProductVariant
+
+logger = logging.getLogger(__name__)
 
 
 class CatalogService:
@@ -365,23 +369,32 @@ class CatalogService:
     def search_products(
         cls, client: Client, query: str, limit: int = 20
     ) -> List[ProductListItem]:
-        """Búsqueda reactiva de productos por nombre o descripción."""
+        """Búsqueda reactiva de productos por nombre con sanitización anti-inyección."""
         if not client or not query or not query.strip():
             return []
 
-        clean_query = query.strip()[:100]
+        # Sanitización defensiva: solo permitir caracteres alfanuméricos, espacios, guiones y puntos
+        clean_query = re.sub(
+            r"[^\w\s\-\.]", "", query.strip()[:100], flags=re.UNICODE
+        ).strip()
+        if not clean_query:
+            return []
+
         safe_limit = min(max(1, limit), 50)
 
-        # Utilizar ilike para búsqueda case-insensitive
-        res = (
-            client.table("products")
-            .select(
-                "*, brands(*), subcategories(*, categories(*)), product_variants(*)"
+        try:
+            res = (
+                client.table("products")
+                .select(
+                    "*, brands(*), subcategories(*, categories(*)), product_variants(*)"
+                )
+                .eq("is_active", True)
+                .ilike("name", f"%{clean_query}%")
+                .order("created_at", desc=True)
+                .limit(safe_limit)
+                .execute()
             )
-            .eq("is_active", True)
-            .ilike("name", f"%{clean_query}%")
-            .order("created_at", desc=True)
-            .limit(safe_limit)
-            .execute()
-        )
-        return [cls._map_to_list_item(p) for p in (res.data or [])]
+            return [cls._map_to_list_item(p) for p in (res.data or [])]
+        except Exception as e:
+            logger.warning("Excepción defensiva capturada en búsqueda de catálogo: %s", e)
+            return []
