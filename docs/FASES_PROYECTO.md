@@ -19,9 +19,9 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 | # | Fase | Estado Actual | Entregable Principal |
 |---|---|:---:|---|
 | **1** | **Scaffolding y Conectividad Inicial** | ✅ **Completada** | Estructura base FastAPI + Next.js 14 + Tailwind v4 + Health checks |
-| **2** | **Base de Datos & Supabase** | ⏳ **Fase Activa / Siguiente** | Esquema relacional PostgreSQL, migraciones, índices y datos semilla |
-| **3** | **Backend — Catálogo y APIs Públicas** | ⏸️ Pendiente | Endpoints REST de productos, variantes, filtros y búsqueda |
-| **4** | **Frontend — Catálogo y Diseño** | ⏸️ Pendiente | Storefront completo: grilla, filtros, buscador y detalle de producto |
+| **2** | **Base de Datos & Supabase** | ✅ **Completada** | Esquema relacional PostgreSQL, migraciones, índices y datos semilla |
+| **3** | **Backend — Catálogo y APIs Públicas** | ✅ **Completada** | Endpoints REST de productos, variantes, filtros y búsqueda |
+| **4** | **Frontend — Catálogo y Diseño** | ⏳ **Fase Activa / Siguiente** | Storefront completo: grilla, filtros, buscador y detalle de producto |
 | **5** | **Carrito y Cotizador de Envíos** | ⏸️ Pendiente | Carrito en `localStorage` (guest checkout) y cotizador por zonas/CP |
 | **6** | **Checkout, MercadoPago y Webhooks** | ⏸️ Pendiente | Pedidos, pasarela MercadoPago Checkout Pro, webhooks y stock |
 | **7** | **Panel de Administración** | ⏸️ Pendiente | Auth admin JWT, dashboard de métricas, CRUD de catálogo y pedidos |
@@ -46,7 +46,7 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 ---
 
 ### 2. Fase 2: Base de Datos & Supabase
-* **Estado:** ⏳ Fase Activa / Siguiente.
+* **Estado:** ✅ Completada.
 * **Objetivo:** Diseñar y desplegar el modelo de datos relacional en PostgreSQL alojado en Supabase, garantizando integridad referencial, tipos adecuados, índices para alto rendimiento y carga inicial de marcas y categorías del negocio real.
 * **Componentes y Tablas a Modelar:**
   1. `categories`: Categorías principales (Coloración, Tratamientos, Barbería, etc.) con `slug` único y orden visual.
@@ -70,7 +70,7 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 ---
 
 ### 3. Fase 3: Backend — Catálogo y APIs Públicas
-* **Estado:** ⏸️ Pendiente.
+* **Estado:** ✅ Completada.
 * **Objetivo:** Construir los servicios de negocio y endpoints REST de lectura pública que servirán de base para que los clientes consulten el catálogo desde la tienda.
 * **Endpoints a Desarrollar:**
   - `GET /api/products`: Listado paginado con filtros combinables (`category`, `subcategory`, `brand`, `min_price`, `max_price`, `sort`, `page`, `per_page`).
@@ -91,7 +91,7 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 ---
 
 ### 4. Fase 4: Frontend — Catálogo y Diseño
-* **Estado:** ⏸️ Pendiente.
+* **Estado:** ⏳ Fase Activa / Siguiente.
 * **Objetivo:** Desarrollar el storefront completo para el cliente final con una estética cuidada, moderna y profesional orientada al sector cosmético y de peluquería, altamente responsiva y rápida.
 * **Estructura de Vistas:**
   - **Home (`/`):** Hero section con llamados a la acción, carrusel o grilla de marcas destacadas, y secciones de productos en oferta y recomendados.
