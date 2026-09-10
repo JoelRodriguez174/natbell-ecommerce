@@ -28,23 +28,23 @@
 **Interfaces:**
 - Produces: `Settings` con `supabase_url`, `supabase_key` en `backend/app/config.py`.
 
-- [ ] **Step 1: Actualizar `backend/requirements.txt`**
+- [x] **Step 1: Actualizar `backend/requirements.txt`**
 Agregar `supabase>=2.31.0`, `pytest>=8.0.0` y `pytest-asyncio>=0.23.0`.
 
-- [ ] **Step 2: Instalar `pytest` y `pytest-asyncio` en el entorno**
+- [x] **Step 2: Instalar `pytest` y `pytest-asyncio` en el entorno**
 Run: `pip install pytest pytest-asyncio`
 
-- [ ] **Step 3: Actualizar `backend/app/config.py`**
+- [x] **Step 3: Actualizar `backend/app/config.py`**
 Agregar variables opcionales/configurables `supabase_url: str = ""` y `supabase_service_key: str = ""` a la clase `Settings`.
 
-- [ ] **Step 4: Crear `backend/.env.example`**
+- [x] **Step 4: Crear `backend/.env.example`**
 Documentar variables requeridas de Supabase para desarrollo.
 
-- [ ] **Step 5: Verificar instalación de pytest**
+- [x] **Step 5: Verificar instalación de pytest**
 Run: `pytest --version`
 Expected: pytest versión 8.x instalado y funcional.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 ```bash
 git add backend/requirements.txt backend/app/config.py backend/.env.example
 git commit -m "feat(phase-2): configure supabase settings and test dependencies"
@@ -62,21 +62,21 @@ git commit -m "feat(phase-2): configure supabase settings and test dependencies"
 **Interfaces:**
 - Produces: `get_supabase_client()` en `backend/app/database.py`.
 
-- [ ] **Step 1: Escribir test de inicialización del cliente (`test_database_client.py`)**
+- [x] **Step 1: Escribir test de inicialización del cliente (`test_database_client.py`)**
 Validar que `get_supabase_client()` retorna un cliente válido o maneja limpiamente la ausencia de credenciales en modo offline.
 
-- [ ] **Step 2: Correr test para verificar fallo inicial**
+- [x] **Step 2: Correr test para verificar fallo inicial**
 Run: `pytest backend/tests/test_database_client.py -v`
 Expected: FAIL ("cannot import name 'get_supabase_client'")
 
-- [ ] **Step 3: Implementar `backend/app/database.py`**
+- [x] **Step 3: Implementar `backend/app/database.py`**
 Implementar función singleton `get_supabase_client()` con control de inicialización y manejo seguro de variables de entorno.
 
-- [ ] **Step 4: Correr test para verificar éxito**
+- [x] **Step 4: Correr test para verificar éxito**
 Run: `pytest backend/tests/test_database_client.py -v`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add backend/app/database.py backend/tests/conftest.py backend/tests/test_database_client.py
 git commit -m "feat(phase-2): add singleton Supabase client and client unit test"
@@ -98,21 +98,21 @@ git commit -m "feat(phase-2): add singleton Supabase client and client unit test
 **Interfaces:**
 - Produces: Schemas de validación para `Category`, `Subcategory`, `Brand`, `Product`, `ProductVariant`, `Order`, `OrderItem`, `ShippingZone`.
 
-- [ ] **Step 1: Escribir tests unitarios de validación de schemas (`test_pydantic_schemas.py`)**
+- [x] **Step 1: Escribir tests unitarios de validación de schemas (`test_pydantic_schemas.py`)**
 Validar checks de precios positivos, slugs válidos, estructura de variantes y cálculo de subtotales.
 
-- [ ] **Step 2: Correr test para verificar fallo inicial**
+- [x] **Step 2: Correr test para verificar fallo inicial**
 Run: `pytest backend/tests/test_pydantic_schemas.py -v`
 Expected: FAIL ("cannot import models")
 
-- [ ] **Step 3: Implementar schemas modulares en `backend/app/models/`**
+- [x] **Step 3: Implementar schemas modulares en `backend/app/models/`**
 Implementar contratos Pydantic v2 limpios y desacoplados.
 
-- [ ] **Step 4: Correr test para verificar éxito**
+- [x] **Step 4: Correr test para verificar éxito**
 Run: `pytest backend/tests/test_pydantic_schemas.py -v`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add backend/app/models/ backend/tests/test_pydantic_schemas.py
 git commit -m "feat(phase-2): add atomic Pydantic schemas and schema validation tests"
@@ -133,13 +133,13 @@ git commit -m "feat(phase-2): add atomic Pydantic schemas and schema validation 
 **Interfaces:**
 - Produces: Definición DDL modular completa en PostgreSQL para ejecutar en Supabase.
 
-- [ ] **Step 1: Crear `001_extensions.sql`** (uuid-ossp, pgcrypto).
-- [ ] **Step 2: Crear `002_taxonomies.sql`** (categories, subcategories, brands con foreign keys y constraints).
-- [ ] **Step 3: Crear `003_products_variants.sql`** (products, product_variants con checks de precio y stock).
-- [ ] **Step 4: Crear `004_orders_payments.sql`** (orders, order_items, payments con status check inmutable).
-- [ ] **Step 5: Crear `005_shipping_and_admin.sql`** (shipping_zones con JSONB y admin_users).
-- [ ] **Step 6: Crear `006_indexes_and_constraints.sql`** (índices de slugs, FKs y búsqueda rápida).
-- [ ] **Step 7: Commit**
+- [x] **Step 1: Crear `001_extensions.sql`** (uuid-ossp, pgcrypto).
+- [x] **Step 2: Crear `002_taxonomies.sql`** (categories, subcategories, brands con foreign keys y constraints).
+- [x] **Step 3: Crear `003_products_variants.sql`** (products, product_variants con checks de precio y stock).
+- [x] **Step 4: Crear `004_orders_payments.sql`** (orders, order_items, payments con status check inmutable).
+- [x] **Step 5: Crear `005_shipping_and_admin.sql`** (shipping_zones con JSONB y admin_users).
+- [x] **Step 6: Crear `006_indexes_and_constraints.sql`** (índices de slugs, FKs y búsqueda rápida).
+- [x] **Step 7: Commit**
 ```bash
 git add database/migrations/
 git commit -m "feat(phase-2): create atomic DDL database migrations"
@@ -158,11 +158,11 @@ git commit -m "feat(phase-2): create atomic DDL database migrations"
 **Interfaces:**
 - Produces: Scripts SQL reproducibles con cláusulas `ON CONFLICT DO NOTHING / UPDATE`.
 
-- [ ] **Step 1: Crear `01_brands.sql` con las 25 marcas reales**.
-- [ ] **Step 2: Crear `02_categories_subcategories.sql` con las 11 categorías y subcategorías**.
-- [ ] **Step 3: Crear `03_shipping_zones.sql` con las zonas CABA, GBA e Interior**.
-- [ ] **Step 4: Crear `04_admin_user.sql` con usuario inicial seguro**.
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Crear `01_brands.sql` con las 25 marcas reales**.
+- [x] **Step 2: Crear `02_categories_subcategories.sql` con las 11 categorías y subcategorías**.
+- [x] **Step 3: Crear `03_shipping_zones.sql` con las zonas CABA, GBA e Interior**.
+- [x] **Step 4: Crear `04_admin_user.sql` con usuario inicial seguro**.
+- [x] **Step 5: Commit**
 ```bash
 git add database/seeds/
 git commit -m "feat(phase-2): create atomic seed scripts with real business data"
@@ -179,17 +179,17 @@ git commit -m "feat(phase-2): create atomic seed scripts with real business data
 **Interfaces:**
 - Produces: Herramienta de verificación de migraciones y conexión a Supabase.
 
-- [ ] **Step 1: Escribir test de consistencia de archivos SQL (`test_migration_files.py`)**
+- [x] **Step 1: Escribir test de consistencia de archivos SQL (`test_migration_files.py`)**
 Validar que todos los archivos `.sql` existan, contengan sintaxis válida básica y no tengan referencias rotas.
 
-- [ ] **Step 2: Implementar `database/scripts/verify_db.py`**
+- [x] **Step 2: Implementar `database/scripts/verify_db.py`**
 Script CLI para chequear credenciales en `.env`, conectarse a Supabase y verificar tablas existentes o generar el script unificado de migración si el usuario prefiere copiarlo en Supabase SQL Editor.
 
-- [ ] **Step 3: Correr suite completa de tests de Fase 2**
+- [x] **Step 3: Correr suite completa de tests de Fase 2**
 Run: `pytest backend/tests/ -v`
 Expected: Todos los tests pasan (100% verde).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add database/scripts/ backend/tests/test_migration_files.py
 git commit -m "feat(phase-2): add database verification script and migration file tests"
