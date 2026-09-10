@@ -1,6 +1,7 @@
 from app.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.routers import taxonomies
 
 app = FastAPI(
     title=settings.app_name,
@@ -20,6 +21,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Routers de APIs
+app.include_router(taxonomies.router)
 
 
 @app.get("/")
