@@ -102,14 +102,14 @@ export default function HomePage() {
       <header className="w-full max-w-5xl flex items-center justify-between border-b border-slate-800/80 pb-6 mb-8">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center font-bold text-lg shadow-lg shadow-rose-950/50">
-            LA
+            NB
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-white">
-              Los Arrayanes
+              Natbell
             </h1>
             <p className="text-xs text-slate-400">
-              Cosmética, Barbería & Peluquería Profesional
+              Cosmética & Peluquería • Proveedor: Los Arrayanes
             </p>
           </div>
         </div>
@@ -268,7 +268,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="w-full max-w-5xl border-t border-slate-800/80 pt-6 mt-8 text-center text-xs text-slate-500">
-        Los Arrayanes E-commerce &bull; Arquitectura Modular &bull; Fase 1
+        Natbell E-commerce &bull; Proveedor Oficial: Los Arrayanes &bull; Arquitectura Modular
       </footer>
     </div>
   );

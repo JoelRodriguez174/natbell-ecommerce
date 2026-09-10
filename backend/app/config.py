@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
-    app_name: str = "Los Arrayanes API"
+    app_name: str = "Natbell API"
     phase: int = 3
     frontend_url: str = "http://localhost:3000"
     backend_url: str = "http://localhost:8000"

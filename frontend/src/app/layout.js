@@ -12,9 +12,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Los Arrayanes — Insumos y Productos de Peluquería y Belleza",
+  title: "Natbell — Tienda de Belleza y Peluquería Profesional",
   description:
-    "Distribuidora mayorista y minorista de productos profesionales de peluquería, cosmética y estética en Argentina.",
+    "E-commerce oficial de productos y cosmética profesional para el cabello, barbería y estética. Proveedor oficial: Los Arrayanes.",
 };
 
 export default function RootLayout({ children }) {
