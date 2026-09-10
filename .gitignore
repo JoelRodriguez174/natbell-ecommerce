@@ -22,13 +22,15 @@ frontend/build/
 .next/
 node_modules/
 
-# OS / IDE
+# OS / IDE & AI Rules
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
 *.swp
 *.swo
+GEMINI.md
+
 
 # Large asset archives (already extracted or reference only)
 # Keep the extracted images if needed, or ignore zip if any
