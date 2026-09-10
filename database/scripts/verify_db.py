@@ -2,8 +2,11 @@ import os
 import sys
 
 # Forzar UTF-8 en stdout para terminales Windows
-if sys.stdout.encoding != "utf-8":
-    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        getattr(sys.stdout, "reconfigure")(encoding="utf-8")
+    except Exception:
+        pass
 
 # Asegurar importación del backend
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -86,9 +89,24 @@ def main():
         print(f"[OK] Conexión exitosa a Supabase.")
         print(f"[DATA] Marcas registradas en base de datos: {len(brands)}")
 
-        # Consultar categorías
+        # Consultar categorías y subcategorías
         res_cat = client.table("categories").select("id, name").execute()
-        print(f"[DATA] Categorías registradas en base de datos: {len(res_cat.data)}")
+        res_subcat = client.table("subcategories").select("id, name").execute()
+        res_zones = client.table("shipping_zones").select("id, zone_name").execute()
+        res_admin = client.table("admin_users").select("id, email").execute()
+        res_prod = client.table("products").select("id").limit(1).execute()
+        res_var = client.table("product_variants").select("id").limit(1).execute()
+        res_ord = client.table("orders").select("id").limit(1).execute()
+        res_items = client.table("order_items").select("id").limit(1).execute()
+        res_pay = client.table("payments").select("id").limit(1).execute()
+
+        print(f"[OK] Categorías registradas: {len(res_cat.data)}")
+        print(f"[OK] Subcategorías registradas: {len(res_subcat.data)}")
+        print(f"[OK] Zonas de envío configuradas: {len(res_zones.data)}")
+        print(f"[OK] Usuarios admin registrados: {len(res_admin.data)}")
+        print(f"[OK] Tablas de catálogo (products, product_variants): Accesibles")
+        print(f"[OK] Tablas transaccionales (orders, order_items, payments): Accesibles")
+        print("\n--> [FASE 2 COMPLETADA CON ÉXITO] Base de datos relacional 100% operativa en Supabase.")
     except Exception as e:
         print(f"[ERROR] Error al consultar Supabase: {e}")
         print("   Asegúrate de haber ejecutado los scripts de migración en el panel de Supabase.")

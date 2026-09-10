@@ -15,7 +15,7 @@ def get_supabase_client() -> Client:
     if _client is not None:
         return _client
 
-    url = settings.supabase_url
+    url = settings.supabase_url.rstrip("/")
     key = settings.supabase_service_key or settings.supabase_anon_key
 
     if not url or not key:
