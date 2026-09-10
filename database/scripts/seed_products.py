@@ -220,6 +220,25 @@ SAMPLE_PRODUCTS = [
 ]
 
 
+from typing import Any, Dict, List, Optional
+
+
+def _as_dict_list(data: Any) -> List[Dict[str, Any]]:
+    """Convierte de forma segura el payload de PostgREST en una lista de diccionarios."""
+    if isinstance(data, list):
+        return [item for item in data if isinstance(item, dict)]
+    return []
+
+
+def _as_first_dict(data: Any) -> Optional[Dict[str, Any]]:
+    """Obtiene de forma segura el primer diccionario de un payload de PostgREST."""
+    if isinstance(data, list) and data and isinstance(data[0], dict):
+        return data[0]
+    if isinstance(data, dict):
+        return data
+    return None
+
+
 def seed_sample_products():
     print("\n========================================================")
     print("[*] INSERCIÓN DE PRODUCTOS SEMILLA EN SUPABASE")
@@ -229,10 +248,16 @@ def seed_sample_products():
 
     # 1. Mapear subcategorías y marcas por slug para obtener sus IDs
     subcats_res = client.table("subcategories").select("id, slug").execute()
-    subcats_map = {s["slug"]: s["id"] for s in (subcats_res.data or [])}
+    subcats_rows = _as_dict_list(subcats_res.data)
+    subcats_map: Dict[str, str] = {
+        str(s["slug"]): str(s["id"]) for s in subcats_rows if "slug" in s and "id" in s
+    }
 
     brands_res = client.table("brands").select("id, slug").execute()
-    brands_map = {b["slug"]: b["id"] for b in (brands_res.data or [])}
+    brands_rows = _as_dict_list(brands_res.data)
+    brands_map: Dict[str, str] = {
+        str(b["slug"]): str(b["id"]) for b in brands_rows if "slug" in b and "id" in b
+    }
 
     print(f"[INFO] Subcategorías indexadas: {len(subcats_map)}")
     print(f"[INFO] Marcas indexadas: {len(brands_map)}")
@@ -241,8 +266,8 @@ def seed_sample_products():
     inserted_variants = 0
 
     for prod_data in SAMPLE_PRODUCTS:
-        subcat_id = subcats_map.get(prod_data["subcategory_slug"])
-        brand_id = brands_map.get(prod_data["brand_slug"])
+        subcat_id = subcats_map.get(str(prod_data["subcategory_slug"]))
+        brand_id = brands_map.get(str(prod_data["brand_slug"]))
 
         if not subcat_id:
             print(f"[WARN] Subcategoría '{prod_data['subcategory_slug']}' no encontrada. Saltando producto {prod_data['name']}.")
@@ -267,28 +292,33 @@ def seed_sample_products():
 
         # Upsert producto por slug
         res = client.table("products").upsert(product_payload, on_conflict="slug").execute()
-        if not res.data:
+        prod_row = _as_first_dict(res.data)
+        if not prod_row or "id" not in prod_row:
             print(f"[ERROR] No se pudo insertar/actualizar {prod_data['name']}")
             continue
 
-        product_id = res.data[0]["id"]
+        product_id = prod_row["id"]
         inserted_products += 1
         print(f"[OK] Producto: {prod_data['name']} (ID: {product_id})")
 
         # Upsert variantes
-        for var_data in prod_data["variants"]:
+        raw_variants = prod_data.get("variants")
+        variants_list = raw_variants if isinstance(raw_variants, list) else []
+        for var_item in variants_list:
+            if not isinstance(var_item, dict):
+                continue
             variant_payload = {
                 "product_id": product_id,
-                "sku": var_data["sku"],
-                "variant_name": var_data["variant_name"],
-                "price_override": var_data["price_override"],
-                "stock": var_data["stock"],
-                "is_active": var_data["is_active"],
+                "sku": var_item["sku"],
+                "variant_name": var_item["variant_name"],
+                "price_override": var_item["price_override"],
+                "stock": var_item["stock"],
+                "is_active": var_item["is_active"],
             }
             var_res = client.table("product_variants").upsert(variant_payload, on_conflict="sku").execute()
             if var_res.data:
                 inserted_variants += 1
-                print(f"     -> Variante: {var_data['sku']} ({var_data['variant_name']}) - Stock: {var_data['stock']}")
+                print(f"     -> Variante: {var_item['sku']} ({var_item['variant_name']}) - Stock: {var_item['stock']}")
 
     print(f"\n========================================================")
     print(f"[EXITO] Total productos cargados/actualizados: {inserted_products}/{len(SAMPLE_PRODUCTS)}")
