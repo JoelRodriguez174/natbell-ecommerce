@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Natbell — Tienda de Belleza y Peluquería Profesional",
   description:
-    "E-commerce oficial de productos y cosmética profesional para el cabello, barbería y estética. Proveedor oficial: Los Arrayanes.",
+    "E-commerce oficial de productos y cosmética profesional para el cabello, barbería y estética.",
 };
 
 export default function RootLayout({ children }) {

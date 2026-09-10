@@ -109,7 +109,7 @@ export default function HomePage() {
               Natbell
             </h1>
             <p className="text-xs text-slate-400">
-              Cosmética & Peluquería • Proveedor: Los Arrayanes
+              Cosmética, Barbería & Peluquería Profesional
             </p>
           </div>
         </div>
@@ -268,7 +268,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="w-full max-w-5xl border-t border-slate-800/80 pt-6 mt-8 text-center text-xs text-slate-500">
-        Natbell E-commerce &bull; Proveedor Oficial: Los Arrayanes &bull; Arquitectura Modular
+        Natbell E-commerce &bull; Belleza, Barbería & Peluquería Profesional
       </footer>
     </div>
   );

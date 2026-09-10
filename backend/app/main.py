@@ -5,7 +5,7 @@ from app.routers import taxonomies, products
 
 app = FastAPI(
     title=settings.app_name,
-    description="API de Backend para Natbell E-commerce (Catálogo provisto por Los Arrayanes)",
+    description="API de Backend para Natbell E-commerce",
     version="0.1.0",
 )
 
