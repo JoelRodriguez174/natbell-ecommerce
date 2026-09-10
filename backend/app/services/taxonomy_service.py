@@ -1,7 +1,14 @@
-from typing import List
+from typing import List, Dict, Any
 from supabase import Client
 from app.models.category import Category, Subcategory
 from app.models.brand import Brand
+
+
+def _as_dict_list(data: Any) -> List[Dict[str, Any]]:
+    """Convierte de forma segura datos de PostgREST en una lista de diccionarios tipados."""
+    if isinstance(data, list):
+        return [item for item in data if isinstance(item, dict)]
+    return []
 
 
 class TaxonomyService:
@@ -22,7 +29,7 @@ class TaxonomyService:
             .order("display_order")
             .execute()
         )
-        categories_data = res_cat.data or []
+        categories_data = _as_dict_list(res_cat.data)
 
         # 2. Obtener subcategorías activas
         res_sub = (
@@ -32,12 +39,12 @@ class TaxonomyService:
             .order("display_order")
             .execute()
         )
-        subcategories_data = res_sub.data or []
+        subcategories_data = _as_dict_list(res_sub.data)
 
         # 3. Agrupar subcategorías por category_id
-        sub_by_cat: dict[str, list[Subcategory]] = {}
+        sub_by_cat: Dict[str, List[Subcategory]] = {}
         for item in subcategories_data:
-            cat_id = str(item["category_id"])
+            cat_id = str(item.get("category_id", ""))
             if cat_id not in sub_by_cat:
                 sub_by_cat[cat_id] = []
             sub_by_cat[cat_id].append(Subcategory.model_validate(item))
@@ -45,20 +52,11 @@ class TaxonomyService:
         # 4. Construir lista de categorías anidadas
         result: List[Category] = []
         for cat_item in categories_data:
-            cat_id = str(cat_item["id"])
+            cat_id = str(cat_item.get("id", ""))
             subcats = sub_by_cat.get(cat_id, [])
-            cat_obj = Category(
-                id=cat_item["id"],
-                name=cat_item["name"],
-                slug=cat_item["slug"],
-                description=cat_item.get("description"),
-                image_url=cat_item.get("image_url"),
-                display_order=cat_item.get("display_order", 0),
-                is_active=cat_item.get("is_active", True),
-                created_at=cat_item["created_at"],
-                subcategories=subcats,
-            )
-            result.append(cat_obj)
+            cat_payload = dict(cat_item)
+            cat_payload["subcategories"] = subcats
+            result.append(Category.model_validate(cat_payload))
 
         return result
 
@@ -77,5 +75,5 @@ class TaxonomyService:
             .order("name")
             .execute()
         )
-        brands_data = res.data or []
+        brands_data = _as_dict_list(res.data)
         return [Brand.model_validate(item) for item in brands_data]

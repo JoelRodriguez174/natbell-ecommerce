@@ -62,10 +62,10 @@ class ProductDetailResponse(BaseModel):
     is_on_sale: bool = False
     is_featured: bool = False
     image_urls: List[str] = Field(default_factory=list)
-    brand_id: UUID
+    brand_id: Optional[UUID] = None
     brand_name: Optional[str] = None
     brand_slug: Optional[str] = None
-    subcategory_id: UUID
+    subcategory_id: Optional[UUID] = None
     subcategory_name: Optional[str] = None
     subcategory_slug: Optional[str] = None
     category_id: Optional[UUID] = None

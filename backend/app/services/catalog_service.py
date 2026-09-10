@@ -2,6 +2,7 @@ from decimal import Decimal
 import logging
 import re
 from typing import Optional, List, Any, Dict
+from postgrest.types import CountMethod
 from supabase import Client
 from app.models.catalog import (
     ProductFilters,
@@ -13,6 +14,22 @@ from app.models.catalog import (
 from app.models.product import ProductVariant
 
 logger = logging.getLogger(__name__)
+
+
+def _as_dict_list(data: Any) -> List[Dict[str, Any]]:
+    """Convierte de forma segura el payload de PostgREST en una lista de diccionarios."""
+    if isinstance(data, list):
+        return [item for item in data if isinstance(item, dict)]
+    return []
+
+
+def _as_first_dict(data: Any) -> Optional[Dict[str, Any]]:
+    """Obtiene de forma segura el primer diccionario de un payload de PostgREST."""
+    if isinstance(data, list) and data and isinstance(data[0], dict):
+        return data[0]
+    if isinstance(data, dict):
+        return data
+    return None
 
 
 class CatalogService:
@@ -28,9 +45,9 @@ class CatalogService:
         is_on_sale = bool(p.get("is_on_sale"))
 
         # Extraer variantes activas
-        raw_variants = p.get("product_variants") or []
+        raw_variants = p.get("product_variants")
         active_variants = [
-            v for v in raw_variants if v.get("is_active", True)
+            v for v in _as_dict_list(raw_variants) if v.get("is_active", True)
         ]
 
         # Calcular precios extremos (mínimo y máximo)
@@ -51,9 +68,14 @@ class CatalogService:
             in_stock = True
 
         # Extraer taxonomías asociadas
-        brand = p.get("brands") or {}
-        subcat = p.get("subcategories") or {}
-        cat = subcat.get("categories") or {}
+        brand = p.get("brands")
+        brand_dict = brand if isinstance(brand, dict) else {}
+
+        subcat = p.get("subcategories")
+        subcat_dict = subcat if isinstance(subcat, dict) else {}
+
+        cat = subcat_dict.get("categories")
+        cat_dict = cat if isinstance(cat, dict) else {}
 
         return ProductListItem(
             id=p["id"],
@@ -64,10 +86,10 @@ class CatalogService:
             is_on_sale=is_on_sale,
             is_featured=bool(p.get("is_featured", False)),
             image_urls=p.get("image_urls") or [],
-            brand_name=brand.get("name"),
-            brand_slug=brand.get("slug"),
-            category_name=cat.get("name"),
-            category_slug=cat.get("slug"),
+            brand_name=brand_dict.get("name"),
+            brand_slug=brand_dict.get("slug"),
+            category_name=cat_dict.get("name"),
+            category_slug=cat_dict.get("slug"),
             min_price=min_price,
             max_price=max_price,
             in_stock=in_stock,
@@ -84,9 +106,9 @@ class CatalogService:
         )
         is_on_sale = bool(p.get("is_on_sale"))
 
-        raw_variants = p.get("product_variants") or []
+        raw_variants = p.get("product_variants")
         active_variants = [
-            v for v in raw_variants if v.get("is_active", True)
+            v for v in _as_dict_list(raw_variants) if v.get("is_active", True)
         ]
 
         active_base = sale_price if (is_on_sale and sale_price is not None) else base_price
@@ -96,7 +118,6 @@ class CatalogService:
         for v in active_variants:
             if v.get("price_override") is not None:
                 prices.append(Decimal(str(v["price_override"])))
-            # Validar y adaptar variante si incluye created_at
             if "created_at" in v:
                 parsed_variants.append(ProductVariant.model_validate(v))
 
@@ -108,9 +129,14 @@ class CatalogService:
         else:
             in_stock = True
 
-        brand = p.get("brands") or {}
-        subcat = p.get("subcategories") or {}
-        cat = subcat.get("categories") or {}
+        brand = p.get("brands")
+        brand_dict = brand if isinstance(brand, dict) else {}
+
+        subcat = p.get("subcategories")
+        subcat_dict = subcat if isinstance(subcat, dict) else {}
+
+        cat = subcat_dict.get("categories")
+        cat_dict = cat if isinstance(cat, dict) else {}
 
         return ProductDetailResponse(
             id=p["id"],
@@ -122,15 +148,15 @@ class CatalogService:
             is_on_sale=is_on_sale,
             is_featured=bool(p.get("is_featured", False)),
             image_urls=p.get("image_urls") or [],
-            brand_id=p.get("brand_id") or brand.get("id"),
-            brand_name=brand.get("name"),
-            brand_slug=brand.get("slug"),
-            subcategory_id=p.get("subcategory_id") or subcat.get("id"),
-            subcategory_name=subcat.get("name"),
-            subcategory_slug=subcat.get("slug"),
-            category_id=cat.get("id"),
-            category_name=cat.get("name"),
-            category_slug=cat.get("slug"),
+            brand_id=p.get("brand_id") or brand_dict.get("id"),
+            brand_name=brand_dict.get("name"),
+            brand_slug=brand_dict.get("slug"),
+            subcategory_id=p.get("subcategory_id") or subcat_dict.get("id"),
+            subcategory_name=subcat_dict.get("name"),
+            subcategory_slug=subcat_dict.get("slug"),
+            category_id=cat_dict.get("id"),
+            category_name=cat_dict.get("name"),
+            category_slug=cat_dict.get("slug"),
             variants=parsed_variants,
             min_price=min_price,
             max_price=max_price,
@@ -159,7 +185,7 @@ class CatalogService:
             client.table("products")
             .select(
                 "*, brands(*), subcategories(*, categories(*)), product_variants(*)",
-                count="exact",
+                count=CountMethod.exact,
             )
             .eq("is_active", True)
         )
@@ -172,8 +198,9 @@ class CatalogService:
                 .eq("slug", filters.brand)
                 .execute()
             )
-            if brand_res.data:
-                query = query.eq("brand_id", brand_res.data[0]["id"])
+            brand_dict = _as_first_dict(brand_res.data)
+            if brand_dict and "id" in brand_dict:
+                query = query.eq("brand_id", brand_dict["id"])
             else:
                 return PaginatedProductsResponse(
                     items=[],
@@ -195,8 +222,9 @@ class CatalogService:
                 .eq("slug", filters.subcategory)
                 .execute()
             )
-            if subcat_res.data:
-                query = query.eq("subcategory_id", subcat_res.data[0]["id"])
+            subcat_dict = _as_first_dict(subcat_res.data)
+            if subcat_dict and "id" in subcat_dict:
+                query = query.eq("subcategory_id", subcat_dict["id"])
             else:
                 return PaginatedProductsResponse(
                     items=[],
@@ -217,15 +245,17 @@ class CatalogService:
                 .eq("slug", filters.category)
                 .execute()
             )
-            if cat_res.data:
-                cat_id = cat_res.data[0]["id"]
+            cat_dict = _as_first_dict(cat_res.data)
+            if cat_dict and "id" in cat_dict:
+                cat_id = cat_dict["id"]
                 sub_res = (
                     client.table("subcategories")
                     .select("id")
                     .eq("category_id", cat_id)
                     .execute()
                 )
-                sub_ids = [s["id"] for s in (sub_res.data or [])]
+                sub_rows = _as_dict_list(sub_res.data)
+                sub_ids = [s["id"] for s in sub_rows if "id" in s]
                 if sub_ids:
                     query = query.in_("subcategory_id", sub_ids)
                 else:
@@ -284,7 +314,8 @@ class CatalogService:
             else 0
         )
 
-        items = [cls._map_to_list_item(p) for p in (res.data or [])]
+        rows = _as_dict_list(res.data)
+        items = [cls._map_to_list_item(p) for p in rows]
 
         return PaginatedProductsResponse(
             items=items,
@@ -316,10 +347,11 @@ class CatalogService:
             .execute()
         )
 
-        if not res.data:
+        prod_dict = _as_first_dict(res.data)
+        if not prod_dict:
             return None
 
-        return cls._map_to_detail(res.data[0])
+        return cls._map_to_detail(prod_dict)
 
     @classmethod
     def get_featured_products(
@@ -341,7 +373,8 @@ class CatalogService:
             .limit(safe_limit)
             .execute()
         )
-        return [cls._map_to_list_item(p) for p in (res.data or [])]
+        rows = _as_dict_list(res.data)
+        return [cls._map_to_list_item(p) for p in rows]
 
     @classmethod
     def get_on_sale_products(
@@ -363,7 +396,8 @@ class CatalogService:
             .limit(safe_limit)
             .execute()
         )
-        return [cls._map_to_list_item(p) for p in (res.data or [])]
+        rows = _as_dict_list(res.data)
+        return [cls._map_to_list_item(p) for p in rows]
 
     @classmethod
     def search_products(
@@ -394,7 +428,8 @@ class CatalogService:
                 .limit(safe_limit)
                 .execute()
             )
-            return [cls._map_to_list_item(p) for p in (res.data or [])]
+            rows = _as_dict_list(res.data)
+            return [cls._map_to_list_item(p) for p in rows]
         except Exception as e:
             logger.warning("Excepción defensiva capturada en búsqueda de catálogo: %s", e)
             return []
