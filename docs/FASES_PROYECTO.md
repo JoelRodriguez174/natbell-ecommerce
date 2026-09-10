@@ -8,8 +8,9 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 ## 📌 Metodología de Trabajo y Reglas de Calidad
 1. **Desarrollo estrictamente por fases:** Se trabaja exclusivamente en una fase a la vez. No se inician desarrollos de fases posteriores hasta validar y cerrar la fase activa.
 2. **Estructura limpia y modularización atómica:** Ningún archivo debe ser monolítico. El frontend se organiza mediante componentes atómicos (`ui/`, `product/`, `cart/`), stores aislados con **Zustand** (`src/store/`) para el manejo de estado global sin acoplamiento, y el backend separa estrictamente capas (`routers/`, `services/`, `models/`, `utils/`), manteniendo funciones y módulos pequeños, puros y con responsabilidad única.
-3. **Testeo modular obligatorio:** Cada fase debe contar con pruebas unitarias, de integración o validaciones funcionales verificables que demuestren que los módulos funcionan correctamente y de manera desacoplada.
+3. **Testeo modular obligatorio (Modelo Híbrido: Unitario + Pentesting):** Cada fase debe contar con pruebas unitarias exhaustivas (dominio, edge cases, Pydantic, Zustand) y pentests defensivos específicos de su capa (inyecciones, validación de firmas criptográficas, control de concurrencia/stock, prevención de BOLA/IDOR). Antes del pase a producción (Fase 8) se ejecuta una auditoría de seguridad y pentesting integral (DAST/SAST).
 4. **Validación y confirmación:** Ninguna fase se considera cerrada sin mostrar los resultados de las pruebas y obtener la aprobación del usuario.
+5. **Referencia de Arquitectura de Pruebas:** Especificación formal en [`docs/superpowers/specs/2026-09-10-estrategia-testing-y-pentesting-design.md`](file:///c:/Users/Enekon/Desktop/Ecommerce/docs/superpowers/specs/2026-09-10-estrategia-testing-y-pentesting-design.md).
 
 ---
 
@@ -63,10 +64,8 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
   - Índices únicos en slugs y SKUs.
   - Índice parcial para productos destacados activos (`idx_products_featured WHERE is_active = TRUE`).
 * **Pruebas y Verificaciones Requeridas:**
-  - Ejecución de migraciones DDL sin conflictos.
-  - Script de validación de conexión e inserción/consulta con el cliente oficial `supabase-py`.
-  - Verificación de restricciones de integridad (ej: borrado protegido, checks de precios y stock >= 0).
-  - Comprobación de carga de datos semilla (marcas y categorías base).
+  - **Unitarias & Integración:** Ejecución de migraciones DDL sin conflictos, validación de esquemas Pydantic v2 frente a valores límite y tipos anómalos, script de comprobación con cliente `supabase-py` y test de carga de datos semilla.
+  - **Pentest & Seguridad:** Verificación de políticas RLS (*Row Level Security*) para garantizar que un cliente con *anon key* pública no pueda modificar productos, ver `admin_users` ni insertar órdenes directamente. Validación de rechazo a nivel motor de restricciones `CHECK` (`stock >= 0`, `price >= 0`).
 
 ---
 
@@ -86,10 +85,8 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
   - Capa de servicios en `app/services/product_service.py` desacoplada de los controladores HTTP.
   - Routers modulares en `app/routers/products.py`.
 * **Pruebas y Verificaciones Requeridas:**
-  - Tests automatizados con `pytest` y `httpx.AsyncClient`.
-  - Verificación de paginación correcta (límites, offsets y totales).
-  - Casos de prueba para filtros compuestos (ej: filtrar por marca X + precio entre Y y Z).
-  - Validación de respuestas 404 ante slugs inexistentes.
+  - **Unitarias & Lógica de Negocio:** Tests automatizados con `pytest` y `httpx.AsyncClient` sobre serialización Pydantic, cálculo de páginas/offsets y ordenamiento; mocks aislados de base de datos en capa de servicios.
+  - **Pentest & Seguridad:** Pruebas de inyección SQL/PostgREST y fuzzing de caracteres Unicode especiales en endpoints `/api/products` y `/api/products/search`; validación de límites contra abusos de paginación (`limit=1000000` o negativos); respuestas 404 limpias sin stack trace ante slugs inválidos.
 
 ---
 
@@ -104,9 +101,9 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 * **Componentes Reutilizables:**
   - `ProductCard`, `ProductGrid`, `VariantSelector`, `FilterSidebar`, `SearchBar`, `Breadcrumbs`, `Pagination`.
 * **Pruebas y Verificaciones Requeridas:**
-  - Pruebas de renderizado responsive (mobile, tablet y desktop).
-  - Chequeo de tiempos de carga e imágenes optimizadas con `next/image`.
-  - Verificación del flujo de navegación desde la home hasta el detalle de producto y selección de variantes.
+  - **Unitarias UI:** Renderizado atómico de componentes (`Button`, `Badge`, `Card`, `Skeleton`), accesibilidad (atributos ARIA, navegación por teclado y contraste).
+  - **Pentest & Seguridad Frontend:** Sanitización de parámetros de búsqueda (`q`) para prevención de XSS reflejado; saneamiento de URLs de imágenes externas en catálogo.
+  - **Render & Navegación:** Renderizado responsive (mobile, tablet, desktop) y flujo desde home hasta detalle de producto.
 
 ---
 
@@ -126,10 +123,8 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
     - Preparado para futura integración en Fase 2 de envíos con `AndreaniProvider`.
     - Endpoint público `GET /api/shipping/quote?postal_code=XXXX`.
 * **Pruebas y Verificaciones Requeridas:**
-  - Tests unitarios de cálculo de subtotales, totales y tarifas de envío en backend.
-  - Pruebas de persistencia en frontend (recarga de página, cierre de pestaña, edición de cantidades y vaciado de carrito).
-  - Validación de límites de stock (no permitir agregar más items de los disponibles).
-  - Test de cotización ante códigos postales válidos y fuera de rango.
+  - **Unitarias:** Tests de store Zustand (`useCartStore`) en operaciones puras (`addItem`, `removeItem`, `updateQuantity`, vaciado, subtotales) y persistencia limpia en `localStorage`. Tests en backend para el cotizador por rangos de código postal.
+  - **Pentest & Seguridad:** Simulación de alteración maliciosa en `localStorage` (precios en $0 o cantidades negativas como `-5`) comprobando que el backend recalcule contra la BD oficial; fuzzing de códigos postales corruptos en `/api/shipping/quote`.
 
 ---
 
@@ -151,10 +146,12 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
      - `/pago/exitoso`, `/pago/pendiente`, `/pago/fallido`.
      - Página pública para el comprador `/pedido/[orderNumber]` para consultar estado de preparación y despacho.
 * **Pruebas y Verificaciones Requeridas:**
-  - Pruebas de creación de orden con payloads correctos e incompletos.
-  - Tests de simulación con credenciales Sandbox de MercadoPago.
-  - Test de idempotencia de webhooks (asegurar que un webhook repetido no descuente doble stock ni duplique estados).
-  - Verificación de consistencia transaccional en PostgreSQL ante pagos aprobados y rechazados.
+  - **Unitarias:** Cálculo matemático exacto de totales de orden, snapshots inmutables en `order_items` y generación correlativa de identificador `ORD-YYYY-NNNNN`.
+  - **Pentest & Anti-Fraude (Crítico):**
+    - *Price Tampering:* Comprobar que el backend rechace o sobrescriba cualquier precio manipulado enviado desde el cliente.
+    - *Falsificación de Webhooks (HMAC Spoofing):* Rechazo (401/403) ante webhooks sin firma o con firma inválida.
+    - *Replay Attacks:* Idempotencia comprobada ante envíos repetidos del mismo evento de pago aprobado.
+    - *Condiciones de Carrera (Race Conditions):* Simulación concurrente con `asyncio.gather` para evitar sobreventa ante compras simultáneas del último item en stock.
 
 ---
 
@@ -179,9 +176,9 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
   - **Gestión de Tarifas de Envío:**
     - Creación y edición de zonas, costos fijos y rangos de códigos postales.
 * **Pruebas y Verificaciones Requeridas:**
-  - Pruebas de seguridad: rechazo estricto (401 Unauthorized / 403 Forbidden) en todos los endpoints admin ante peticiones sin token o token expirado.
-  - Pruebas de operaciones CRUD (crear producto, modificar variante, cambiar estado de orden).
-  - Verificación de soft delete (desactivar productos sin romper órdenes históricas).
+  - **Unitarias:** Generación y verificación criptográfica de tokens JWT, salting y hashing bcrypt de passwords.
+  - **Pentest & Autorización:** Pruebas contra vulnerabilidades BOLA/IDOR (intento de mutar o acceder a órdenes o productos sin autorización); tests de bypass de JWT (`alg: none`, tokens manipulados o expirados); simulación de fuerza bruta contra `/api/admin/auth/login` validando rate limiting.
+  - **CRUD:** Pruebas de operaciones CRUD y soft delete (desactivación de catálogo sin rotura referencial).
 
 ---
 
@@ -194,6 +191,6 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
   - **Base de Datos y Storage en Supabase Cloud:** Proyecto productivo configurado con backups automáticos y bucket público de Supabase Storage para imágenes.
   - **Pasarela de Pagos:** Transición de credenciales de Sandbox a credenciales productivas de MercadoPago, registrando la URL pública de producción del webhook.
 * **Pruebas y Verificaciones Requeridas:**
-  - Smoke tests en producción: verificar que todos los endpoints respondan en tiempo y forma en los dominios reales.
-  - Prueba de compra completa end-to-end (E2E) con monto mínimo de prueba en entorno real.
-  - Auditoría de seguridad: verificar que ninguna clave privada o token sensible quede expuesto en el código del cliente.
+  - **Auditoría Integral & Pentesting (Pre-Producción):** Escaneo SAST de dependencias (`pip-audit`, `npm audit`), análisis estático de código Python (`bandit`), verificación de cabeceras HTTP defensivas (CORS estricto, HSTS, CSP, X-Frame-Options) y revisión OWASP API Security Top 10.
+  - **Smoke Tests E2E:** Verificación de respuesta de todos los endpoints en dominios de producción y prueba de compra real end-to-end con monto de control.
+  - **Auditoría de Secretos:** Comprobación de que ninguna clave sensible (`SERVICE_ROLE_KEY`, `JWT_SECRET`, tokens de MercadoPago) esté expuesta en frontend ni en repositorios.
