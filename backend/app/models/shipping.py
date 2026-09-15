@@ -29,3 +29,13 @@ class ShippingZone(ShippingZoneBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ShippingQuote(BaseModel):
+    zone_name: str
+    cost: Decimal
+    estimated_days: int
+    postal_code: str
+    provider: str = "fixed_rate"
+    description: str
+

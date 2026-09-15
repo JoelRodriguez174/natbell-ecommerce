@@ -1,7 +1,7 @@
 from app.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import taxonomies, products
+from app.routers import taxonomies, products, shipping
 
 app = FastAPI(
     title=settings.app_name,
@@ -25,6 +25,7 @@ app.add_middleware(
 # Routers de APIs
 app.include_router(taxonomies.router)
 app.include_router(products.router)
+app.include_router(shipping.router)
 
 
 @app.get("/")
