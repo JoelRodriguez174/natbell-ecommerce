@@ -17,7 +17,7 @@ INSERT INTO products (
     TRUE,
     FALSE,
     NULL,
-    '["https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/nov-tintura-en-crema-profesional-60g.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,
@@ -46,7 +46,7 @@ INSERT INTO products (
     TRUE,
     TRUE,
     11900.00,
-    '["https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/nov-tintura-en-crema-profesional-60g.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,
@@ -73,7 +73,7 @@ INSERT INTO products (
     TRUE,
     FALSE,
     NULL,
-    '["https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/plasma-polvo-decolorante-white-blue-500g.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,
@@ -99,7 +99,7 @@ INSERT INTO products (
     FALSE,
     FALSE,
     NULL,
-    '["https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/la-puissance-shampoo-nutritivo-argan.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,
@@ -125,7 +125,7 @@ INSERT INTO products (
     TRUE,
     TRUE,
     9800.00,
-    '["https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/la-puissance-acondicionador-desenredante-argan.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,
@@ -153,7 +153,7 @@ INSERT INTO products (
     FALSE,
     FALSE,
     NULL,
-    '["https://images.unsplash.com/photo-1585751119414-ef2636f8aede?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/la-puissance-mascara-restauradora-keratina.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,
@@ -180,7 +180,7 @@ INSERT INTO products (
     TRUE,
     FALSE,
     NULL,
-    '["https://images.unsplash.com/photo-1608248597359-bb5833076758?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/nov-crema-oxidante-estabilizada-900ml.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,
@@ -205,7 +205,7 @@ INSERT INTO products (
     TRUE,
     TRUE,
     34500.00,
-    '["https://images.unsplash.com/photo-1621607512214-68297480165e?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/plasma-serum-reparador-puntas-argan-lino.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,
@@ -232,7 +232,7 @@ INSERT INTO products (
     FALSE,
     FALSE,
     NULL,
-    '["https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/kemei-cortadora-profesional-km-1990.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,
@@ -257,7 +257,7 @@ INSERT INTO products (
     TRUE,
     FALSE,
     NULL,
-    '["https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/kemei-patillera-trimmer-t9.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,
@@ -282,7 +282,7 @@ INSERT INTO products (
     FALSE,
     TRUE,
     5200.00,
-    '["https://images.unsplash.com/photo-1585238342024-78d387f4a707?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/wahl-super-taper-clasica-v5000.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,
@@ -310,7 +310,7 @@ INSERT INTO products (
     FALSE,
     FALSE,
     NULL,
-    '["https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800&q=80"]'::jsonb,
+    '["/products/mac-gregor-pomada-modeladora-mate-100g.webp"]'::jsonb,
     TRUE
 ) ON CONFLICT (slug) DO UPDATE SET
     base_price = EXCLUDED.base_price,

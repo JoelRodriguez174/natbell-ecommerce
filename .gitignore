@@ -34,3 +34,4 @@ GEMINI.md
 
 # Large asset archives (already extracted or reference only)
 # Keep the extracted images if needed, or ignore zip if any
+img/screenshot_*.png

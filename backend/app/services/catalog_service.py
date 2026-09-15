@@ -61,8 +61,8 @@ class CatalogService:
         min_price = min(prices)
         max_price = max(prices)
 
-        # Determinar disponibilidad de inventario (False si no hay variantes o todas están en 0)
-        in_stock = any(int(v.get("stock", 0)) > 0 for v in active_variants)
+        # Determinar disponibilidad de inventario (True por defecto para catálogo activo)
+        in_stock = any(int(v.get("stock", 0)) > 0 for v in active_variants) if active_variants else True
 
         # Extraer taxonomías asociadas
         brand = p.get("brands")
@@ -278,13 +278,17 @@ class CatalogService:
                     ),
                 )
 
-        # 4. Filtro por rango de precios
+        # 4. Filtro por productos en oferta
+        if filters.on_sale is not None:
+            query = query.eq("is_on_sale", filters.on_sale)
+
+        # 5. Filtro por rango de precios
         if filters.min_price is not None:
             query = query.gte("base_price", str(filters.min_price))
         if filters.max_price is not None:
             query = query.lte("base_price", str(filters.max_price))
 
-        # 5. Ordenamiento
+        # 6. Ordenamiento
         if filters.sort == "price_asc":
             query = query.order("base_price", desc=False)
         elif filters.sort == "price_desc":
@@ -398,7 +402,7 @@ class CatalogService:
     def search_products(
         cls, client: Client, query: str, limit: int = 20
     ) -> List[ProductListItem]:
-        """Búsqueda reactiva de productos por nombre con sanitización anti-inyección."""
+        """Búsqueda reactiva, adaptada y predictiva de productos por múltiples palabras, marcas y taxonomías."""
         if not client or not query or not query.strip():
             return []
 
@@ -409,22 +413,63 @@ class CatalogService:
         if not clean_query:
             return []
 
+        tokens = [t for t in clean_query.split() if len(t) >= 2]
+        if not tokens:
+            tokens = [clean_query]
+
         safe_limit = min(max(1, limit), 50)
 
         try:
+            or_conditions = []
+            for t in tokens[:4]:
+                or_conditions.append(f"name.ilike.%{t}%")
+                or_conditions.append(f"description.ilike.%{t}%")
+
+            or_query = ",".join(or_conditions)
+
             res = (
                 client.table("products")
                 .select(
                     "*, brands(*), subcategories(*, categories(*)), product_variants(*)"
                 )
                 .eq("is_active", True)
-                .ilike("name", f"%{clean_query}%")
-                .order("created_at", desc=True)
-                .limit(safe_limit)
+                .or_(or_query)
+                .limit(safe_limit * 2)
                 .execute()
             )
             rows = _as_dict_list(res.data)
-            return [cls._map_to_list_item(p) for p in rows]
+            items = [cls._map_to_list_item(p) for p in rows]
+
+            # Filtrar productos agotados para que no aparezcan en repertorio/búsqueda
+            items = [it for it in items if it.in_stock]
+
+            # Puntuación predictiva de relevancia
+            query_lower = clean_query.lower()
+            tokens_lower = [t.lower() for t in tokens]
+
+            def score_product(item: ProductListItem) -> int:
+                score = 0
+                name_l = (item.name or "").lower()
+                brand_l = (item.brand_name or "").lower()
+                cat_l = (item.category_name or "").lower()
+
+                if query_lower in name_l:
+                    score += 100
+                if query_lower in brand_l:
+                    score += 60
+
+                for t in tokens_lower:
+                    if t in name_l:
+                        score += 30
+                    if t in brand_l:
+                        score += 25
+                    if t in cat_l:
+                        score += 15
+
+                return score
+
+            scored_items = sorted(items, key=score_product, reverse=True)
+            return scored_items[:safe_limit]
         except Exception as e:
             logger.warning("Excepción defensiva capturada en búsqueda de catálogo: %s", e)
             return []

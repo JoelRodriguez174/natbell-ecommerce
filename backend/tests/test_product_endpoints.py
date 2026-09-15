@@ -17,6 +17,19 @@ async def test_get_products_paginated():
 
 
 @pytest.mark.asyncio
+async def test_get_products_filtered_by_on_sale():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/products?on_sale=true")
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert len(data["items"]) > 0
+        # Absolutamente todos los productos devueltos deben estar marcados en oferta
+        for item in data["items"]:
+            assert item["is_on_sale"] is True
+
+
+@pytest.mark.asyncio
 async def test_get_featured_products():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/api/products/featured")

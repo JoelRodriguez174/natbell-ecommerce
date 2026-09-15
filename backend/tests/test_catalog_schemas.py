@@ -42,6 +42,11 @@ def test_product_filters_validation():
     with pytest.raises(ValidationError):
         ProductFilters(min_price=Decimal("-10.00"))
 
+    # Soporte para filtro de ofertas
+    filters_sale = ProductFilters(on_sale=True)
+    assert filters_sale.on_sale is True
+    assert ProductFilters().on_sale is None
+
 
 def test_product_list_item_schema():
     item = ProductListItem(

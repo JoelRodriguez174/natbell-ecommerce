@@ -28,6 +28,10 @@ class ProductFilters(BaseModel):
         default=None,
         pattern="^(price_asc|price_desc|newest|featured)$",
     )
+    on_sale: Optional[bool] = Field(
+        default=None,
+        description="Filtrar exclusivamente productos en oferta",
+    )
 
 
 class ProductListItem(BaseModel):
