@@ -106,9 +106,12 @@ class MercadoPagoProvider(PaymentProvider):
                 "pending": f"{settings.frontend_url}/pago/pendiente?order={order.order_number}",
                 "failure": f"{settings.frontend_url}/pago/fallido?order={order.order_number}",
             },
-            "auto_return": "approved",
             "statement_descriptor": "NATBELL",
         }
+
+        # auto_return solo es admitido por MercadoPago cuando las URLs son públicas (HTTPS)
+        if settings.frontend_url.startswith("https://"):
+            preference_data["auto_return"] = "approved"
 
         try:
             preference_response = self._sdk.preference().create(preference_data)
