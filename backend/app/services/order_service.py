@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
+from app.config import settings
 from app.database import get_supabase_client
 from app.models.order import (
     Order,
@@ -186,6 +187,14 @@ class OrderService:
 
         preference_result = await self.payment_provider.create_checkout_preference(domain_order)
 
+        # Si se usan credenciales de Sandbox (TEST-), redirigir a sandbox_init_point
+        token = getattr(settings, "mercadopago_access_token", "")
+        checkout_url = (
+            preference_result.sandbox_init_point
+            if token.startswith("TEST-")
+            else preference_result.init_point
+        )
+
         return OrderCreateResponse(
             order_id=UUID(order_id),
             order_number=order_number,
@@ -193,7 +202,7 @@ class OrderService:
             subtotal=calculated_subtotal,
             shipping_cost=shipping_cost,
             total=calculated_total,
-            checkout_url=preference_result.init_point,
+            checkout_url=checkout_url,
             mp_preference_id=preference_result.preference_id,
         )
 
