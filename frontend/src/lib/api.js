@@ -105,3 +105,21 @@ export async function getShippingQuote(postalCode) {
 export async function getShippingZones() {
   return apiFetch(`/api/shipping/zones`);
 }
+
+/**
+ * Crea un nuevo pedido en la pasarela / API de órdenes (Guest Checkout)
+ */
+export async function createOrder(orderPayload) {
+  return apiFetch("/api/orders", {
+    method: "POST",
+    body: JSON.stringify(orderPayload),
+  });
+}
+
+/**
+ * Consulta el estado público y detalle de un pedido por su identificador ORD-YYYY-NNNNN
+ */
+export async function getOrderStatus(orderNumber) {
+  if (!orderNumber) throw new Error("Número de orden requerido");
+  return apiFetch(`/api/orders/${encodeURIComponent(orderNumber)}/status`);
+}

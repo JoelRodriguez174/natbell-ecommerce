@@ -19,6 +19,8 @@ export function formatCurrency(amount) {
   }).format(num);
 }
 
+export const formatPrice = formatCurrency;
+
 /**
  * Sanitiza parámetros de texto para prevenir XSS reflejado y caracteres no deseados
  */
