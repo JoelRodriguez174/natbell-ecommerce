@@ -6,7 +6,7 @@ _BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     app_name: str = "Natbell API"
-    phase: int = 6
+    phase: int = 7
     frontend_url: str = "http://localhost:3000"
     backend_url: str = "http://localhost:8000"
 
@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     mercadopago_webhook_secret: str = ""
     mercadopago_mode: str = "auto"  # "auto", "mock", or "real"
     mercadopago_sandbox: bool = True
+
+    # JWT & Admin Security Configuration
+    jwt_secret_key: str = "natbell-ecommerce-secret-key-2026-production-min-32-chars-long"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 480  # 8 horas de sesión admin
 
     model_config = SettingsConfigDict(
         env_file=(
