@@ -37,6 +37,22 @@ DEFAULT_ZONES_CONFIG = [
 ]
 
 
+def _as_dict_list(data: Any) -> List[Dict[str, Any]]:
+    """Convierte de forma segura datos de PostgREST en una lista de diccionarios tipados."""
+    if isinstance(data, list):
+        return [item for item in data if isinstance(item, dict)]
+    return []
+
+
+def _as_first_dict(data: Any) -> Optional[Dict[str, Any]]:
+    """Obtiene de forma segura el primer diccionario de un payload de PostgREST."""
+    if isinstance(data, list) and data and isinstance(data[0], dict):
+        return data[0]
+    if isinstance(data, dict):
+        return data
+    return None
+
+
 def extract_numeric_postal_code(postal_code: str) -> int:
     """
     Normaliza y extrae el código postal numérico argentino (1000 a 9999).
@@ -92,7 +108,7 @@ class FixedRateProvider(ShippingProvider):
                     .order("cost", desc=False)
                     .execute()
                 )
-                zones = response.data if response and hasattr(response, "data") else []
+                zones = _as_dict_list(response.data) if response else []
 
                 for zone in zones:
                     raw_ranges = zone.get("postal_code_ranges") or []
@@ -103,22 +119,19 @@ class FixedRateProvider(ShippingProvider):
                         except Exception:
                             raw_ranges = []
 
-                    if not isinstance(raw_ranges, list):
-                        continue
-
-                    for r in raw_ranges:
-                        if not isinstance(r, dict):
-                            continue
+                    ranges_list = _as_dict_list(raw_ranges)
+                    for r in ranges_list:
                         from_val = int(r.get("from") or r.get("from_code") or 0)
                         to_val = int(r.get("to") or r.get("to_code") or 0)
                         if from_val <= cp_num <= to_val:
+                            days_val = int(zone.get("estimated_days") or 3)
                             return ShippingQuote(
-                                zone_name=zone.get("zone_name", "Zona Estándar"),
-                                cost=Decimal(str(zone.get("cost", "5000.00"))),
-                                estimated_days=int(zone.get("estimated_days", 3)),
+                                zone_name=str(zone.get("zone_name") or "Zona Estándar"),
+                                cost=Decimal(str(zone.get("cost") or "5000.00")),
+                                estimated_days=days_val,
                                 postal_code=cp_str,
                                 provider="fixed_rate",
-                                description=f"Entrega estimada en {zone.get('estimated_days', 3)} días hábiles",
+                                description=f"Entrega estimada en {days_val} días hábiles",
                             )
             except Exception as e:
                 logger.warning(f"Error consultando shipping_zones en Supabase: {e}. Usando fallback local.")
@@ -128,23 +141,23 @@ class FixedRateProvider(ShippingProvider):
             for r in item["ranges"]:
                 if r["from"] <= cp_num <= r["to"]:
                     return ShippingQuote(
-                        zone_name=item["zone_name"],
-                        cost=item["cost"],
-                        estimated_days=item["days"],
+                        zone_name=str(item["zone_name"]),
+                        cost=Decimal(str(item["cost"])),
+                        estimated_days=int(item["days"]),
                         postal_code=cp_str,
                         provider="fixed_rate",
-                        description=item["description"],
+                        description=str(item["description"]),
                     )
 
         # Si por alguna razón excede, retornar interior general
         fallback = DEFAULT_ZONES_CONFIG[-1]
         return ShippingQuote(
-            zone_name=fallback["zone_name"],
-            cost=fallback["cost"],
-            estimated_days=fallback["days"],
+            zone_name=str(fallback["zone_name"]),
+            cost=Decimal(str(fallback["cost"])),
+            estimated_days=int(fallback["days"]),
             postal_code=cp_str,
             provider="fixed_rate",
-            description=fallback["description"],
+            description=str(fallback["description"]),
         )
 
 
@@ -170,25 +183,26 @@ class ShippingService:
         if db is not None:
             try:
                 response = db.table("shipping_zones").select("*").order("cost", desc=False).execute()
-                if response and hasattr(response, "data") and response.data:
+                zones_data = _as_dict_list(response.data) if response else []
+                if zones_data:
                     return [
                         {
-                            "zone_name": item.get("zone_name", ""),
-                            "cost": float(item.get("cost", 0.0)),
-                            "estimated_days": int(item.get("estimated_days", 3)),
-                            "description": f"Entrega estimada en {item.get('estimated_days', 3)} días hábiles",
+                            "zone_name": str(item.get("zone_name") or ""),
+                            "cost": float(Decimal(str(item.get("cost") or 0.0))),
+                            "estimated_days": int(item.get("estimated_days") or 3),
+                            "description": f"Entrega estimada en {item.get('estimated_days') or 3} días hábiles",
                         }
-                        for item in response.data
+                        for item in zones_data
                     ]
             except Exception as e:
                 logger.warning(f"Error listando zonas desde Supabase: {e}")
 
         return [
             {
-                "zone_name": item["zone_name"],
-                "cost": float(item["cost"]),
-                "estimated_days": item["days"],
-                "description": item["description"],
+                "zone_name": str(item["zone_name"]),
+                "cost": float(Decimal(str(item["cost"]))),
+                "estimated_days": int(item["days"]),
+                "description": str(item["description"]),
             }
             for item in DEFAULT_ZONES_CONFIG
         ]

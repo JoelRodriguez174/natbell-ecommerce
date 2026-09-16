@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from app.database import get_supabase_client
@@ -17,6 +17,13 @@ from app.services.payment_service import PaymentProvider, get_payment_provider
 from app.utils.order_number import generate_order_number, parse_order_sequence
 
 logger = logging.getLogger(__name__)
+
+
+def _as_dict_list(data: Any) -> List[Dict[str, Any]]:
+    """Convierte de forma segura datos de PostgREST en una lista de diccionarios tipados."""
+    if isinstance(data, list):
+        return [item for item in data if isinstance(item, dict)]
+    return []
 
 
 def _as_first_dict(data: Any) -> Dict[str, Any]:
@@ -64,19 +71,19 @@ class OrderService:
                 .execute()
             )
 
-            if not variant_res.data:
+            variant = _as_first_dict(variant_res.data) if variant_res else {}
+            if not variant or not variant.get("id"):
                 raise ValueError(f"Variante de producto con ID {item.product_variant_id} no encontrada.")
 
-            variant = variant_res.data[0]
             product = _as_first_dict(variant.get("products"))
 
             if not variant.get("is_active", True) or not product.get("is_active", True):
                 raise ValueError(f"El producto o variante {variant.get('sku')} no se encuentra disponible.")
 
-            current_stock = int(variant.get("stock", 0))
+            current_stock = int(variant.get("stock") or 0)
             if current_stock < item.quantity:
-                product_name = product.get("name", "Producto")
-                variant_name = variant.get("variant_name", "")
+                product_name = str(product.get("name") or "Producto")
+                variant_name = str(variant.get("variant_name") or "")
                 raise ValueError(
                     f"Stock insuficiente para {product_name} ({variant_name}). "
                     f"Stock disponible: {current_stock}, solicitado: {item.quantity}."
@@ -91,10 +98,10 @@ class OrderService:
             order_items_to_create.append(
                 {
                     "product_variant_id": str(variant["id"]),
-                    "product_name": product.get("name", "Producto"),
-                    "variant_name": variant.get("variant_name", ""),
-                    "sku": variant.get("sku", ""),
-                    "quantity": item.quantity,
+                    "product_name": str(product.get("name") or "Producto"),
+                    "variant_name": str(variant.get("variant_name") or ""),
+                    "sku": str(variant.get("sku") or ""),
+                    "quantity": int(item.quantity),
                     "unit_price": float(unit_price),
                     "subtotal": float(line_subtotal),
                 }
@@ -114,13 +121,13 @@ class OrderService:
         order_insert_payload = {
             "order_number": order_number,
             "status": OrderStatus.PENDING.value,
-            "customer_name": request.customer_name,
-            "customer_email": request.customer_email,
-            "customer_phone": request.customer_phone,
-            "shipping_address": request.shipping_address,
-            "shipping_city": request.shipping_city,
-            "shipping_province": request.shipping_province,
-            "shipping_postal_code": request.shipping_postal_code,
+            "customer_name": str(request.customer_name),
+            "customer_email": str(request.customer_email),
+            "customer_phone": str(request.customer_phone),
+            "shipping_address": str(request.shipping_address),
+            "shipping_city": str(request.shipping_city),
+            "shipping_province": str(request.shipping_province),
+            "shipping_postal_code": str(request.shipping_postal_code),
             "shipping_cost": float(shipping_cost),
             "subtotal": float(calculated_subtotal),
             "total": float(calculated_total),
@@ -128,30 +135,29 @@ class OrderService:
         }
 
         order_res = self.db.table("orders").insert(order_insert_payload).execute()
-        if not order_res.data:
+        created_order_data = _as_first_dict(order_res.data) if order_res else {}
+        if not created_order_data or not created_order_data.get("id"):
             raise RuntimeError("Error al persistir la orden en la base de datos.")
 
-        created_order_data = order_res.data[0]
-        order_id = created_order_data["id"]
+        order_id = str(created_order_data["id"])
 
         # 4. Insertar snapshots inmutables en order_items
         created_order_items = []
         for line in order_items_to_create:
             line["order_id"] = order_id
             item_insert_res = self.db.table("order_items").insert(line).execute()
-            item_id = None
-            if item_insert_res and item_insert_res.data:
-                item_id = item_insert_res.data[0].get("id")
+            first_item = _as_first_dict(item_insert_res.data) if item_insert_res else {}
+            item_id = str(first_item.get("id")) if first_item.get("id") else None
 
             created_order_items.append(
                 OrderItem(
                     id=UUID(item_id) if item_id else UUID(str(line["product_variant_id"])),
                     order_id=UUID(order_id),
-                    product_variant_id=UUID(line["product_variant_id"]),
-                    product_name=line["product_name"],
-                    variant_name=line["variant_name"],
-                    sku=line["sku"],
-                    quantity=line["quantity"],
+                    product_variant_id=UUID(str(line["product_variant_id"])),
+                    product_name=str(line["product_name"]),
+                    variant_name=str(line["variant_name"]),
+                    sku=str(line["sku"]),
+                    quantity=int(line["quantity"]),
                     unit_price=Decimal(str(line["unit_price"])),
                     subtotal=Decimal(str(line["subtotal"])),
                 )
@@ -162,13 +168,13 @@ class OrderService:
             id=UUID(order_id),
             order_number=order_number,
             status=OrderStatus.PENDING,
-            customer_name=request.customer_name,
-            customer_email=request.customer_email,
-            customer_phone=request.customer_phone,
-            shipping_address=request.shipping_address,
-            shipping_city=request.shipping_city,
-            shipping_province=request.shipping_province,
-            shipping_postal_code=request.shipping_postal_code,
+            customer_name=str(request.customer_name),
+            customer_email=str(request.customer_email),
+            customer_phone=str(request.customer_phone),
+            shipping_address=str(request.shipping_address),
+            shipping_city=str(request.shipping_city),
+            shipping_province=str(request.shipping_province),
+            shipping_postal_code=str(request.shipping_postal_code),
             shipping_cost=shipping_cost,
             subtotal=calculated_subtotal,
             total=calculated_total,
@@ -200,35 +206,35 @@ class OrderService:
             .execute()
         )
 
-        if not order_res.data:
+        order_data = _as_first_dict(order_res.data) if order_res else {}
+        if not order_data or not order_data.get("order_number"):
             raise KeyError(f"No se encontró el pedido con identificador {order_number}.")
 
-        order_data = order_res.data[0]
-        items_raw = order_data.get("order_items") or []
+        items_raw = _as_dict_list(order_data.get("order_items"))
         items = [
             OrderItem(
-                id=UUID(it["id"]),
-                order_id=UUID(it["order_id"]),
-                product_variant_id=UUID(it["product_variant_id"]) if it.get("product_variant_id") else None,
-                product_name=it["product_name"],
-                variant_name=it["variant_name"],
-                sku=it["sku"],
-                quantity=it["quantity"],
-                unit_price=Decimal(str(it["unit_price"])),
-                subtotal=Decimal(str(it["subtotal"])),
+                id=UUID(str(it["id"])),
+                order_id=UUID(str(it["order_id"])),
+                product_variant_id=UUID(str(it["product_variant_id"])) if it.get("product_variant_id") else None,
+                product_name=str(it.get("product_name") or ""),
+                variant_name=str(it.get("variant_name") or ""),
+                sku=str(it.get("sku") or ""),
+                quantity=int(it.get("quantity") or 0),
+                unit_price=Decimal(str(it.get("unit_price") or "0.00")),
+                subtotal=Decimal(str(it.get("subtotal") or "0.00")),
             )
             for it in items_raw
         ]
 
         return OrderStatusResponse(
-            order_number=order_data["order_number"],
-            status=OrderStatus(order_data["status"]),
-            customer_name=order_data["customer_name"],
-            customer_email=order_data["customer_email"],
-            shipping_address=order_data["shipping_address"],
-            shipping_city=order_data["shipping_city"],
-            shipping_province=order_data["shipping_province"],
-            shipping_postal_code=order_data["shipping_postal_code"],
+            order_number=str(order_data["order_number"]),
+            status=OrderStatus(str(order_data["status"])),
+            customer_name=str(order_data["customer_name"]),
+            customer_email=str(order_data["customer_email"]),
+            shipping_address=str(order_data["shipping_address"]),
+            shipping_city=str(order_data["shipping_city"]),
+            shipping_province=str(order_data["shipping_province"]),
+            shipping_postal_code=str(order_data["shipping_postal_code"]),
             shipping_cost=Decimal(str(order_data.get("shipping_cost", "0.00"))),
             subtotal=Decimal(str(order_data["subtotal"])),
             total=Decimal(str(order_data["total"])),
@@ -250,18 +256,17 @@ class OrderService:
             .execute()
         )
 
-        if not order_res.data:
+        order_data = _as_first_dict(order_res.data) if order_res else {}
+        if not order_data or not order_data.get("id"):
             logger.error(f"Orden {order_number} no encontrada para marcar como pagada")
             raise KeyError(f"Orden {order_number} no encontrada")
-
-        order_data = order_res.data[0]
 
         # Idempotencia: Si ya está pagada, no volver a descontar stock ni duplicar registros
         if order_data.get("status") == OrderStatus.PAID.value:
             logger.info(f"Orden {order_number} ya se encontraba pagada (idempotencia verificada).")
             return True
 
-        order_id = order_data["id"]
+        order_id = str(order_data["id"])
 
         # 1. Actualizar orden a 'paid'
         self.db.table("orders").update(
@@ -277,7 +282,7 @@ class OrderService:
             "mp_payment_id": payment_id,
             "mp_status": "approved",
             "mp_status_detail": (payment_details or {}).get("status_detail", "accredited"),
-            "amount": float(order_data["total"]),
+            "amount": float(Decimal(str(order_data.get("total") or 0.0))),
         }
         try:
             self.db.table("payments").insert(payment_insert).execute()
@@ -285,9 +290,9 @@ class OrderService:
             logger.warning(f"Aviso registrando pago en tabla payments: {e}")
 
         # 3. Descontar stock atómicamente de las variantes compradas
-        for item in order_data.get("order_items") or []:
-            variant_id = item.get("product_variant_id")
-            quantity = int(item.get("quantity", 0))
+        for item in _as_dict_list(order_data.get("order_items")):
+            variant_id = str(item.get("product_variant_id") or "")
+            quantity = int(item.get("quantity") or 0)
             if variant_id and quantity > 0:
                 self._decrement_stock(variant_id, quantity)
 
@@ -298,8 +303,9 @@ class OrderService:
         """Resta stock de la variante de forma segura."""
         try:
             var_res = self.db.table("product_variants").select("stock").eq("id", variant_id).execute()
-            if var_res.data:
-                current_stock = int(var_res.data[0].get("stock", 0))
+            var_data = _as_first_dict(var_res.data) if var_res else {}
+            if var_data:
+                current_stock = int(var_data.get("stock") or 0)
                 new_stock = max(0, current_stock - quantity)
                 self.db.table("product_variants").update(
                     {
@@ -314,8 +320,9 @@ class OrderService:
         """Calcula el siguiente número correlativo para la secuencia anual de pedidos."""
         try:
             res = self.db.table("orders").select("order_number").order("created_at", desc=True).limit(1).execute()
-            if res.data and res.data[0].get("order_number"):
-                last_number = res.data[0]["order_number"]
+            first_row = _as_first_dict(res.data) if res else {}
+            if first_row and first_row.get("order_number"):
+                last_number = str(first_row["order_number"])
                 seq = parse_order_sequence(last_number)
                 if seq is not None:
                     return seq + 1
@@ -323,3 +330,4 @@ class OrderService:
             logger.warning(f"No se pudo consultar última secuencia de orden: {e}")
 
         return 1
+
