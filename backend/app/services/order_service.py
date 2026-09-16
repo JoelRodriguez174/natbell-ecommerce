@@ -187,11 +187,12 @@ class OrderService:
 
         preference_result = await self.payment_provider.create_checkout_preference(domain_order)
 
-        # Si se usan credenciales de Sandbox (TEST-), redirigir a sandbox_init_point
+        # Si se usan credenciales de Sandbox (TEST-) o mercadopago_sandbox está activado, redirigir a sandbox_init_point
         token = getattr(settings, "mercadopago_access_token", "")
+        is_sandbox = getattr(settings, "mercadopago_sandbox", True) or token.startswith("TEST-")
         checkout_url = (
-            preference_result.sandbox_init_point
-            if token.startswith("TEST-")
+            (preference_result.sandbox_init_point or preference_result.init_point)
+            if is_sandbox
             else preference_result.init_point
         )
 

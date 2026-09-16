@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     mercadopago_public_key: str = ""
     mercadopago_webhook_secret: str = ""
     mercadopago_mode: str = "auto"  # "auto", "mock", or "real"
+    mercadopago_sandbox: bool = True
 
     model_config = SettingsConfigDict(
         env_file=(
