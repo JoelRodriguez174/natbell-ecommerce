@@ -1,7 +1,7 @@
 from app.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import taxonomies, products, shipping, orders
+from app.routers import taxonomies, products, shipping, orders, webhooks
 
 app = FastAPI(
     title=settings.app_name,
@@ -27,6 +27,7 @@ app.include_router(taxonomies.router)
 app.include_router(products.router)
 app.include_router(shipping.router)
 app.include_router(orders.router)
+app.include_router(webhooks.router)
 
 
 @app.get("/")
@@ -50,7 +51,8 @@ async def health_check():
       "app": settings.app_name,
       "phase": settings.phase,
       "message": (
-          "Fase 3 activa: Catálogo y APIs públicas REST (productos, variantes, "
-          "filtros, categorías y marcas) 100% operativas."
+          "Fase 6 activa: Checkout, MercadoPago y Webhooks con control de inventario "
+          "100% operativos."
       ),
   }
+
