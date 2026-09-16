@@ -1,0 +1,64 @@
+#!/bin/sh
+# ==============================================================================
+# Git Pre-Push Hook (Natbell E-Commerce)
+# Bloquea el push si no hay aprobación de Code Review o si fallan los linters/tests
+# ==============================================================================
+
+echo ""
+echo "🚀 [NATBELL CI/CD] Iniciando validaciones pre-push obligatorias..."
+echo "------------------------------------------------------------------"
+
+ROOT_DIR=$(git rev-parse --show-toplevel)
+CURRENT_SHA=$(git rev-parse HEAD)
+
+# 1. Verificar Aprobación de Code Review por Agente
+APPROVAL_FILE="$ROOT_DIR/.git/agent_code_review_approved"
+if [ ! -f "$APPROVAL_FILE" ]; then
+    echo "❌ [BLOQUEO DE PUSH] Falta aprobación de Code Review por Agente."
+    echo "   Se requiere que un agente certifique el código antes de pushear."
+    echo "   Para certificar tras la revisión, ejecutá: python scripts/approve_code_review.py"
+    echo "------------------------------------------------------------------"
+    exit 1
+fi
+
+APPROVED_SHA=$(cat "$APPROVAL_FILE" | tr -d '\r\n')
+if [ "$CURRENT_SHA" != "$APPROVED_SHA" ]; then
+    echo "❌ [BLOQUEO DE PUSH] El commit actual ($CURRENT_SHA) no coincide con el commit aprobado ($APPROVED_SHA)."
+    echo "   Hay commits nuevos sin certificar por el agente de Code Review."
+    echo "   Para volver a certificar la versión actual: python scripts/approve_code_review.py"
+    echo "------------------------------------------------------------------"
+    exit 1
+fi
+
+# 2. Linter y Tests Backend
+echo "🔍 [1/4] Verificando Linter de Backend (ruff)..."
+cd "$ROOT_DIR/backend" || exit 1
+ruff check app tests || {
+    echo "❌ Linter de Backend falló. Corregí los errores antes de pushear."
+    exit 1
+}
+
+echo "🧪 [2/4] Ejecutando Tests de Backend (pytest)..."
+pytest -q || {
+    echo "❌ Tests de Backend fallaron. Corregí los tests antes de pushear."
+    exit 1
+}
+
+# 3. Linter y Tests Frontend
+echo "🔍 [3/4] Verificando Linter de Frontend (eslint)..."
+cd "$ROOT_DIR/frontend" || exit 1
+npm run lint || {
+    echo "❌ Linter de Frontend falló. Corregí los errores antes de pushear."
+    exit 1
+}
+
+echo "🧪 [4/4] Ejecutando Tests de Frontend (vitest)..."
+npm test || {
+    echo "❌ Tests de Frontend fallaron. Corregí los tests antes de pushear."
+    exit 1
+}
+
+echo "------------------------------------------------------------------"
+echo "✅ [APROBADO] Linter, Tests y Code Review certificados. Procediendo con el push..."
+echo ""
+exit 0
