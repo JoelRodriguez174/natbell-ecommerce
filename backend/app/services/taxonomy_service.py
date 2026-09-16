@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 from supabase import Client
 from app.models.category import Category, Subcategory
 from app.models.brand import Brand
+from app.utils.cache import cached
 
 
 def _as_dict_list(data: Any) -> List[Dict[str, Any]]:
@@ -22,6 +23,7 @@ def _as_first_dict(data: Any) -> Optional[Dict[str, Any]]:
 
 class TaxonomyService:
     @staticmethod
+    @cached(ttl_seconds=300, prefix="taxonomy:categories")
     def get_categories_tree(
         client: Client, brand_slug: Optional[str] = None
     ) -> List[Category]:
@@ -120,6 +122,7 @@ class TaxonomyService:
         return result
 
     @staticmethod
+    @cached(ttl_seconds=300, prefix="taxonomy:brands")
     def get_brands(
         client: Client,
         category_slug: Optional[str] = None,

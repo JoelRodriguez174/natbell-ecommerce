@@ -12,6 +12,7 @@ from app.models.catalog import (
     PaginationMetadata,
 )
 from app.models.product import ProductVariant
+from app.utils.cache import cached
 
 logger = logging.getLogger(__name__)
 
@@ -159,6 +160,7 @@ class CatalogService:
         )
 
     @classmethod
+    @cached(ttl_seconds=60, prefix="catalog:products")
     def get_products(
         cls, client: Client, filters: ProductFilters
     ) -> PaginatedProductsResponse:
@@ -329,6 +331,7 @@ class CatalogService:
         )
 
     @classmethod
+    @cached(ttl_seconds=60, prefix="catalog:detail")
     def get_product_by_slug(
         cls, client: Client, slug: str
     ) -> Optional[ProductDetailResponse]:
@@ -353,6 +356,7 @@ class CatalogService:
         return cls._map_to_detail(prod_dict)
 
     @classmethod
+    @cached(ttl_seconds=60, prefix="catalog:featured")
     def get_featured_products(
         cls, client: Client, limit: int = 8
     ) -> List[ProductListItem]:
@@ -376,6 +380,7 @@ class CatalogService:
         return [cls._map_to_list_item(p) for p in rows]
 
     @classmethod
+    @cached(ttl_seconds=60, prefix="catalog:on_sale")
     def get_on_sale_products(
         cls, client: Client, limit: int = 8
     ) -> List[ProductListItem]:
@@ -399,6 +404,7 @@ class CatalogService:
         return [cls._map_to_list_item(p) for p in rows]
 
     @classmethod
+    @cached(ttl_seconds=30, prefix="catalog:search")
     def search_products(
         cls, client: Client, query: str, limit: int = 20
     ) -> List[ProductListItem]:
