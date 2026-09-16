@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 import functools
 import inspect
 import json
 import time
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, Tuple
 
 
@@ -79,7 +79,7 @@ def cached(
 ):
     """
     Decorador para cachear resultados de funciones síncronas o asíncronas en memoria.
-    
+
     :param ttl_seconds: Segundos de vida de la entrada de caché.
     :param prefix: Prefijo para la clave de caché (por defecto el nombre de la función).
     :param ignore_args: Nombres de argumentos a omitir en la clave (ej: 'client', 'response').

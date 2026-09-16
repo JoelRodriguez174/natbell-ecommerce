@@ -1,9 +1,11 @@
 from decimal import Decimal
+
 import pytest
 from pydantic import ValidationError
+
 from app.models.category import CategoryCreate
-from app.models.product import ProductCreate, ProductVariantCreate
 from app.models.order import OrderCreate, OrderItemCreate
+from app.models.product import ProductVariantCreate
 
 
 def test_sql_injection_defense_in_pydantic_slugs():

@@ -1,13 +1,15 @@
-from decimal import Decimal
-from uuid import uuid4
 from datetime import datetime
-from unittest.mock import MagicMock, AsyncMock, patch
+from decimal import Decimal
+from unittest.mock import MagicMock
+from uuid import uuid4
+
 import pytest
+
 from app.models.order import (
-    OrderStatus,
     OrderCheckoutItem,
     OrderCheckoutRequest,
     OrderCreateResponse,
+    OrderStatus,
     OrderStatusResponse,
 )
 from app.services.order_service import OrderService

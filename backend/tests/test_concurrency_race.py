@@ -1,8 +1,9 @@
 import asyncio
-from decimal import Decimal
-from uuid import uuid4
 from unittest.mock import MagicMock
+from uuid import uuid4
+
 import pytest
+
 from app.models.order import OrderCheckoutItem, OrderCheckoutRequest
 from app.services.order_service import OrderService
 from app.services.payment_service import MockPaymentProvider

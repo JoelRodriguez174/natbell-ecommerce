@@ -1,10 +1,12 @@
 import json
-import re
 import logging
+import re
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
 from supabase import Client
+
 from app.models.shipping import ShippingQuote
 
 logger = logging.getLogger(__name__)

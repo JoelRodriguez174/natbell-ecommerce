@@ -1,5 +1,7 @@
 from typing import Optional
+
 from supabase import Client, create_client
+
 from app.config import settings
 
 _client: Optional[Client] = None

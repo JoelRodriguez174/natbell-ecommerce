@@ -1,5 +1,5 @@
-import time
 import pytest
+
 from app.utils.cache import CacheMemory, cached
 
 
@@ -99,7 +99,8 @@ def test_cached_decorator_classmethod():
 
 @pytest.mark.asyncio
 async def test_endpoint_cache_control_headers():
-    from httpx import AsyncClient, ASGITransport
+    from httpx import ASGITransport, AsyncClient
+
     from app.main import app
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

@@ -1,12 +1,14 @@
 from decimal import Decimal
-from uuid import uuid4
 from unittest.mock import AsyncMock, patch
+from uuid import uuid4
+
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
+
 from app.main import app
 from app.models.order import (
-    OrderStatus,
     OrderCreateResponse,
+    OrderStatus,
     OrderStatusResponse,
 )
 

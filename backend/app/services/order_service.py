@@ -1,19 +1,19 @@
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, Optional
 from uuid import UUID
 
 from app.database import get_supabase_client
 from app.models.order import (
     Order,
-    OrderItem,
-    OrderStatus,
     OrderCheckoutRequest,
     OrderCreateResponse,
+    OrderItem,
+    OrderStatus,
     OrderStatusResponse,
 )
-from app.services.payment_service import get_payment_provider, PaymentProvider
+from app.services.payment_service import PaymentProvider, get_payment_provider
 from app.utils.order_number import generate_order_number, parse_order_sequence
 
 logger = logging.getLogger(__name__)

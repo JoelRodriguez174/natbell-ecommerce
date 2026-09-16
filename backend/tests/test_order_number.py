@@ -1,16 +1,14 @@
+from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
-from datetime import datetime
-import pytest
-from app.utils.order_number import generate_order_number, parse_order_sequence
+
 from app.models.order import (
-    OrderStatus,
     OrderCheckoutItem,
     OrderCheckoutRequest,
     OrderCreateResponse,
-    OrderStatusResponse,
-    PaymentPreferenceResult,
+    OrderStatus,
 )
+from app.utils.order_number import generate_order_number, parse_order_sequence
 
 
 def test_generate_order_number_format():

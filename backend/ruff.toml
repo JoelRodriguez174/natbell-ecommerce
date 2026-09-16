@@ -1,0 +1,17 @@
+# Configuración oficial de Ruff para el backend de Natbell
+line-length = 120
+target-version = "py311"
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort (orden de imports)
+]
+ignore = [
+    "E501", # line-length (permitir flexibilidad en docstrings y queries largas)
+]
+
+[lint.isort]
+known-first-party = ["app"]

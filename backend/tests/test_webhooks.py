@@ -1,6 +1,8 @@
 from unittest.mock import AsyncMock, patch
+
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
+
 from app.main import app
 
 
@@ -28,7 +30,7 @@ async def test_mercadopago_webhook_payment_approved_success():
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         with patch("app.routers.webhooks.get_payment_provider") as mock_prov_fn, \
              patch("app.routers.webhooks.OrderService.mark_order_paid", new_callable=AsyncMock) as mock_mark_paid:
-            
+
             mock_prov = AsyncMock()
             mock_prov.verify_webhook_signature.return_value = True
             mock_prov.get_payment_details.return_value = {

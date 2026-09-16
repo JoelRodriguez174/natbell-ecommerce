@@ -1,11 +1,12 @@
-import pytest
 from decimal import Decimal
-from httpx import AsyncClient, ASGITransport
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+
 from app.main import app
 from app.services.shipping_service import (
-    extract_numeric_postal_code,
     FixedRateProvider,
-    ShippingService,
+    extract_numeric_postal_code,
 )
 
 

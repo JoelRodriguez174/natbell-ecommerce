@@ -1,7 +1,9 @@
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from supabase import Client
-from app.models.category import Category, Subcategory
+
 from app.models.brand import Brand
+from app.models.category import Category, Subcategory
 from app.utils.cache import cached
 
 

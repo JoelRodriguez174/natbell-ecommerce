@@ -1,13 +1,14 @@
-from decimal import Decimal
-from uuid import uuid4
 from datetime import datetime
+from decimal import Decimal
 from unittest.mock import MagicMock, patch
+from uuid import uuid4
+
 import pytest
+
 from app.models.order import Order, OrderItem, OrderStatus, PaymentPreferenceResult
 from app.services.payment_service import (
-    PaymentProvider,
-    MockPaymentProvider,
     MercadoPagoProvider,
+    MockPaymentProvider,
     get_payment_provider,
 )
 

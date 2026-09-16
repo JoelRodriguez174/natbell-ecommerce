@@ -1,9 +1,11 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from supabase import Client
+
 from app.database import get_supabase_client
 from app.models.shipping import ShippingQuote
-from app.services.shipping_service import shipping_service, extract_numeric_postal_code
+from app.services.shipping_service import extract_numeric_postal_code, shipping_service
 
 router = APIRouter(prefix="/api/shipping", tags=["Envíos y Tarifas"])
 

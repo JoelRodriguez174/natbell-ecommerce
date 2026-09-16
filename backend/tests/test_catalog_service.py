@@ -1,7 +1,6 @@
 from decimal import Decimal
 from uuid import uuid4
-import pytest
-from app.models.catalog import ProductFilters
+
 from app.services.catalog_service import CatalogService
 
 

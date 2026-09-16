@@ -1,9 +1,10 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Optional, List, Union
+from typing import List, Optional, Union
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class OrderStatus(str, Enum):

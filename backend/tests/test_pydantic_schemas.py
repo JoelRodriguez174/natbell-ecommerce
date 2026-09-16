@@ -1,11 +1,13 @@
 from decimal import Decimal
+
 import pytest
 from pydantic import ValidationError
-from app.models.category import CategoryCreate, SubcategoryCreate
+
 from app.models.brand import BrandCreate
-from app.models.product import ProductCreate, ProductVariantCreate
+from app.models.category import CategoryCreate
 from app.models.order import OrderCreate, OrderItemCreate, OrderStatus
-from app.models.shipping import ShippingZoneCreate, PostalCodeRange
+from app.models.product import ProductCreate, ProductVariantCreate
+from app.models.shipping import PostalCodeRange, ShippingZoneCreate
 
 
 def test_category_schema_validation():

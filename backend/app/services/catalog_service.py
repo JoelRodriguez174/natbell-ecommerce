@@ -1,15 +1,17 @@
-from decimal import Decimal
 import logging
 import re
-from typing import Optional, List, Any, Dict
+from decimal import Decimal
+from typing import Any, Dict, List, Optional
+
 from postgrest.types import CountMethod
 from supabase import Client
+
 from app.models.catalog import (
-    ProductFilters,
-    ProductListItem,
-    ProductDetailResponse,
     PaginatedProductsResponse,
     PaginationMetadata,
+    ProductDetailResponse,
+    ProductFilters,
+    ProductListItem,
 )
 from app.models.product import ProductVariant
 from app.utils.cache import cached

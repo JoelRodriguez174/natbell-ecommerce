@@ -1,10 +1,12 @@
 from decimal import Decimal
-from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
+
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
+
 from app.main import app
-from app.models.order import OrderCheckoutItem, OrderCheckoutRequest, OrderStatus
+from app.models.order import OrderCheckoutItem, OrderCheckoutRequest
 from app.services.order_service import OrderService
 
 
@@ -94,7 +96,7 @@ async def test_pentest_replay_attacks_idempotent():
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         with patch("app.routers.webhooks.get_payment_provider") as mock_prov_fn, \
              patch("app.routers.webhooks.OrderService.mark_order_paid", new_callable=AsyncMock) as mock_mark_paid:
-            
+
             mock_prov = AsyncMock()
             mock_prov.verify_webhook_signature.return_value = True
             mock_prov.get_payment_details.return_value = {

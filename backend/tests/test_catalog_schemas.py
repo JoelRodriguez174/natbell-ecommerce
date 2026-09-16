@@ -1,12 +1,12 @@
 from decimal import Decimal
+
 import pytest
 from pydantic import ValidationError
+
 from app.models.catalog import (
     PaginationMetadata,
     ProductFilters,
     ProductListItem,
-    ProductDetailResponse,
-    PaginatedProductsResponse,
 )
 
 

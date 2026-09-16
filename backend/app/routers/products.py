@@ -1,12 +1,14 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query, Path, Response, status
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 from supabase import Client
+
 from app.database import get_supabase_client
 from app.models.catalog import (
+    PaginatedProductsResponse,
+    ProductDetailResponse,
     ProductFilters,
     ProductListItem,
-    ProductDetailResponse,
-    PaginatedProductsResponse,
 )
 from app.services.catalog_service import CatalogService
 

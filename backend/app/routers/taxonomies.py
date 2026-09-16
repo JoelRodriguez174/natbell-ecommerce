@@ -1,9 +1,11 @@
 from typing import List, Optional
+
 from fastapi import APIRouter, Depends, Query, Response
 from supabase import Client
+
 from app.database import get_supabase_client
-from app.models.category import Category
 from app.models.brand import Brand
+from app.models.category import Category
 from app.services.taxonomy_service import TaxonomyService
 
 router = APIRouter(prefix="/api", tags=["Taxonomías"])

@@ -1,6 +1,5 @@
 import os
 import re
-import pytest
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MIGRATIONS_DIR = os.path.join(ROOT_DIR, "database", "migrations")
