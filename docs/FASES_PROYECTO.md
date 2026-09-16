@@ -23,8 +23,8 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 | **3** | **Backend — Catálogo y APIs Públicas** | ✅ **Completada** | Endpoints REST de productos, variantes, filtros y búsqueda |
 | **4** | **Frontend — Catálogo y Diseño** | ✅ **Completada** | Storefront completo: grilla, filtros, buscador y detalle de producto |
 | **5** | **Carrito y Cotizador de Envíos** | ✅ **Completada** | Carrito en `localStorage` (guest checkout) y cotizador por zonas/CP |
-| **6** | **Checkout, MercadoPago y Webhooks** | ⏳ **Fase Activa / Siguiente** | Pedidos, pasarela MercadoPago Checkout Pro, webhooks y stock |
-| **7** | **Panel de Administración** | ⏸️ Pendiente | Auth admin JWT, dashboard de métricas, CRUD de catálogo y pedidos |
+| **6** | **Checkout, MercadoPago y Webhooks** | ✅ **Completada** | Pedidos, pasarela MercadoPago Checkout Pro, webhooks y stock |
+| **7** | **Panel de Administración** | ⏳ **Fase Activa / Siguiente** | Auth admin JWT, dashboard de métricas, CRUD de catálogo y pedidos |
 | **8** | **Deploy y Puesta en Producción** | ⏸️ Pendiente | Despliegue en Render + Vercel, secrets de producción y smoke tests |
 
 ---
@@ -129,8 +129,8 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 ---
 
 ### 6. Fase 6: Checkout, MercadoPago y Webhooks
-* **Estado:** ⏸️ Pendiente.
-* **Objetivo:** Completar el flujo transaccional y de compra: captura de datos del cliente, creación de orden, procesamiento seguro de pagos con MercadoPago Checkout Pro, confirmación asíncrona de pagos mediante webhooks y actualización automática de stock.
+* **Estado:** ✅ Completada.
+* **Objetivo:** Completar el flujo transaccional y de compra para Natbell: captura de datos del cliente, creación de orden, procesamiento seguro de pagos con MercadoPago Checkout Pro, confirmación asíncrona de pagos mediante webhooks y actualización automática de stock.
 * **Flujo Transaccional:**
   1. **Formulario de Checkout (`/checkout`):** Captura en pasos: datos personales (nombre, email, teléfono) + domicilio de entrega (calle, ciudad, provincia, CP) + selección de tarifa de envío.
   2. **Creación de Orden:** Endpoint `POST /api/orders` que valida existencias, reserva stock temporal o definitivo, genera código único `ORD-YYYY-NNNNN` y guarda orden en estado `pending`.
