@@ -12,7 +12,7 @@ from app.models.shipping import ShippingQuote
 logger = logging.getLogger(__name__)
 
 # Tarifas por defecto para contingencia en caso de que la tabla esté vacía
-DEFAULT_ZONES_CONFIG = [
+DEFAULT_ZONES_CONFIG: List[Dict[str, Any]] = [
     {
         "zone_name": "CABA",
         "ranges": [{"from": 1000, "to": 1499}],
@@ -141,23 +141,23 @@ class FixedRateProvider(ShippingProvider):
             for r in item["ranges"]:
                 if r["from"] <= cp_num <= r["to"]:
                     return ShippingQuote(
-                        zone_name=str(item["zone_name"]),
-                        cost=Decimal(str(item["cost"])),
-                        estimated_days=int(item["days"]),
+                        zone_name=item["zone_name"],
+                        cost=item["cost"],
+                        estimated_days=item["days"],
                         postal_code=cp_str,
                         provider="fixed_rate",
-                        description=str(item["description"]),
+                        description=item["description"],
                     )
 
         # Si por alguna razón excede, retornar interior general
         fallback = DEFAULT_ZONES_CONFIG[-1]
         return ShippingQuote(
-            zone_name=str(fallback["zone_name"]),
-            cost=Decimal(str(fallback["cost"])),
-            estimated_days=int(fallback["days"]),
+            zone_name=fallback["zone_name"],
+            cost=fallback["cost"],
+            estimated_days=fallback["days"],
             postal_code=cp_str,
             provider="fixed_rate",
-            description=str(fallback["description"]),
+            description=fallback["description"],
         )
 
 
@@ -199,10 +199,10 @@ class ShippingService:
 
         return [
             {
-                "zone_name": str(item["zone_name"]),
-                "cost": float(Decimal(str(item["cost"]))),
-                "estimated_days": int(item["days"]),
-                "description": str(item["description"]),
+                "zone_name": item["zone_name"],
+                "cost": float(item["cost"]),
+                "estimated_days": item["days"],
+                "description": item["description"],
             }
             for item in DEFAULT_ZONES_CONFIG
         ]
