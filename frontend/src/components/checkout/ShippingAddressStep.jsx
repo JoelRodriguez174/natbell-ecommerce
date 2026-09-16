@@ -1,14 +1,64 @@
-import { MapPin, Truck, CheckCircle2 } from "lucide-react";
+import { MapPin, CheckCircle2 } from "lucide-react";
 import { formatPrice } from "../../lib/utils";
 
 export default function ShippingAddressStep({
-  formData,
-  onChange,
+  register,
   errors = {},
+  formData = {},
+  onChange,
+  postalCodeValue = "",
   shippingQuote = null,
   isQuoting = false,
   onQuotePostalCode = () => {},
 }) {
+  const getErrorMessage = (field) => {
+    const err = errors[field];
+    if (!err) return null;
+    return typeof err === "string" ? err : err.message;
+  };
+
+  const addressProps = register
+    ? register("shipping_address", { required: "La dirección de entrega es obligatoria" })
+    : { value: formData.shipping_address || "", onChange };
+
+  const cityProps = register
+    ? register("shipping_city", { required: "La ciudad o localidad es obligatoria" })
+    : { value: formData.shipping_city || "", onChange };
+
+  const provinceProps = register
+    ? register("shipping_province", { required: "La provincia es obligatoria" })
+    : { value: formData.shipping_province || "", onChange };
+
+  const postalCodeProps = register
+    ? register("shipping_postal_code", {
+        required: "El código postal es obligatorio",
+        minLength: {
+          value: 4,
+          message: "Ingresá al menos 4 caracteres",
+        },
+        onChange: (e) => {
+          const val = e.target.value.trim();
+          if (val.length >= 4) {
+            onQuotePostalCode(val);
+          }
+        },
+      })
+    : {
+        value: formData.shipping_postal_code || "",
+        onChange: (e) => {
+          if (onChange) onChange(e);
+          if (e.target.value.trim().length >= 4) {
+            onQuotePostalCode(e.target.value.trim());
+          }
+        },
+      };
+
+  const notesProps = register
+    ? register("notes")
+    : { value: formData.notes || "", onChange };
+
+  const currentCP = postalCodeValue || formData.shipping_postal_code || "";
+
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-100 dark:border-zinc-800">
@@ -34,19 +84,19 @@ export default function ShippingAddressStep({
               id="shipping_address"
               name="shipping_address"
               type="text"
-              required
               placeholder="Ej: Av. Santa Fe 1234, Piso 4 B"
-              value={formData.shipping_address || ""}
-              onChange={onChange}
+              {...addressProps}
               className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 transition-all ${
-                errors.shipping_address
+                getErrorMessage("shipping_address")
                   ? "border-red-500 focus:ring-red-500/20"
                   : "border-zinc-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20"
               }`}
             />
           </div>
-          {errors.shipping_address && (
-            <p className="text-xs text-red-500 mt-1">{errors.shipping_address}</p>
+          {getErrorMessage("shipping_address") && (
+            <p className="text-xs text-red-500 mt-1">
+              {getErrorMessage("shipping_address")}
+            </p>
           )}
         </div>
 
@@ -62,18 +112,18 @@ export default function ShippingAddressStep({
               id="shipping_city"
               name="shipping_city"
               type="text"
-              required
               placeholder="Ej: Mar del Plata"
-              value={formData.shipping_city || ""}
-              onChange={onChange}
+              {...cityProps}
               className={`w-full px-3.5 py-2.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 transition-all ${
-                errors.shipping_city
+                getErrorMessage("shipping_city")
                   ? "border-red-500 focus:ring-red-500/20"
                   : "border-zinc-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20"
               }`}
             />
-            {errors.shipping_city && (
-              <p className="text-xs text-red-500 mt-1">{errors.shipping_city}</p>
+            {getErrorMessage("shipping_city") && (
+              <p className="text-xs text-red-500 mt-1">
+                {getErrorMessage("shipping_city")}
+              </p>
             )}
           </div>
 
@@ -88,18 +138,18 @@ export default function ShippingAddressStep({
               id="shipping_province"
               name="shipping_province"
               type="text"
-              required
               placeholder="Ej: Buenos Aires"
-              value={formData.shipping_province || ""}
-              onChange={onChange}
+              {...provinceProps}
               className={`w-full px-3.5 py-2.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 transition-all ${
-                errors.shipping_province
+                getErrorMessage("shipping_province")
                   ? "border-red-500 focus:ring-red-500/20"
                   : "border-zinc-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20"
               }`}
             />
-            {errors.shipping_province && (
-              <p className="text-xs text-red-500 mt-1">{errors.shipping_province}</p>
+            {getErrorMessage("shipping_province") && (
+              <p className="text-xs text-red-500 mt-1">
+                {getErrorMessage("shipping_province")}
+              </p>
             )}
           </div>
         </div>
@@ -116,32 +166,27 @@ export default function ShippingAddressStep({
               id="shipping_postal_code"
               name="shipping_postal_code"
               type="text"
-              required
               placeholder="Ej: 1425"
-              value={formData.shipping_postal_code || ""}
-              onChange={(e) => {
-                onChange(e);
-                if (e.target.value.trim().length >= 4) {
-                  onQuotePostalCode(e.target.value.trim());
-                }
-              }}
+              {...postalCodeProps}
               className={`w-full px-3.5 py-2.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 transition-all ${
-                errors.shipping_postal_code
+                getErrorMessage("shipping_postal_code")
                   ? "border-red-500 focus:ring-red-500/20"
                   : "border-zinc-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20"
               }`}
             />
             <button
               type="button"
-              onClick={() => onQuotePostalCode(formData.shipping_postal_code)}
-              disabled={isQuoting || !formData.shipping_postal_code}
+              onClick={() => onQuotePostalCode(currentCP)}
+              disabled={isQuoting || !currentCP}
               className="px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-medium transition-colors disabled:opacity-50 shrink-0"
             >
               {isQuoting ? "Cotizando..." : "Cotizar"}
             </button>
           </div>
-          {errors.shipping_postal_code && (
-            <p className="text-xs text-red-500 mt-1">{errors.shipping_postal_code}</p>
+          {getErrorMessage("shipping_postal_code") && (
+            <p className="text-xs text-red-500 mt-1">
+              {getErrorMessage("shipping_postal_code")}
+            </p>
           )}
 
           {shippingQuote && (
@@ -171,8 +216,7 @@ export default function ShippingAddressStep({
             name="notes"
             rows="2"
             placeholder="Ej: Timbre no funciona, dejar con encargado o vecino..."
-            value={formData.notes || ""}
-            onChange={onChange}
+            {...notesProps}
             className="w-full px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all resize-none"
           />
         </div>

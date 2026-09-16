@@ -1,6 +1,41 @@
 import { User, Mail, Phone } from "lucide-react";
 
-export default function CustomerInfoStep({ formData, onChange, errors = {} }) {
+export default function CustomerInfoStep({
+  register,
+  errors = {},
+  formData = {},
+  onChange,
+}) {
+  const getErrorMessage = (field) => {
+    const err = errors[field];
+    if (!err) return null;
+    return typeof err === "string" ? err : err.message;
+  };
+
+  const nameProps = register
+    ? register("customer_name", { required: "El nombre y apellido es obligatorio" })
+    : { value: formData.customer_name || "", onChange };
+
+  const emailProps = register
+    ? register("customer_email", {
+        required: "El correo electrónico es obligatorio",
+        pattern: {
+          value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+          message: "Ingresá un correo electrónico válido",
+        },
+      })
+    : { value: formData.customer_email || "", onChange };
+
+  const phoneProps = register
+    ? register("customer_phone", {
+        required: "El teléfono de contacto es obligatorio",
+        minLength: {
+          value: 8,
+          message: "Ingresá un teléfono válido (mínimo 8 dígitos)",
+        },
+      })
+    : { value: formData.customer_phone || "", onChange };
+
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-100 dark:border-zinc-800">
@@ -26,19 +61,19 @@ export default function CustomerInfoStep({ formData, onChange, errors = {} }) {
               id="customer_name"
               name="customer_name"
               type="text"
-              required
               placeholder="Ej: Laura Rodriguez"
-              value={formData.customer_name || ""}
-              onChange={onChange}
+              {...nameProps}
               className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 transition-all ${
-                errors.customer_name
+                getErrorMessage("customer_name")
                   ? "border-red-500 focus:ring-red-500/20"
                   : "border-zinc-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20"
               }`}
             />
           </div>
-          {errors.customer_name && (
-            <p className="text-xs text-red-500 mt-1">{errors.customer_name}</p>
+          {getErrorMessage("customer_name") && (
+            <p className="text-xs text-red-500 mt-1">
+              {getErrorMessage("customer_name")}
+            </p>
           )}
         </div>
 
@@ -55,19 +90,19 @@ export default function CustomerInfoStep({ formData, onChange, errors = {} }) {
               id="customer_email"
               name="customer_email"
               type="email"
-              required
               placeholder="Ej: laura@gmail.com"
-              value={formData.customer_email || ""}
-              onChange={onChange}
+              {...emailProps}
               className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 transition-all ${
-                errors.customer_email
+                getErrorMessage("customer_email")
                   ? "border-red-500 focus:ring-red-500/20"
                   : "border-zinc-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20"
               }`}
             />
           </div>
-          {errors.customer_email && (
-            <p className="text-xs text-red-500 mt-1">{errors.customer_email}</p>
+          {getErrorMessage("customer_email") && (
+            <p className="text-xs text-red-500 mt-1">
+              {getErrorMessage("customer_email")}
+            </p>
           )}
           <span className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 block">
             Te enviaremos el comprobante y el seguimiento de tu compra a este email.
@@ -87,19 +122,19 @@ export default function CustomerInfoStep({ formData, onChange, errors = {} }) {
               id="customer_phone"
               name="customer_phone"
               type="tel"
-              required
               placeholder="Ej: 11 4455 6677"
-              value={formData.customer_phone || ""}
-              onChange={onChange}
+              {...phoneProps}
               className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 transition-all ${
-                errors.customer_phone
+                getErrorMessage("customer_phone")
                   ? "border-red-500 focus:ring-red-500/20"
                   : "border-zinc-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20"
               }`}
             />
           </div>
-          {errors.customer_phone && (
-            <p className="text-xs text-red-500 mt-1">{errors.customer_phone}</p>
+          {getErrorMessage("customer_phone") && (
+            <p className="text-xs text-red-500 mt-1">
+              {getErrorMessage("customer_phone")}
+            </p>
           )}
         </div>
       </div>

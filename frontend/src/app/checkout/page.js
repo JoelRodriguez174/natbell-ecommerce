@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, AlertCircle } from "lucide-react";
+import { useForm } from "react-hook-form";
 import { useCartStore } from "../../store/useCartStore";
 import { getShippingQuote, createOrder } from "../../lib/api";
 import EmptyCheckout from "../../components/checkout/EmptyCheckout";
@@ -13,36 +14,33 @@ import OrderSummary from "../../components/checkout/OrderSummary";
 export default function CheckoutPage() {
   const { items, getSubtotal, clearCart } = useCartStore();
   const [hasMounted, setHasMounted] = useState(false);
-
-  // Datos del formulario
-  const [formData, setFormData] = useState({
-    customer_name: "",
-    customer_email: "",
-    customer_phone: "",
-    shipping_address: "",
-    shipping_city: "",
-    shipping_province: "",
-    shipping_postal_code: "",
-    notes: "",
-  });
-
-  const [errors, setErrors] = useState({});
   const [shippingQuote, setShippingQuote] = useState(null);
   const [isQuoting, setIsQuoting] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: {
+      customer_name: "",
+      customer_email: "",
+      customer_phone: "",
+      shipping_address: "",
+      shipping_city: "",
+      shipping_province: "",
+      shipping_postal_code: "",
+      notes: "",
+    },
+  });
+
+  const postalCode = watch("shipping_postal_code");
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: null }));
-    }
-  };
 
   const handleQuotePostalCode = async (cp) => {
     if (!cp || cp.length < 4) return;
@@ -57,31 +55,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.customer_name.trim()) newErrors.customer_name = "El nombre es obligatorio.";
-    if (!formData.customer_email.trim()) {
-      newErrors.customer_email = "El correo electrónico es obligatorio.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.customer_email)) {
-      newErrors.customer_email = "Ingresá un correo electrónico válido.";
-    }
-    if (!formData.customer_phone.trim()) newErrors.customer_phone = "El teléfono es obligatorio.";
-    if (!formData.shipping_address.trim()) newErrors.shipping_address = "La dirección es obligatoria.";
-    if (!formData.shipping_city.trim()) newErrors.shipping_city = "La ciudad es obligatoria.";
-    if (!formData.shipping_province.trim()) newErrors.shipping_province = "La provincia es obligatoria.";
-    if (!formData.shipping_postal_code.trim()) newErrors.shipping_postal_code = "El código postal es obligatorio.";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmitOrder = async () => {
-    if (!validateForm()) {
-      window.scrollTo({ top: 100, behavior: "smooth" });
-      return;
-    }
-
-    setIsSubmitting(true);
+  const onSubmit = async (data) => {
     setSubmitError(null);
 
     try {
@@ -91,15 +65,15 @@ export default function CheckoutPage() {
       }));
 
       const payload = {
-        customer_name: formData.customer_name.trim(),
-        customer_email: formData.customer_email.trim(),
-        customer_phone: formData.customer_phone.trim(),
-        shipping_address: formData.shipping_address.trim(),
-        shipping_city: formData.shipping_city.trim(),
-        shipping_province: formData.shipping_province.trim(),
-        shipping_postal_code: formData.shipping_postal_code.trim(),
+        customer_name: data.customer_name.trim(),
+        customer_email: data.customer_email.trim(),
+        customer_phone: data.customer_phone.trim(),
+        shipping_address: data.shipping_address.trim(),
+        shipping_city: data.shipping_city.trim(),
+        shipping_province: data.shipping_province.trim(),
+        shipping_postal_code: data.shipping_postal_code.trim(),
         shipping_cost: shippingQuote?.cost ? Number(shippingQuote.cost) : 0,
-        notes: formData.notes?.trim() || null,
+        notes: data.notes?.trim() || null,
         items: orderItems,
       };
 
@@ -115,7 +89,7 @@ export default function CheckoutPage() {
     } catch (err) {
       console.error("Error al procesar la orden:", err);
       setSubmitError(err.message || "Ocurrió un error al procesar tu compra. Por favor, verificá tus datos.");
-      setIsSubmitting(false);
+      window.scrollTo({ top: 100, behavior: "smooth" });
     }
   };
 
@@ -164,36 +138,37 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        {/* Grilla principal: Formulario 2 pasos + Resumen sticky */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-7 space-y-6">
-            <CustomerInfoStep
-              formData={formData}
-              onChange={handleInputChange}
-              errors={errors}
-            />
+        {/* Formulario y Resumen */}
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-7 space-y-6">
+              <CustomerInfoStep
+                register={register}
+                errors={errors}
+              />
 
-            <ShippingAddressStep
-              formData={formData}
-              onChange={handleInputChange}
-              errors={errors}
-              shippingQuote={shippingQuote}
-              isQuoting={isQuoting}
-              onQuotePostalCode={handleQuotePostalCode}
-            />
-          </div>
+              <ShippingAddressStep
+                register={register}
+                errors={errors}
+                postalCodeValue={postalCode}
+                shippingQuote={shippingQuote}
+                isQuoting={isQuoting}
+                onQuotePostalCode={handleQuotePostalCode}
+              />
+            </div>
 
-          <div className="lg:col-span-5">
-            <OrderSummary
-              items={items}
-              subtotal={subtotal}
-              shippingCost={shippingCost}
-              total={total}
-              isLoading={isSubmitting}
-              onSubmit={handleSubmitOrder}
-            />
+            <div className="lg:col-span-5">
+              <OrderSummary
+                items={items}
+                subtotal={subtotal}
+                shippingCost={shippingCost}
+                total={total}
+                isLoading={isSubmitting}
+                onSubmit={handleSubmit(onSubmit)}
+              />
+            </div>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
