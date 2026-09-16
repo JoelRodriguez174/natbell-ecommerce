@@ -19,6 +19,27 @@ from app.utils.order_number import generate_order_number, parse_order_sequence
 logger = logging.getLogger(__name__)
 
 
+def _as_first_dict(data: Any) -> Dict[str, Any]:
+    """Obtiene de forma segura el primer diccionario de un payload relacional de PostgREST."""
+    if isinstance(data, list) and data and isinstance(data[0], dict):
+        return data[0]
+    if isinstance(data, dict):
+        return data
+    return {}
+
+
+def _parse_datetime(val: Any) -> datetime:
+    """Parsea de forma robusta strings de fecha ISO provenientes de Supabase/Postgres."""
+    if isinstance(val, datetime):
+        return val
+    if isinstance(val, str):
+        try:
+            return datetime.fromisoformat(val.replace("Z", "+00:00"))
+        except Exception:
+            pass
+    return datetime.now()
+
+
 class OrderService:
     """Servicio de dominio para la gestión y ciclo de vida de órdenes en Natbell."""
 
@@ -47,7 +68,7 @@ class OrderService:
                 raise ValueError(f"Variante de producto con ID {item.product_variant_id} no encontrada.")
 
             variant = variant_res.data[0]
-            product = variant.get("products") or {}
+            product = _as_first_dict(variant.get("products"))
 
             if not variant.get("is_active", True) or not product.get("is_active", True):
                 raise ValueError(f"El producto o variante {variant.get('sku')} no se encuentra disponible.")
@@ -79,7 +100,10 @@ class OrderService:
                 }
             )
 
-        shipping_cost = Decimal(str(request.shipping_cost))
+        shipping_cost = Decimal(str(request.shipping_cost or "0.00"))
+        if shipping_cost < Decimal("0.00"):
+            raise ValueError("El costo de envío no puede ser negativo.")
+
         calculated_total = calculated_subtotal + shipping_cost
 
         # 2. Generar el número de orden correlativo ORD-YYYY-NNNNN
@@ -115,20 +139,23 @@ class OrderService:
         for line in order_items_to_create:
             line["order_id"] = order_id
             item_insert_res = self.db.table("order_items").insert(line).execute()
-            if item_insert_res.data:
-                created_order_items.append(
-                    OrderItem(
-                        id=UUID(item_insert_res.data[0]["id"]),
-                        order_id=UUID(order_id),
-                        product_variant_id=UUID(line["product_variant_id"]),
-                        product_name=line["product_name"],
-                        variant_name=line["variant_name"],
-                        sku=line["sku"],
-                        quantity=line["quantity"],
-                        unit_price=Decimal(str(line["unit_price"])),
-                        subtotal=Decimal(str(line["subtotal"])),
-                    )
+            item_id = None
+            if item_insert_res and item_insert_res.data:
+                item_id = item_insert_res.data[0].get("id")
+
+            created_order_items.append(
+                OrderItem(
+                    id=UUID(item_id) if item_id else UUID(str(line["product_variant_id"])),
+                    order_id=UUID(order_id),
+                    product_variant_id=UUID(line["product_variant_id"]),
+                    product_name=line["product_name"],
+                    variant_name=line["variant_name"],
+                    sku=line["sku"],
+                    quantity=line["quantity"],
+                    unit_price=Decimal(str(line["unit_price"])),
+                    subtotal=Decimal(str(line["subtotal"])),
                 )
+            )
 
         # 5. Construir modelo de dominio Order para generar la preferencia de pago
         domain_order = Order(
@@ -146,8 +173,8 @@ class OrderService:
             subtotal=calculated_subtotal,
             total=calculated_total,
             notes=request.notes,
-            created_at=datetime.fromisoformat(created_order_data.get("created_at", datetime.now().isoformat())),
-            updated_at=datetime.fromisoformat(created_order_data.get("updated_at", datetime.now().isoformat())),
+            created_at=_parse_datetime(created_order_data.get("created_at")),
+            updated_at=_parse_datetime(created_order_data.get("updated_at")),
             items=created_order_items,
         )
 
@@ -205,7 +232,7 @@ class OrderService:
             shipping_cost=Decimal(str(order_data.get("shipping_cost", "0.00"))),
             subtotal=Decimal(str(order_data["subtotal"])),
             total=Decimal(str(order_data["total"])),
-            created_at=datetime.fromisoformat(order_data.get("created_at", datetime.now().isoformat())),
+            created_at=_parse_datetime(order_data.get("created_at")),
             items=items,
         )
 

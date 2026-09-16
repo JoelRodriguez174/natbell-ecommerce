@@ -1,10 +1,11 @@
+import json
 import re
 import logging
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
 from supabase import Client
-from app.models.shipping import ShippingQuote, ShippingZone
+from app.models.shipping import ShippingQuote
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ DEFAULT_ZONES_CONFIG = [
         "description": "Entrega express en Ciudad Autónoma de Buenos Aires",
     },
     {
-        "zone_name": "Gran Buenos Aires (GBA)",
+        "zone_name": "GBA (Gran Buenos Aires)",
         "ranges": [{"from": 1500, "to": 1999}],
         "cost": Decimal("5000.00"),
         "days": 3,
@@ -38,11 +39,17 @@ def extract_numeric_postal_code(postal_code: str) -> int:
     """
     Normaliza y extrae el código postal numérico argentino (1000 a 9999).
     Soporta formatos: '1414', 'C1414CAB', 'B1602XYZ', ' 1414 '.
+    Rechaza códigos con más de 4 dígitos o fuera de rango.
     """
     if not postal_code or not isinstance(postal_code, str):
         raise ValueError("El código postal es requerido")
 
     cleaned = postal_code.strip().upper()
+
+    # Prevenir que números de más de 4 dígitos (ej: 12345) sean truncados silenciosamente
+    if re.search(r"\d{5,}", cleaned):
+        raise ValueError("El código postal debe contener exactamente 4 dígitos numéricos")
+
     match = re.search(r"\d{4}", cleaned)
     if not match:
         raise ValueError("El código postal debe contener 4 dígitos numéricos válidos (ej: 1414 o C1414CAB)")
@@ -73,20 +80,33 @@ class FixedRateProvider(ShippingProvider):
         cp_num = extract_numeric_postal_code(postal_code)
         cp_str = str(cp_num)
 
-        # 1. Intentar consultar zonas activas desde Supabase
+        # 1. Intentar consultar zonas activas desde Supabase ordenadas por menor costo
         if db is not None:
             try:
                 response = (
                     db.table("shipping_zones")
                     .select("*")
                     .eq("is_active", True)
+                    .order("cost", desc=False)
                     .execute()
                 )
                 zones = response.data if response and hasattr(response, "data") else []
 
                 for zone in zones:
-                    ranges = zone.get("postal_code_ranges") or []
-                    for r in ranges:
+                    raw_ranges = zone.get("postal_code_ranges") or []
+                    # Parseo defensivo en caso de que Supabase devuelva el JSONB como string
+                    if isinstance(raw_ranges, str):
+                        try:
+                            raw_ranges = json.loads(raw_ranges)
+                        except Exception:
+                            raw_ranges = []
+
+                    if not isinstance(raw_ranges, list):
+                        continue
+
+                    for r in raw_ranges:
+                        if not isinstance(r, dict):
+                            continue
                         from_val = int(r.get("from") or r.get("from_code") or 0)
                         to_val = int(r.get("to") or r.get("to_code") or 0)
                         if from_val <= cp_num <= to_val:
@@ -144,12 +164,20 @@ class ShippingService:
         return self._provider.calculate_quote(postal_code, db=db)
 
     def list_zones(self, db: Optional[Client] = None) -> List[Dict[str, Any]]:
-        """Lista todas las zonas configuradas."""
+        """Lista todas las zonas configuradas con tipos consistentes."""
         if db is not None:
             try:
-                response = db.table("shipping_zones").select("*").execute()
+                response = db.table("shipping_zones").select("*").order("cost", desc=False).execute()
                 if response and hasattr(response, "data") and response.data:
-                    return response.data
+                    return [
+                        {
+                            "zone_name": item.get("zone_name", ""),
+                            "cost": float(item.get("cost", 0.0)),
+                            "estimated_days": int(item.get("estimated_days", 3)),
+                            "description": f"Entrega estimada en {item.get('estimated_days', 3)} días hábiles",
+                        }
+                        for item in response.data
+                    ]
             except Exception as e:
                 logger.warning(f"Error listando zonas desde Supabase: {e}")
 
