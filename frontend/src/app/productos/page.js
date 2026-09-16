@@ -212,7 +212,7 @@ function CatalogoContent() {
           <>
             <span className="text-gray-400 select-none">&gt;</span>
             <div className="inline-flex items-center gap-1">
-              <span className="text-blue-600 font-medium">"{q}"</span>
+              <span className="text-blue-600 font-medium">&ldquo;{q}&rdquo;</span>
               <button
                 type="button"
                 onClick={() => handleFilterChange({ q: undefined, page: 1 })}

@@ -185,7 +185,7 @@ export default function OrderTrackingView({ order }) {
                     Notas de entrega:
                   </span>
                   <p className="italic text-zinc-700 dark:text-zinc-300">
-                    "{order.notes}"
+                    &ldquo;{order.notes}&rdquo;
                   </p>
                 </div>
               )}

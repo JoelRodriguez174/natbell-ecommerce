@@ -168,13 +168,13 @@ export default function Navbar() {
                 onClick={handleSearchSubmit}
                 className="w-full py-2.5 px-4 text-center text-xs font-bold text-gray-900 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1 cursor-pointer"
               >
-                <span>Ver todos los resultados para "{searchQuery}"</span>
+                <span>Ver todos los resultados para &ldquo;{searchQuery}&rdquo;</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           ) : (
             <div className="p-4 text-center text-xs text-gray-500">
-              No encontramos productos para "{searchQuery}"
+              No encontramos productos para &ldquo;{searchQuery}&rdquo;
             </div>
           )}
         </CardContent>
