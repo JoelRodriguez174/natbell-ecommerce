@@ -24,7 +24,7 @@ export const useCartStore = create(
        * Agrega un producto (y su variante opcional) al carrito.
        * Si el producto ya existe en el carrito, incrementa la cantidad respetando el stock disponible.
        */
-      addItem: (product, variant = null, quantity = 1) => {
+      addItem: (product, variant = null, quantity = 1, openDrawer = true) => {
         if (!product || !product.id) return;
 
         const qtyToAdd = Math.max(1, parseInt(quantity, 10) || 1);
@@ -71,7 +71,10 @@ export const useCartStore = create(
             maxStock: availableStock,
           };
 
-          set({ items: updatedItems, isOpen: true });
+          set({
+            items: updatedItems,
+            ...(openDrawer ? { isOpen: true } : {}),
+          });
         } else {
           const newItem = {
             itemKey,
@@ -90,7 +93,10 @@ export const useCartStore = create(
             addedAt: new Date().toISOString(),
           };
 
-          set({ items: [...currentItems, newItem], isOpen: true });
+          set({
+            items: [...currentItems, newItem],
+            ...(openDrawer ? { isOpen: true } : {}),
+          });
         }
       },
 

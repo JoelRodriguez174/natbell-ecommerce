@@ -40,12 +40,18 @@ describe("CartDrawer Component", () => {
     expect(screen.getAllByText(/\$\s*8\.000/)).toHaveLength(2);
     expect(screen.getByText("2")).toBeInTheDocument();
 
-    // Incrementar cantidad
+    // Incrementar cantidad (requiere confirmación)
     const incBtn = screen.getByTestId("qty-increase-prod-1_default");
     fireEvent.click(incBtn);
+    // Antes de confirmar, el store no se altera (protección contra click accidental)
+    expect(useCartStore.getState().items[0].quantity).toBe(2);
+
+    const confirmBtn = screen.getByTestId("qty-confirm-prod-1_default");
+    expect(confirmBtn).toBeInTheDocument();
+    fireEvent.click(confirmBtn);
     expect(useCartStore.getState().items[0].quantity).toBe(3);
 
-    // Eliminar ítem
+    // Eliminar ítem con botón X en la esquina superior derecha
     const removeBtn = screen.getByTestId("remove-item-prod-1_default");
     fireEvent.click(removeBtn);
     expect(useCartStore.getState().items).toHaveLength(0);

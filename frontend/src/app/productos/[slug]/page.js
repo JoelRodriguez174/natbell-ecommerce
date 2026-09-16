@@ -37,6 +37,7 @@ export default function ProductDetailPage({ params }) {
   const [addedNotice, setAddedNotice] = useState(false);
 
   const addItem = useCartStore((state) => state.addItem);
+  const closeCart = useCartStore((state) => state.closeCart);
 
   // Consulta de producto por slug
   const {
@@ -148,14 +149,15 @@ export default function ProductDetailPage({ params }) {
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
-    addItem(product, selectedVariant, quantity);
+    addItem(product, selectedVariant, quantity, true);
     setAddedNotice(true);
     setTimeout(() => setAddedNotice(false), 3500);
   };
 
   const handleBuyNow = () => {
     if (isOutOfStock) return;
-    addItem(product, selectedVariant, quantity);
+    addItem(product, selectedVariant, quantity, false);
+    closeCart();
     router.push("/carrito");
   };
 
