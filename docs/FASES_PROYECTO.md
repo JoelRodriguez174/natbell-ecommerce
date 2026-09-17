@@ -24,8 +24,8 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 | **4** | **Frontend — Catálogo y Diseño** | ✅ **Completada** | Storefront completo: grilla, filtros, buscador y detalle de producto |
 | **5** | **Carrito y Cotizador de Envíos** | ✅ **Completada** | Carrito en `localStorage` (guest checkout) y cotizador por zonas/CP |
 | **6** | **Checkout, MercadoPago y Webhooks** | ✅ **Completada** | Pedidos, pasarela MercadoPago Checkout Pro, webhooks y stock |
-| **7** | **Panel de Administración** | ⏳ **Fase Activa / Siguiente** | Auth admin JWT, dashboard de métricas, CRUD de catálogo y pedidos |
-| **8** | **Deploy y Puesta en Producción** | ⏸️ Pendiente | Despliegue en Render + Vercel, secrets de producción y smoke tests |
+| **7** | **Panel de Administración** | ✅ **Completada** | Auth admin JWT, dashboard de métricas, CRUD de catálogo, pedidos y tarifas |
+| **8** | **Deploy y Puesta en Producción** | ⏳ **Fase Activa / Siguiente** | Despliegue en Render + Vercel, secrets de producción y smoke tests |
 
 ---
 
@@ -156,7 +156,7 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 ---
 
 ### 7. Fase 7: Panel de Administración
-* **Estado:** ⏸️ Pendiente.
+* **Estado:** ✅ Completada.
 * **Objetivo:** Dotar a los administradores del negocio de una plataforma privada, segura y cómoda para gestionar el catálogo completo, controlar el inventario, revisar los pedidos de los clientes y ajustar costos logísticos.
 * **Módulos del Panel (`/admin`):**
   - **Seguridad y Acceso:**
@@ -183,7 +183,7 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 ---
 
 ### 8. Fase 8: Deploy y Puesta en Producción
-* **Estado:** ⏸️ Pendiente.
+* **Estado:** ⏳ Fase Activa / Siguiente.
 * **Objetivo:** Publicar la aplicación completa en infraestructura cloud moderna, gratuita o de bajo costo, con alta disponibilidad, certificados SSL y variables de entorno de producción debidamente protegidas.
 * **Configuración de Infraestructura:**
   - **Backend en Render:** Despliegue de servicio web en Render con Dockerfile optimizado o entorno nativo Python, configurando workers de Uvicorn, health checks automáticos y variables de entorno (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `MERCADOPAGO_ACCESS_TOKEN`, `JWT_SECRET_KEY`, etc.).

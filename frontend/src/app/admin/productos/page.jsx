@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Image from "next/image";
 import {
   Plus,
   Search,
@@ -11,6 +10,7 @@ import {
   Trash2,
   Upload,
   X,
+  Pencil,
 } from "lucide-react";
 import { useAdminAuthStore } from "../../../store/useAdminAuthStore";
 import { formatCurrency } from "../../../lib/utils";
@@ -27,30 +27,40 @@ export default function AdminProductosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [feedback, setFeedback] = useState(null);
 
-  // Modal para nuevo producto
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  // Modal State (Creación / Edición)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("create"); // "create" | "edit"
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [editingVariantId, setEditingVariantId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadingPreview, setUploadingPreview] = useState(null);
+  const [urlInput, setUrlInput] = useState("");
 
-  // Form state
-  const [newProdName, setNewProdName] = useState("");
-  const [newProdDesc, setNewProdDesc] = useState("");
-  const [newProdCategory, setNewProdCategory] = useState("");
-  const [newProdBrand, setNewProdBrand] = useState("");
-  const [newProdPrice, setNewProdPrice] = useState("");
-  const [newProdSalePrice, setNewProdSalePrice] = useState("");
-  const [newProdIsOnSale, setNewProdIsOnSale] = useState(false);
-  const [newProdIsFeatured, setNewProdIsFeatured] = useState(false);
-  const [newProdImages, setNewProdImages] = useState([]);
-  const [newProdSku, setNewProdSku] = useState("");
-  const [newProdVariantName, setNewProdVariantName] = useState("Estándar");
-  const [newProdStock, setNewProdStock] = useState(10);
+  // Form states
+  const [formName, setFormName] = useState("");
+  const [formDesc, setFormDesc] = useState("");
+  const [formCategory, setFormCategory] = useState("");
+  const [formBrand, setFormBrand] = useState("");
+  const [formPrice, setFormPrice] = useState("");
+  const [formSalePrice, setFormSalePrice] = useState("");
+  const [formIsOnSale, setFormIsOnSale] = useState(false);
+  const [formIsFeatured, setFormIsFeatured] = useState(false);
+  const [formIsActive, setFormIsActive] = useState(true);
+  const [formImages, setFormImages] = useState([]);
+  const [formSku, setFormSku] = useState("");
+  const [formVariantName, setFormVariantName] = useState("Estándar");
+  const [formStock, setFormStock] = useState(10);
 
   const fetchCatalogData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [prodRes, catRes, brandRes] = await Promise.all([
-        fetch(`${API_URL}/api/products?per_page=50${search ? `&search=${encodeURIComponent(search)}` : ""}`),
+        fetch(
+          `${API_URL}/api/products?per_page=50${
+            search ? `&search=${encodeURIComponent(search)}` : ""
+          }`
+        ),
         fetch(`${API_URL}/api/categories`),
         fetch(`${API_URL}/api/brands`),
       ]);
@@ -62,29 +72,143 @@ export default function AdminProductosPage() {
       if (catRes.ok) {
         const cData = await catRes.json();
         setCategories(cData || []);
-        if (cData.length > 0 && !newProdCategory) setNewProdCategory(cData[0].id);
+        if (cData.length > 0 && !formCategory) setFormCategory(cData[0].id);
       }
       if (brandRes.ok) {
         const bData = await brandRes.json();
         setBrands(bData || []);
-        if (bData.length > 0 && !newProdBrand) setNewProdBrand(bData[0].id);
+        if (bData.length > 0 && !formBrand) setFormBrand(bData[0].id);
       }
     } catch {
       setFeedback({ type: "error", message: "Error al conectar con el servidor." });
     } finally {
       setIsLoading(false);
     }
-  }, [search, newProdCategory, newProdBrand]);
+  }, [search, formCategory, formBrand]);
 
   useEffect(() => {
     fetchCatalogData();
   }, [fetchCatalogData]);
 
+  // Abrir Modal para Crear Producto
+  const handleOpenCreateModal = () => {
+    setModalMode("create");
+    setEditingProductId(null);
+    setEditingVariantId(null);
+    setFormName("");
+    setFormDesc("");
+    setFormCategory(categories[0]?.id || "");
+    setFormBrand(brands[0]?.id || "");
+    setFormPrice("");
+    setFormSalePrice("");
+    setFormIsOnSale(false);
+    setFormIsFeatured(false);
+    setFormIsActive(true);
+    setFormSku(`SKU-${Date.now().toString().slice(-6)}`);
+    setFormVariantName("Estándar");
+    setFormStock(10);
+    setFormImages([]);
+    setUrlInput("");
+    setUploadingPreview(null);
+    setIsModalOpen(true);
+  };
+
+  // Abrir Modal para Editar Producto Existente
+  const handleOpenEditModal = async (prod) => {
+    setModalMode("edit");
+    setEditingProductId(prod.id);
+    setEditingVariantId(null);
+    setUrlInput("");
+    setUploadingPreview(null);
+
+    // Carga inicial inmediata con los datos de la fila
+    setFormName(prod.name || "");
+    setFormDesc(prod.description || "");
+    setFormPrice(prod.base_price !== undefined ? String(prod.base_price) : "");
+    setFormSalePrice(
+      prod.sale_price !== undefined && prod.sale_price !== null
+        ? String(prod.sale_price)
+        : ""
+    );
+    setFormIsOnSale(Boolean(prod.is_on_sale));
+    setFormIsFeatured(Boolean(prod.is_featured));
+    setFormIsActive(prod.is_active !== false);
+
+    const initialImgs =
+      prod.image_urls && prod.image_urls.length > 0
+        ? [...prod.image_urls]
+        : prod.images && prod.images.length > 0
+        ? [...prod.images]
+        : [];
+    setFormImages(initialImgs);
+
+    // Matching de categoría y marca por id o por nombre/slug
+    const matchedCategory = categories.find(
+      (c) =>
+        c.id === prod.category_id ||
+        c.name === prod.category_name ||
+        c.slug === prod.category_slug
+    );
+    setFormCategory(matchedCategory?.id || prod.category_id || categories[0]?.id || "");
+
+    const matchedBrand = brands.find(
+      (b) =>
+        b.id === prod.brand_id ||
+        b.name === prod.brand_name ||
+        b.slug === prod.brand_slug
+    );
+    setFormBrand(matchedBrand?.id || prod.brand_id || brands[0]?.id || "");
+
+    const initialStock =
+      prod.variants?.[0]?.stock ??
+      (typeof prod.stock === "number" ? prod.stock : 0);
+    setFormStock(initialStock);
+
+    if (prod.variants?.[0]?.id) {
+      setEditingVariantId(prod.variants[0].id);
+      setFormSku(prod.variants[0].sku || "");
+      setFormVariantName(prod.variants[0].variant_name || "Estándar");
+    }
+
+    setIsModalOpen(true);
+
+    // Si tiene slug, traer información ampliada (descripción completa, variantes)
+    if (prod.slug) {
+      try {
+        const detailRes = await fetch(`${API_URL}/api/products/${prod.slug}`);
+        if (detailRes.ok) {
+          const detail = await detailRes.json();
+          if (detail.description !== undefined && detail.description !== null) {
+            setFormDesc(detail.description);
+          }
+          if (detail.category_id) setFormCategory(detail.category_id);
+          if (detail.brand_id) setFormBrand(detail.brand_id);
+          if (detail.image_urls && detail.image_urls.length > 0) {
+            setFormImages(detail.image_urls);
+          }
+          if (detail.variants && detail.variants.length > 0) {
+            setEditingVariantId(detail.variants[0].id);
+            setFormStock(detail.variants[0].stock ?? 0);
+            setFormSku(detail.variants[0].sku || "");
+            setFormVariantName(detail.variants[0].variant_name || "Estándar");
+          }
+        }
+      } catch (err) {
+        console.error("Error al cargar detalle extendido del producto:", err);
+      }
+    }
+  };
+
+  // Subida de imagen a Supabase Storage con previsualización inmediata
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !token) return;
 
+    // Previsualización instantánea en memoria
+    const localPreviewUrl = URL.createObjectURL(file);
+    setUploadingPreview(localPreviewUrl);
     setIsUploading(true);
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -95,66 +219,138 @@ export default function AdminProductosPage() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Error subiendo imagen");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Error al subir la imagen");
+      }
       const data = await res.json();
-      setNewProdImages((prev) => [...prev, data.url]);
+      setFormImages((prev) => [...prev, data.url]);
     } catch (err) {
       alert(err.message || "Error al subir imagen");
     } finally {
       setIsUploading(false);
+      setUploadingPreview(null);
+      e.target.value = "";
     }
   };
 
-  const handleCreateProduct = async (e) => {
+  // Agregar imagen mediante URL directa
+  const handleAddImageUrl = (e) => {
+    if (e) e.preventDefault();
+    const clean = urlInput.trim();
+    if (!clean) return;
+    setFormImages((prev) => [...prev, clean]);
+    setUrlInput("");
+  };
+
+  // Remover imagen del producto
+  const handleRemoveImage = (indexToRemove) => {
+    setFormImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  // Guardar (Crear o Actualizar) Producto
+  const handleSubmitProduct = async (e) => {
     e.preventDefault();
     if (!token) return;
 
     setIsSubmitting(true);
     setFeedback(null);
 
-    const payload = {
-      name: newProdName,
-      description: newProdDesc || null,
-      category_id: newProdCategory,
-      brand_id: newProdBrand,
-      base_price: parseFloat(newProdPrice),
-      sale_price: newProdIsOnSale && newProdSalePrice ? parseFloat(newProdSalePrice) : null,
-      is_on_sale: newProdIsOnSale,
-      is_featured: newProdIsFeatured,
-      images: newProdImages,
-      variants: [
-        {
-          sku: newProdSku || `SKU-${Date.now().toString().slice(-6)}`,
-          variant_name: newProdVariantName || "Estándar",
-          stock: parseInt(newProdStock, 10) || 0,
-        },
-      ],
-    };
+    const isEdit = modalMode === "edit";
 
     try {
-      const res = await fetch(`${API_URL}/api/admin/products`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      if (isEdit) {
+        // PUT /api/admin/products/{id}
+        const updatePayload = {
+          name: formName.trim(),
+          description: formDesc.trim() || null,
+          category_id: formCategory || null,
+          brand_id: formBrand || null,
+          base_price: parseFloat(formPrice),
+          sale_price:
+            formIsOnSale && formSalePrice ? parseFloat(formSalePrice) : null,
+          is_on_sale: formIsOnSale,
+          is_featured: formIsFeatured,
+          is_active: formIsActive,
+          images: formImages,
+        };
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Error al crear producto");
+        const res = await fetch(`${API_URL}/api/admin/products/${editingProductId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(updatePayload),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "Error al actualizar producto");
+        }
+
+        // Si tiene variante asociada, sincronizar stock
+        if (editingVariantId && formStock !== "") {
+          await fetch(`${API_URL}/api/admin/variants/${editingVariantId}/stock`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ stock: parseInt(formStock, 10) || 0 }),
+          }).catch((err) =>
+            console.error("Error sincronizando stock de variante:", err)
+          );
+        }
+
+        setFeedback({
+          type: "success",
+          message: `¡Producto '${formName}' actualizado exitosamente!`,
+        });
+      } else {
+        // POST /api/admin/products
+        const createPayload = {
+          name: formName.trim(),
+          description: formDesc.trim() || null,
+          category_id: formCategory,
+          brand_id: formBrand,
+          base_price: parseFloat(formPrice),
+          sale_price:
+            formIsOnSale && formSalePrice ? parseFloat(formSalePrice) : null,
+          is_on_sale: formIsOnSale,
+          is_featured: formIsFeatured,
+          is_active: formIsActive,
+          images: formImages,
+          variants: [
+            {
+              sku: formSku || `SKU-${Date.now().toString().slice(-6)}`,
+              variant_name: formVariantName || "Estándar",
+              stock: parseInt(formStock, 10) || 0,
+            },
+          ],
+        };
+
+        const res = await fetch(`${API_URL}/api/admin/products`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(createPayload),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "Error al crear producto");
+        }
+
+        setFeedback({
+          type: "success",
+          message: `¡Producto '${formName}' creado exitosamente!`,
+        });
       }
 
-      setFeedback({ type: "success", message: "¡Producto creado exitosamente!" });
-      setIsCreateModalOpen(false);
-      // Reset form
-      setNewProdName("");
-      setNewProdDesc("");
-      setNewProdPrice("");
-      setNewProdSalePrice("");
-      setNewProdImages([]);
-      setNewProdSku("");
+      setIsModalOpen(false);
       fetchCatalogData();
     } catch (err) {
       setFeedback({ type: "error", message: err.message });
@@ -163,6 +359,7 @@ export default function AdminProductosPage() {
     }
   };
 
+  // Desactivar / Eliminar Producto
   const handleDeleteProduct = async (productId, productName) => {
     if (!token) return;
     if (!confirm(`¿Estás seguro de que deseas desactivar '${productName}'?`)) return;
@@ -174,7 +371,10 @@ export default function AdminProductosPage() {
       });
 
       if (!res.ok) throw new Error("No se pudo desactivar el producto");
-      setFeedback({ type: "success", message: `Producto '${productName}' desactivado correctamente.` });
+      setFeedback({
+        type: "success",
+        message: `Producto '${productName}' desactivado correctamente.`,
+      });
       fetchCatalogData();
     } catch (err) {
       setFeedback({ type: "error", message: err.message });
@@ -190,13 +390,13 @@ export default function AdminProductosPage() {
             Catálogo de Productos
           </h1>
           <p className="text-xs text-zinc-500 mt-1">
-            Administrá el stock, precios, variantes e imágenes de la tienda.
+            Administrá el stock, precios, variantes, descripciones e imágenes de la tienda.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={handleOpenCreateModal}
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold shadow-sm transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
@@ -238,14 +438,14 @@ export default function AdminProductosPage() {
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/60 text-zinc-500 uppercase text-[10px] tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+            <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 font-semibold uppercase text-[10px] tracking-wider">
               <tr>
-                <th className="py-3.5 px-4 font-bold">Producto</th>
-                <th className="py-3.5 px-4 font-bold">Categoría / Marca</th>
-                <th className="py-3.5 px-4 font-bold">Precio</th>
-                <th className="py-3.5 px-4 font-bold">Stock</th>
-                <th className="py-3.5 px-4 font-bold">Estado</th>
-                <th className="py-3.5 px-4 font-bold text-right">Acciones</th>
+                <th className="py-3 px-4">Producto</th>
+                <th className="py-3 px-4">Categoría / Marca</th>
+                <th className="py-3 px-4">Precio</th>
+                <th className="py-3 px-4">Stock Total</th>
+                <th className="py-3 px-4">Estado</th>
+                <th className="py-3 px-4 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -270,26 +470,36 @@ export default function AdminProductosPage() {
                       : prod.in_stock
                       ? "En stock"
                       : "Agotado";
-                  const mainImage = (prod.images && prod.images[0]) || (prod.image_urls && prod.image_urls[0]) || `/products/${prod.slug}.webp`;
+                  const mainImage =
+                    (prod.images && prod.images[0]) ||
+                    (prod.image_urls && prod.image_urls[0]) ||
+                    `/products/${prod.slug}.webp`;
 
                   return (
-                    <tr key={prod.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition-colors">
+                    <tr
+                      key={prod.id}
+                      className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition-colors"
+                    >
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden relative shrink-0">
-                            <Image
+                          <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden relative shrink-0 flex items-center justify-center">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
                               src={mainImage}
                               alt={prod.name}
-                              fill
-                              sizes="40px"
-                              className="object-cover"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "/products/default.webp";
+                              }}
                             />
                           </div>
                           <div>
                             <span className="font-semibold text-zinc-900 dark:text-zinc-100 block">
                               {prod.name}
                             </span>
-                            <span className="text-[10px] text-zinc-400 font-mono">{prod.slug}</span>
+                            <span className="text-[10px] text-zinc-400 font-mono">
+                              {prod.slug}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -297,11 +507,17 @@ export default function AdminProductosPage() {
                         <p className="font-medium text-zinc-700 dark:text-zinc-300">
                           {prod.category_name || prod.category?.name || "Sin categoría"}
                         </p>
-                        <p className="text-[10px] text-zinc-400">{prod.brand_name || prod.brand?.name || "Sin marca"}</p>
+                        <p className="text-[10px] text-zinc-400">
+                          {prod.brand_name || prod.brand?.name || "Sin marca"}
+                        </p>
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                          {formatCurrency(prod.is_on_sale && prod.sale_price ? prod.sale_price : prod.base_price)}
+                          {formatCurrency(
+                            prod.is_on_sale && prod.sale_price
+                              ? prod.sale_price
+                              : prod.base_price
+                          )}
                         </span>
                         {prod.is_on_sale && (
                           <span className="text-[10px] text-zinc-400 line-through block">
@@ -312,12 +528,15 @@ export default function AdminProductosPage() {
                       <td className="py-3.5 px-4">
                         <span
                           className={`font-semibold ${
-                            (typeof totalStock === "number" && totalStock <= 5) || totalStock === "Agotado"
+                            (typeof totalStock === "number" && totalStock <= 5) ||
+                            totalStock === "Agotado"
                               ? "text-red-500 font-bold"
                               : "text-zinc-700 dark:text-zinc-300"
                           }`}
                         >
-                          {typeof totalStock === "number" ? `${totalStock} un.` : totalStock}
+                          {typeof totalStock === "number"
+                            ? `${totalStock} un.`
+                            : totalStock}
                         </span>
                       </td>
                       <td className="py-3.5 px-4">
@@ -332,14 +551,24 @@ export default function AdminProductosPage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteProduct(prod.id, prod.name)}
-                          className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer"
-                          title="Desactivar producto"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(prod)}
+                            className="p-1.5 text-zinc-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-lg transition-colors cursor-pointer"
+                            title="Editar / Modificar producto"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(prod.id, prod.name)}
+                            className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer"
+                            title="Desactivar producto"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -350,24 +579,33 @@ export default function AdminProductosPage() {
         </div>
       </div>
 
-      {/* Modal: Crear Producto */}
-      {isCreateModalOpen && (
+      {/* Modal: Crear / Editar Producto */}
+      {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            {/* Header del Modal */}
             <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-5">
-              <h2 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
-                Nuevo Producto
-              </h2>
+              <div>
+                <h2 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
+                  {modalMode === "edit" ? "Modificar Producto" : "Nuevo Producto"}
+                </h2>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  {modalMode === "edit"
+                    ? `Actualizando: ${formName || "Producto seleccionado"}`
+                    : "Completá los campos para sumar un producto al catálogo."}
+                </p>
+              </div>
               <button
                 type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                onClick={() => setIsModalOpen(false)}
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateProduct} className="space-y-4 text-xs">
+            <form onSubmit={handleSubmitProduct} className="space-y-4 text-xs">
+              {/* Nombre */}
               <div>
                 <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
                   Nombre del Producto *
@@ -375,21 +613,36 @@ export default function AdminProductosPage() {
                 <input
                   type="text"
                   required
-                  value={newProdName}
-                  onChange={(e) => setNewProdName(e.target.value)}
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
                   placeholder="Ej: Máquina Cortadora Wahl Legend"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500"
                 />
               </div>
 
+              {/* Descripción */}
+              <div>
+                <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  Descripción
+                </label>
+                <textarea
+                  rows={3}
+                  value={formDesc}
+                  onChange={(e) => setFormDesc(e.target.value)}
+                  placeholder="Breve detalle de características, modo de uso o especificaciones..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500 resize-none"
+                />
+              </div>
+
+              {/* Categoría y Marca */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
                     Categoría *
                   </label>
                   <select
-                    value={newProdCategory}
-                    onChange={(e) => setNewProdCategory(e.target.value)}
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500"
                   >
                     {categories.map((c) => (
@@ -404,8 +657,8 @@ export default function AdminProductosPage() {
                     Marca *
                   </label>
                   <select
-                    value={newProdBrand}
-                    onChange={(e) => setNewProdBrand(e.target.value)}
+                    value={formBrand}
+                    onChange={(e) => setFormBrand(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500"
                   >
                     {brands.map((b) => (
@@ -417,6 +670,7 @@ export default function AdminProductosPage() {
                 </div>
               </div>
 
+              {/* Precios */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
@@ -426,8 +680,8 @@ export default function AdminProductosPage() {
                     type="number"
                     step="0.01"
                     required
-                    value={newProdPrice}
-                    onChange={(e) => setNewProdPrice(e.target.value)}
+                    value={formPrice}
+                    onChange={(e) => setFormPrice(e.target.value)}
                     placeholder="9999.00"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500"
                   />
@@ -439,21 +693,22 @@ export default function AdminProductosPage() {
                   <input
                     type="number"
                     step="0.01"
-                    disabled={!newProdIsOnSale}
-                    value={newProdSalePrice}
-                    onChange={(e) => setNewProdSalePrice(e.target.value)}
+                    disabled={!formIsOnSale}
+                    value={formSalePrice}
+                    onChange={(e) => setFormSalePrice(e.target.value)}
                     placeholder="7999.00"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500 disabled:opacity-40"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-6 pt-1">
+              {/* Toggles: Oferta, Destacado y Activo */}
+              <div className="flex flex-wrap items-center gap-6 pt-1">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={newProdIsOnSale}
-                    onChange={(e) => setNewProdIsOnSale(e.target.checked)}
+                    checked={formIsOnSale}
+                    onChange={(e) => setFormIsOnSale(e.target.checked)}
                     className="rounded text-amber-500 focus:ring-amber-400"
                   />
                   <span>En Oferta</span>
@@ -461,96 +716,192 @@ export default function AdminProductosPage() {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={newProdIsFeatured}
-                    onChange={(e) => setNewProdIsFeatured(e.target.checked)}
+                    checked={formIsFeatured}
+                    onChange={(e) => setFormIsFeatured(e.target.checked)}
                     className="rounded text-amber-500 focus:ring-amber-400"
                   />
                   <span>Producto Destacado</span>
                 </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formIsActive}
+                    onChange={(e) => setFormIsActive(e.target.checked)}
+                    className="rounded text-emerald-500 focus:ring-emerald-400"
+                  />
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    Producto Activo
+                  </span>
+                </label>
               </div>
 
-              {/* Variante inicial */}
+              {/* Inventario / Stock */}
               <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 space-y-3">
                 <span className="font-bold text-[11px] uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
-                  Inventario Inicial
+                  {modalMode === "edit" ? "Control de Stock" : "Inventario Inicial"}
                 </span>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-[10px] font-medium text-zinc-500 mb-1">SKU</label>
+                    <label className="block text-[10px] font-medium text-zinc-500 mb-1">
+                      SKU
+                    </label>
                     <input
                       type="text"
-                      value={newProdSku}
-                      onChange={(e) => setNewProdSku(e.target.value)}
+                      disabled={modalMode === "edit"}
+                      value={formSku}
+                      onChange={(e) => setFormSku(e.target.value)}
                       placeholder="WAHL-001"
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700"
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 disabled:opacity-50"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-zinc-500 mb-1">Nombre Variante</label>
+                    <label className="block text-[10px] font-medium text-zinc-500 mb-1">
+                      Variante
+                    </label>
                     <input
                       type="text"
-                      value={newProdVariantName}
-                      onChange={(e) => setNewProdVariantName(e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700"
+                      disabled={modalMode === "edit"}
+                      value={formVariantName}
+                      onChange={(e) => setFormVariantName(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 disabled:opacity-50"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-zinc-500 mb-1">Stock *</label>
+                    <label className="block text-[10px] font-medium text-zinc-500 mb-1">
+                      Stock (unidades) *
+                    </label>
                     <input
                       type="number"
                       required
                       min={0}
-                      value={newProdStock}
-                      onChange={(e) => setNewProdStock(e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700"
+                      value={formStock}
+                      onChange={(e) => setFormStock(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 font-bold text-zinc-900 dark:text-zinc-100"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Imagen */}
-              <div>
-                <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Foto del Producto (Supabase Storage)
-                </label>
-                <div className="flex items-center gap-2">
-                  <label className="flex-1 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl p-3 text-center cursor-pointer hover:border-amber-500 transition-colors flex items-center justify-center gap-2">
-                    <Upload className="w-4 h-4 text-zinc-400" />
-                    <span className="text-zinc-500">
-                      {isUploading ? "Subiendo a Storage..." : "Seleccionar imagen..."}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      disabled={isUploading}
-                    />
+              {/* SECCIÓN DE IMÁGENES CON PREVISUALIZACIÓN */}
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="block font-semibold text-zinc-700 dark:text-zinc-300">
+                    Galería de Fotos del Producto
                   </label>
+                  <span className="text-[11px] text-zinc-400 font-mono">
+                    {formImages.length}{" "}
+                    {formImages.length === 1 ? "foto cargada" : "fotos cargadas"}
+                  </span>
                 </div>
-                {newProdImages.length > 0 && (
-                  <p className="text-[10px] text-emerald-600 mt-1 font-medium">
-                    ✓ Imagen cargada: {newProdImages[0]}
-                  </p>
+
+                {/* Galería de Previsualización */}
+                {(formImages.length > 0 || uploadingPreview) && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700">
+                    {formImages.map((url, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 aspect-square flex items-center justify-center shadow-xs"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`Foto ${idx + 1}`}
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-200"
+                          onError={(e) => {
+                            e.currentTarget.src = "/products/default.webp";
+                          }}
+                        />
+                        {idx === 0 && (
+                          <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-amber-500 text-zinc-950 shadow-sm z-10">
+                            Portada
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1 right-1 p-1 rounded-md bg-zinc-950/80 hover:bg-red-600 text-white transition-colors cursor-pointer shadow-sm z-10"
+                          title="Eliminar esta foto"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Previsualización instantánea mientras se sube */}
+                    {uploadingPreview && (
+                      <div className="relative rounded-xl overflow-hidden border-2 border-dashed border-amber-500/80 bg-amber-500/10 aspect-square flex flex-col items-center justify-center text-center p-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={uploadingPreview}
+                          alt="Subiendo..."
+                          className="absolute inset-0 w-full h-full object-cover opacity-25"
+                        />
+                        <Loader2 className="w-5 h-5 animate-spin text-amber-500 relative z-10 mb-1" />
+                        <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 relative z-10">
+                          Subiendo...
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 )}
+
+                {/* Dropzone de subida de archivo */}
+                <label className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-amber-500 dark:hover:border-amber-500 rounded-xl p-3.5 text-center cursor-pointer transition-colors flex items-center justify-center gap-2.5 bg-zinc-50/50 dark:bg-zinc-800/30">
+                  <Upload className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span className="text-zinc-600 dark:text-zinc-300 font-medium">
+                    {isUploading
+                      ? "Subiendo archivo a Supabase Storage..."
+                      : "Elegir archivo para subir a Storage"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={isUploading}
+                  />
+                </label>
+
+                {/* Input secundario: URL externa o directa */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="O pegar URL directa de imagen (https://...)"
+                    className="flex-1 px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 text-xs focus:outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddImageUrl}
+                    disabled={!urlInput.trim()}
+                    className="px-3.5 py-2 rounded-xl bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 font-bold transition-colors disabled:opacity-40 cursor-pointer text-xs"
+                  >
+                    + Agregar
+                  </button>
+                </div>
               </div>
 
-              {/* Submit Buttons */}
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800">
+              {/* Botones de Acción */}
+              <div className="pt-4 flex items-center justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800">
                 <button
                   type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-semibold cursor-pointer"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-semibold cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+                  disabled={isSubmitting || isUploading}
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50 transition-colors"
                 >
                   {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <span>Guardar Producto</span>
+                  <span>
+                    {modalMode === "edit"
+                      ? "Actualizar Producto"
+                      : "Guardar Producto"}
+                  </span>
                 </button>
               </div>
             </form>

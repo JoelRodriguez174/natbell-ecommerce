@@ -105,11 +105,10 @@ export default function AdminEnviosPage() {
 
       {feedback && (
         <div
-          className={`p-3.5 rounded-xl text-xs flex items-center gap-2.5 animate-fadeIn ${
-            feedback.type === "success"
+          className={`p-3.5 rounded-xl text-xs flex items-center gap-2.5 animate-fadeIn ${feedback.type === "success"
               ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
               : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
-          }`}
+            }`}
         >
           {feedback.type === "success" ? (
             <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -184,11 +183,10 @@ export default function AdminEnviosPage() {
                       </td>
                       <td className="py-3.5 px-4">
                         <span
-                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            zone.is_active !== false
+                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${zone.is_active !== false
                               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                               : "bg-zinc-200 dark:bg-zinc-800 text-zinc-500"
-                          }`}
+                            }`}
                         >
                           {zone.is_active !== false ? "Activa" : "Inactiva"}
                         </span>

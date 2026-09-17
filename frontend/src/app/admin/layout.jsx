@@ -14,8 +14,11 @@ import {
   Menu,
   X,
   Loader2,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useAdminAuthStore } from "../../store/useAdminAuthStore";
+import { useAdminThemeStore } from "../../store/useAdminThemeStore";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -28,9 +31,12 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { token, adminUser, logout, checkAuth } = useAdminAuthStore();
+  const { theme, toggleTheme } = useAdminThemeStore();
 
   const [hasMounted, setHasMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const isDark = theme === "dark";
 
   useEffect(() => {
     setHasMounted(true);
@@ -39,27 +45,36 @@ export default function AdminLayout({ children }) {
     }
   }, [pathname, checkAuth]);
 
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    return () => {
+      document.documentElement.classList.remove("dark");
+    };
+  }, [isDark]);
+
+  useEffect(() => {
+    if (hasMounted && !token && pathname !== "/admin/login") {
+      router.replace("/admin/login");
+    }
+  }, [hasMounted, token, pathname, router]);
+
   // Si estamos en la página de login, no aplicar sidebar ni layout guard
   if (pathname === "/admin/login") {
     return <>{children}</>;
   }
 
-  // Prevención de flash de contenido no autenticado
-  if (!hasMounted) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-400">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-      </div>
-    );
-  }
-
-  // Si no hay token, redirigir a login
-  if (!token) {
-    router.replace("/admin/login");
+  // Prevención de flash de contenido no autenticado o durante redirección
+  if (!hasMounted || !token) {
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-zinc-400 gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-        <p className="text-sm">Redirigiendo al inicio de sesión de administrador...</p>
+        {hasMounted && !token && (
+          <p className="text-sm">Redirigiendo al inicio de sesión de administrador...</p>
+        )}
       </div>
     );
   }
@@ -70,7 +85,11 @@ export default function AdminLayout({ children }) {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row">
+    <div
+      className={`min-h-screen ${
+        isDark ? "dark" : ""
+      } bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row transition-colors duration-200`}
+    >
       {/* Mobile Topbar */}
       <header className="md:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-40">
         <div className="flex items-center gap-2">
@@ -81,13 +100,28 @@ export default function AdminLayout({ children }) {
             Natbell <span className="text-amber-600 dark:text-amber-400 font-mono text-xs">Admin</span>
           </span>
         </div>
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          aria-label="Abrir menú"
-        >
-          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="p-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo nocturno"}
+            title={isDark ? "Modo Claro" : "Modo Nocturno"}
+          >
+            {isDark ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-zinc-600" />
+            )}
+          </button>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            aria-label="Abrir menú"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </header>
 
       {/* Sidebar Desktop & Mobile Drawer */}
@@ -147,6 +181,25 @@ export default function AdminLayout({ children }) {
           </div>
 
           <div className="pt-2 border-t border-zinc-200/60 dark:border-zinc-800/60 space-y-1">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex items-center justify-between w-full px-2 py-1.5 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/80 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+              title={isDark ? "Cambiar a Modo Claro" : "Cambiar a Modo Nocturno"}
+            >
+              <span className="flex items-center gap-2">
+                {isDark ? (
+                  <Moon className="w-3.5 h-3.5 text-amber-400" />
+                ) : (
+                  <Sun className="w-3.5 h-3.5 text-amber-500" />
+                )}
+                <span>{isDark ? "Modo Nocturno" : "Modo Claro"}</span>
+              </span>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                {isDark ? "ON" : "OFF"}
+              </span>
+            </button>
+
             <Link
               href="/"
               target="_blank"
