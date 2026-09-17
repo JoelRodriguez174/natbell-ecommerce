@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
+from app.config import settings
 from app.database import get_supabase_client
 from app.main import app
 from app.services.email_service import get_email_service
@@ -15,7 +16,7 @@ client = TestClient(app)
 TEST_ADMIN_ID = str(uuid4())
 TEST_EMAIL = "nuevo.admin@natbell.com"
 TEST_PASSWORD = "Password123!"
-VALID_INVITE_CODE = "NatbellAdmin2026!"
+VALID_INVITE_CODE = settings.admin_invite_code
 INVALID_INVITE_CODE = "WrongCode123!"
 
 
