@@ -25,7 +25,7 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 | **5** | **Carrito y Cotizador de Envíos** | ✅ **Completada** | Carrito en `localStorage` (guest checkout) y cotizador por zonas/CP |
 | **6** | **Checkout, MercadoPago y Webhooks** | ✅ **Completada** | Pedidos, pasarela MercadoPago Checkout Pro, webhooks y stock |
 | **7** | **Panel de Administración** | ✅ **Completada** | Auth admin JWT, dashboard de métricas, CRUD de catálogo, pedidos y tarifas |
-| **8** | **Deploy y Puesta en Producción** | ⏳ **Fase Activa / Siguiente** | Despliegue en Render + Vercel, secrets de producción y smoke tests |
+| **8** | **Deploy y Puesta en Producción** | ✅ **Completada** | Despliegue en Render + Vercel, secrets de producción y smoke tests |
 
 ---
 
@@ -183,7 +183,7 @@ Su propósito es servir como referencia clara, permitiendo revisar en cualquier 
 ---
 
 ### 8. Fase 8: Deploy y Puesta en Producción
-* **Estado:** ⏳ Fase Activa / Siguiente.
+* **Estado:** ✅ Completada.
 * **Objetivo:** Publicar la aplicación completa en infraestructura cloud moderna, gratuita o de bajo costo, con alta disponibilidad, certificados SSL y variables de entorno de producción debidamente protegidas.
 * **Configuración de Infraestructura:**
   - **Backend en Render:** Despliegue de servicio web en Render con Dockerfile optimizado o entorno nativo Python, configurando workers de Uvicorn, health checks automáticos y variables de entorno (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `MERCADOPAGO_ACCESS_TOKEN`, `JWT_SECRET_KEY`, etc.).
