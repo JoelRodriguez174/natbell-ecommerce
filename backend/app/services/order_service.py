@@ -320,7 +320,6 @@ class OrderService:
                 self.db.table("product_variants").update(
                     {
                         "stock": new_stock,
-                        "updated_at": datetime.now().isoformat(),
                     }
                 ).eq("id", variant_id).execute()
         except Exception as e:

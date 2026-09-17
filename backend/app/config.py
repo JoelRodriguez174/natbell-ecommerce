@@ -6,9 +6,17 @@ _BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     app_name: str = "Natbell API"
-    phase: int = 6
+    phase: int = 8
     frontend_url: str = "http://localhost:3000"
     backend_url: str = "http://localhost:8000"
+    allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+
+    @property
+    def cors_origins(self) -> list[str]:
+        origins = [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+        if self.frontend_url and self.frontend_url not in origins:
+            origins.append(self.frontend_url)
+        return origins
 
     # Supabase Configuration
     supabase_url: str = ""
@@ -21,6 +29,11 @@ class Settings(BaseSettings):
     mercadopago_webhook_secret: str = ""
     mercadopago_mode: str = "auto"  # "auto", "mock", or "real"
     mercadopago_sandbox: bool = True
+
+    # JWT & Admin Security Configuration
+    jwt_secret_key: str = "natbell-ecommerce-secret-key-2026-production-min-32-chars-long"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 480  # 8 horas de sesión admin
 
     model_config = SettingsConfigDict(
         env_file=(

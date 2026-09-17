@@ -182,6 +182,10 @@ export default function Navbar() {
     );
   };
 
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-xs">
       {/* Top Banner de beneficios compacto y responsivo */}
