@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     email_from: str = "Natbell <onboarding@resend.dev>"
 
+    # Andreani Logistics Configuration
+    andreani_credential_id: str = ""
+    andreani_origin_postal_code: str = "1752"
+    andreani_api_base_url: str = "https://woocommerce-api-acom.andreani.com"
+
     model_config = SettingsConfigDict(
         env_file=(
             str(_BACKEND_DIR / ".env"),

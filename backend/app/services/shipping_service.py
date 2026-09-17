@@ -1,12 +1,15 @@
 import json
 import logging
 import re
+import time
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
+import httpx
 from supabase import Client
 
+from app.config import settings
 from app.models.shipping import ShippingQuote
 
 logger = logging.getLogger(__name__)
@@ -161,6 +164,129 @@ class FixedRateProvider(ShippingProvider):
         )
 
 
+class AndreaniShippingProvider(ShippingProvider):
+    """
+    Estrategia de cotización en tiempo real utilizando la API REST oficial de Andreani PyME.
+    Autentica con Credential ID, almacena en caché el accessToken (24h) y cotiza contra /api/v1/Pyme/rates.
+    En caso de error o indisponibilidad de Andreani, realiza un fallback transparente a FixedRateProvider.
+    """
+
+    def __init__(
+        self,
+        credential_id: Optional[str] = None,
+        origin_postal_code: Optional[str] = None,
+        base_url: Optional[str] = None,
+        fallback_provider: Optional[ShippingProvider] = None,
+        timeout_seconds: float = 6.0,
+    ):
+        self.credential_id = (
+            credential_id if credential_id is not None else settings.andreani_credential_id
+        )
+        self.origin_postal_code = (
+            origin_postal_code
+            if origin_postal_code is not None
+            else (settings.andreani_origin_postal_code or "1752")
+        )
+        self.base_url = (
+            base_url or settings.andreani_api_base_url or "https://woocommerce-api-acom.andreani.com"
+        ).rstrip("/")
+        self.fallback_provider = fallback_provider or FixedRateProvider()
+        self.timeout_seconds = timeout_seconds
+
+        # Token caching en memoria (vigencia 24h, usamos 23h como margen de seguridad)
+        self._access_token: Optional[str] = None
+        self._token_expiry_timestamp: float = 0.0
+
+    def _get_access_token(self) -> Optional[str]:
+        if not self.credential_id:
+            return None
+
+        now = time.time()
+        if self._access_token and now < self._token_expiry_timestamp:
+            return self._access_token
+
+        try:
+            with httpx.Client(timeout=self.timeout_seconds) as client:
+                res = client.post(
+                    f"{self.base_url}/api/v1/Login",
+                    headers={
+                        "Authorization": self.credential_id,
+                        "Content-Type": "application/json",
+                    },
+                )
+                if res.status_code == 200:
+                    data = res.json()
+                    token = data.get("response", {}).get("accessToken")
+                    if token:
+                        self._access_token = token
+                        self._token_expiry_timestamp = now + 82800  # 23 horas
+                        return token
+                logger.warning(f"Login en Andreani API falló con status {res.status_code}: {res.text}")
+        except Exception as e:
+            logger.warning(f"Excepción al conectar con login de Andreani API: {e}")
+
+        return None
+
+    def calculate_quote(self, postal_code: str, db: Optional[Client] = None) -> ShippingQuote:
+        cp_num = extract_numeric_postal_code(postal_code)
+        cp_str = str(cp_num)
+
+        token = self._get_access_token()
+        if token:
+            try:
+                # Paquete estándar de e-commerce de belleza (500g, 10x10x10 cm)
+                payload = {
+                    "postal_code_origin": self.origin_postal_code,
+                    "postal_code_destination": cp_str,
+                    "products": [
+                        {
+                            "quantity": 1,
+                            "price": 10000,
+                            "dimensions": {
+                                "width": 10,
+                                "height": 10,
+                                "depth": 10,
+                                "grams": 500,
+                            },
+                        }
+                    ],
+                }
+                with httpx.Client(timeout=self.timeout_seconds) as client:
+                    res = client.post(
+                        f"{self.base_url}/api/v1/Pyme/rates",
+                        headers={
+                            "X-Auth-Token": token,
+                            "Content-Type": "application/json",
+                        },
+                        json=payload,
+                    )
+                    if res.status_code == 200:
+                        data = res.json()
+                        rates = data.get("response", {}).get("rates", [])
+                        estandar_rate = next((r for r in rates if r.get("code") == "estándar"), None)
+                        chosen_rate = estandar_rate or (rates[0] if rates else None)
+
+                        if chosen_rate and "total" in chosen_rate:
+                            total_cost = Decimal(str(chosen_rate["total"]))
+                            mode_name = chosen_rate.get("code", "estándar").capitalize()
+                            return ShippingQuote(
+                                zone_name=f"Andreani {mode_name} a Domicilio",
+                                cost=total_cost,
+                                estimated_days=3 if cp_num < 2000 else 5,
+                                postal_code=cp_str,
+                                provider="andreani",
+                                description=f"Envío directo por Andreani ({mode_name}). Despacho desde CP {self.origin_postal_code}.",
+                            )
+                    else:
+                        logger.warning(f"Andreani /rates respondió con status {res.status_code}: {res.text}")
+            except Exception as e:
+                logger.warning(f"Error consultando cotización en Andreani API: {e}. Activando fallback.")
+
+        # Fallback a FixedRateProvider si falla o no está disponible
+        logger.info(f"Usando fallback a FixedRateProvider para CP {cp_str}")
+        return self.fallback_provider.calculate_quote(postal_code, db=db)
+
+
 class ShippingService:
     """
     Servicio de envíos de la aplicación.
@@ -168,7 +294,7 @@ class ShippingService:
     """
 
     def __init__(self, provider: Optional[ShippingProvider] = None):
-        self._provider = provider or FixedRateProvider()
+        self._provider = provider or get_default_shipping_provider()
 
     def set_provider(self, provider: ShippingProvider) -> None:
         """Permite intercambiar la estrategia de cotización en tiempo de ejecución."""
@@ -206,6 +332,13 @@ class ShippingService:
             }
             for item in DEFAULT_ZONES_CONFIG
         ]
+
+
+def get_default_shipping_provider() -> ShippingProvider:
+    """Retorna AndreaniShippingProvider si hay credencial configurada, o FixedRateProvider de respaldo."""
+    if settings.andreani_credential_id:
+        return AndreaniShippingProvider()
+    return FixedRateProvider()
 
 
 # Instancia singleton del servicio
