@@ -420,3 +420,13 @@ VALUES (
 ON CONFLICT (email) DO UPDATE SET
     name = EXCLUDED.name;
 
+
+-- ARCHIVO: 008_admin_email_verification.sql
+ALTER TABLE admin_users 
+ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT TRUE,
+ADD COLUMN IF NOT EXISTS verification_code VARCHAR(10),
+ADD COLUMN IF NOT EXISTS verification_code_expires_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS reset_password_code VARCHAR(10),
+ADD COLUMN IF NOT EXISTS reset_password_expires_at TIMESTAMPTZ;
+
+

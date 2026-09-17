@@ -42,6 +42,124 @@ export const useAdminAuthStore = create(
         }
       },
 
+      register: async (name, email, password, inviteCode) => {
+        set({ isLoading: true, error: null });
+        try {
+          const res = await fetch(`${API_URL}/api/admin/auth/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name,
+              email,
+              password,
+              invite_code: inviteCode,
+            }),
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            const msg = errData.detail || "Error al registrar la cuenta de administrador.";
+            set({ isLoading: false, error: msg });
+            return { success: false, error: msg };
+          }
+
+          const data = await res.json();
+          set({ isLoading: false, error: null });
+          return { success: true, data };
+        } catch (err) {
+          const msg = err.message || "Error al conectar con el servidor.";
+          set({ isLoading: false, error: msg });
+          return { success: false, error: msg };
+        }
+      },
+
+      verifyEmail: async (email, code) => {
+        set({ isLoading: true, error: null });
+        try {
+          const res = await fetch(`${API_URL}/api/admin/auth/verify-email`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, code }),
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            const msg = errData.detail || "Código de verificación inválido.";
+            set({ isLoading: false, error: msg });
+            return { success: false, error: msg };
+          }
+
+          const data = await res.json();
+          set({
+            token: data.access_token,
+            adminUser: data.user,
+            isLoading: false,
+            error: null,
+          });
+          return { success: true, user: data.user };
+        } catch (err) {
+          const msg = err.message || "Error al conectar con el servidor.";
+          set({ isLoading: false, error: msg });
+          return { success: false, error: msg };
+        }
+      },
+
+      resendCode: async (email) => {
+        try {
+          const res = await fetch(`${API_URL}/api/admin/auth/resend-code`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          return { success: res.ok };
+        } catch {
+          return { success: false };
+        }
+      },
+
+      forgotPassword: async (email) => {
+        set({ isLoading: true, error: null });
+        try {
+          const res = await fetch(`${API_URL}/api/admin/auth/forgot-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          const data = await res.json().catch(() => ({}));
+          set({ isLoading: false });
+          return { success: res.ok, message: data.message };
+        } catch (err) {
+          set({ isLoading: false, error: err.message });
+          return { success: false, error: err.message };
+        }
+      },
+
+      resetPassword: async (email, code, newPassword) => {
+        set({ isLoading: true, error: null });
+        try {
+          const res = await fetch(`${API_URL}/api/admin/auth/reset-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, code, new_password: newPassword }),
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            const msg = errData.detail || "Error al restablecer la contraseña.";
+            set({ isLoading: false, error: msg });
+            return { success: false, error: msg };
+          }
+
+          const data = await res.json();
+          set({ isLoading: false, error: null });
+          return { success: true, message: data.message };
+        } catch (err) {
+          const msg = err.message || "Error al conectar con el servidor.";
+          set({ isLoading: false, error: msg });
+          return { success: false, error: msg };
+        }
+      },
+
       logout: () => {
         set({ token: null, adminUser: null, error: null, isLoading: false });
       },
