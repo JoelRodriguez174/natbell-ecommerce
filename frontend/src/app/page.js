@@ -86,66 +86,34 @@ export default function HomePage() {
   return (
     <div className="flex flex-col space-y-10 sm:space-y-14 pb-16">
       {/* Hero Banner Comercial estilo Ossono / MercadoLibre */}
-      <section className="bg-gradient-to-r from-zinc-950 via-zinc-900 to-black text-white py-12 sm:py-16 px-4 sm:px-6 lg:px-8 border-b border-zinc-800">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-5 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-zinc-200 text-xs font-semibold tracking-wide">
-              <span>Distribuidora Oficial de Belleza y Cosmética Capilar</span>
-            </div>
-
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
-              Productos profesionales para tu salón al mejor precio
-            </h1>
-
-            <p className="text-sm sm:text-base text-zinc-300 max-w-xl font-normal leading-relaxed">
-              Comprá directo tinturas, decolorantes, máquinas de corte y tratamientos de marcas líderes. Stock real inmediato con envíos a todo el país y cuotas con MercadoPago.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-4 pt-3">
-              <Link
-                href="/productos"
-                className="inline-flex items-center justify-center gap-2.5 bg-white hover:bg-zinc-100 text-zinc-950 font-black text-sm sm:text-base px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] border-2 border-white"
-              >
-                <span>Ver Catálogo Completo</span>
-                <ArrowRight className="w-4 h-4 text-zinc-950" />
-              </Link>
-              <Link
-                href="/productos?on_sale=true"
-                className="inline-flex items-center justify-center gap-2 bg-zinc-800/80 hover:bg-zinc-800 text-white font-semibold text-sm sm:text-base px-6 py-3.5 rounded-xl border border-zinc-700 transition-all hover:border-zinc-500"
-              >
-                <span>Ver Ofertas Especiales</span>
-              </Link>
-            </div>
+      <section className="bg-gradient-to-r from-zinc-950 via-zinc-900 to-black text-white py-14 sm:py-20 px-4 sm:px-6 lg:px-8 border-b border-zinc-800">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-zinc-200 text-xs font-semibold tracking-wide backdrop-blur-xs">
+            <span>Distribuidora Oficial de Belleza y Cosmética Capilar</span>
           </div>
 
-          <div className="lg:col-span-5 hidden lg:flex justify-center">
-            {/* Destacado visual comercial con foto real */}
-            <div className="w-full max-w-md bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-xs flex flex-col items-center text-center space-y-4 shadow-xl">
-              <div className="w-full h-56 bg-white rounded-xl p-4 flex items-center justify-center shadow-md">
-                <img
-                  src="/products/nov-tintura-en-crema-profesional-60g.webp"
-                  alt="Nov Tintura Profesional"
-                  className="max-h-full max-w-full object-contain"
-                />
-              </div>
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">
-                  OFERTA DESTACADA
-                </span>
-                <h3 className="text-lg font-bold text-white">
-                  Línea Nov Coloración Profesional
-                </h3>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Cobertura 100% canas • Brillo de salón • Precios por mayor y menor
-                </p>
-              </div>
-              <Link
-                href="/productos?category=coloracion"
-                className="w-full bg-white text-zinc-950 font-bold py-2.5 rounded-xl text-xs hover:bg-zinc-100 transition-colors text-center"
-              >
-                Ver línea de coloración
-              </Link>
-            </div>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
+            Productos profesionales para tu salón al mejor precio
+          </h1>
+
+          <p className="text-sm sm:text-base text-zinc-300 max-w-2xl mx-auto font-normal leading-relaxed">
+            Comprá directo tinturas, decolorantes, máquinas de corte y tratamientos de marcas líderes. Stock real inmediato con envíos a todo el país y cuotas con MercadoPago.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-3">
+            <Link
+              href="/productos"
+              className="inline-flex items-center justify-center gap-2.5 bg-white hover:bg-zinc-100 text-zinc-950 font-black text-sm sm:text-base px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] border-2 border-white"
+            >
+              <span>Ver Catálogo Completo</span>
+              <ArrowRight className="w-4 h-4 text-zinc-950" />
+            </Link>
+            <Link
+              href="/productos?on_sale=true"
+              className="inline-flex items-center justify-center gap-2 bg-zinc-800/80 hover:bg-zinc-800 text-white font-semibold text-sm sm:text-base px-6 py-3.5 rounded-xl border border-zinc-700 transition-all hover:border-zinc-500"
+            >
+              <span>Ver Ofertas Especiales</span>
+            </Link>
           </div>
         </div>
       </section>
