@@ -150,6 +150,8 @@ export default function CheckoutPage() {
               <ShippingAddressStep
                 register={register}
                 errors={errors}
+                watch={watch}
+                setValue={setValue}
                 postalCodeValue={postalCode}
                 shippingQuote={shippingQuote}
                 isQuoting={isQuoting}

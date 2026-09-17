@@ -387,7 +387,7 @@ async def admin_login(
     try:
         res = (
             db.table("admin_users")
-            .select("id, email, password_hash, name, is_verified, created_at")
+            .select("id, email, password_hash, name, created_at")
             .eq("email", email_clean)
             .execute()
         )

@@ -275,7 +275,7 @@ class AndreaniShippingProvider(ShippingProvider):
                                 estimated_days=3 if cp_num < 2000 else 5,
                                 postal_code=cp_str,
                                 provider="andreani",
-                                description=f"Envío directo por Andreani ({mode_name}). Despacho desde CP {self.origin_postal_code}.",
+                                description=f"Envío directo a domicilio por Andreani ({mode_name})",
                             )
                     else:
                         logger.warning(f"Andreani /rates respondió con status {res.status_code}: {res.text}")

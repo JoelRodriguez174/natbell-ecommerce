@@ -32,6 +32,13 @@ export default function ShippingCalculator({ className = "", compact = false }) 
       return;
     }
 
+    const numericMatch = cleanCP.match(/\d+/g);
+    const digitsCount = numericMatch ? numericMatch.join("").length : 0;
+    if (digitsCount > 4) {
+      setError("El código postal argentino consta de 4 números (ej: 1414 o C1414CAB). No uses más de 4 dígitos.");
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
