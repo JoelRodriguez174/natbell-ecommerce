@@ -49,7 +49,7 @@ def create_access_token(
         settings.jwt_secret_key,
         algorithm=settings.jwt_algorithm,
     )
-    return str(encoded_jwt)
+    return encoded_jwt
 
 
 def decode_access_token(token: str) -> Dict[str, Any]:

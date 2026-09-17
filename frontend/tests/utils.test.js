@@ -1,7 +1,21 @@
 import { describe, it, expect } from "vitest";
-import { formatCurrency, sanitizeQuery, buildQueryString, cn } from "../src/lib/utils";
+import { formatCurrency, formatDate, sanitizeQuery, buildQueryString, cn } from "../src/lib/utils";
 
 describe("Frontend Utils", () => {
+  describe("formatDate", () => {
+    it("formatea correctamente una fecha ISO a string legible", () => {
+      const formatted = formatDate("2026-09-16T12:00:00Z");
+      expect(formatted).toBeTruthy();
+      expect(formatted).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+    });
+
+    it("retorna string vacío ante valores inválidos o nulos", () => {
+      expect(formatDate(null)).toBe("");
+      expect(formatDate(undefined)).toBe("");
+      expect(formatDate("fecha-invalida")).toBe("");
+    });
+  });
+
   describe("formatCurrency", () => {
     it("formatea correctamente números enteros a Pesos Argentinos", () => {
       const result = formatCurrency(12500);

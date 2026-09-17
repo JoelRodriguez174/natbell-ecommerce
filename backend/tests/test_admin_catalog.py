@@ -288,3 +288,86 @@ def test_upload_image_endpoints():
         assert "products" in res_ok.json()["url"]
     finally:
         app.dependency_overrides.clear()
+
+
+def test_create_product_with_subcategory_id_directly():
+    mock_db = _setup_admin_override()
+    token = create_access_token(subject=TEST_ADMIN_ID)
+
+    prod_id = str(uuid4())
+    subcat_id = str(uuid4())
+
+    slug_select = MagicMock()
+    slug_eq = MagicMock()
+    slug_eq.execute.return_value = MagicMock(data=[])
+
+    prod_insert = MagicMock()
+    prod_insert.execute.return_value = MagicMock(
+        data=[
+            {
+                "id": prod_id,
+                "name": "Acondicionador Restaurador",
+                "slug": "acondicionador-restaurador",
+                "subcategory_id": subcat_id,
+                "base_price": 4500.0,
+                "is_active": True,
+            }
+        ]
+    )
+
+    def table_side_effect(name):
+        m = MagicMock()
+        if name == "admin_users":
+            admin_sel = MagicMock()
+            admin_eq = MagicMock()
+            admin_eq.execute.return_value = MagicMock(
+                data=[{"id": TEST_ADMIN_ID, "email": TEST_EMAIL, "name": "Admin"}]
+            )
+            admin_sel.eq.return_value = admin_eq
+            m.select.return_value = admin_sel
+            return m
+        if name == "products":
+            m.select.return_value = slug_select
+            slug_select.eq.return_value = slug_eq
+            m.insert.return_value = prod_insert
+            return m
+        return m
+
+    mock_db.table.side_effect = table_side_effect
+    app.dependency_overrides[get_supabase_client] = lambda: mock_db
+
+    try:
+        res = client.post(
+            "/api/admin/products",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "name": "Acondicionador Restaurador",
+                "subcategory_id": subcat_id,
+                "brand_id": str(uuid4()),
+                "base_price": 4500.0,
+            },
+        )
+        assert res.status_code == 201
+        assert res.json()["id"] == prod_id
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_create_product_missing_categories_fails():
+    mock_db = _setup_admin_override()
+    token = create_access_token(subject=TEST_ADMIN_ID)
+    app.dependency_overrides[get_supabase_client] = lambda: mock_db
+    try:
+        res = client.post(
+            "/api/admin/products",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "name": "Acondicionador Sin Categoria",
+                "brand_id": str(uuid4()),
+                "base_price": 4500.0,
+            },
+        )
+        assert res.status_code == 422
+    finally:
+        app.dependency_overrides.clear()
+

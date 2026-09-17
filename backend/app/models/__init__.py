@@ -1,5 +1,24 @@
 """Módulo de modelos y contratos Pydantic para Los Arrayanes E-commerce."""
 
+from app.models.admin import AdminLoginRequest, AdminLoginResponse, AdminUserResponse
+from app.models.admin_catalog import (
+    AdminProductCreate,
+    AdminProductUpdate,
+    AdminStockUpdate,
+    AdminUploadResponse,
+    AdminVariantCreate,
+    AdminVariantUpdate,
+)
+from app.models.admin_dashboard import (
+    AdminDashboardMetricsResponse,
+    LowStockVariantItem,
+    RecentOrderItem,
+)
+from app.models.admin_orders import (
+    AdminOrderStatusUpdate,
+    AdminShippingZoneCreate,
+    AdminShippingZoneUpdate,
+)
 from app.models.brand import Brand, BrandCreate
 from app.models.catalog import (
     PaginatedProductsResponse,
@@ -42,4 +61,19 @@ __all__ = [
     "ProductListItem",
     "ProductDetailResponse",
     "PaginatedProductsResponse",
+    "AdminLoginRequest",
+    "AdminUserResponse",
+    "AdminLoginResponse",
+    "AdminProductCreate",
+    "AdminProductUpdate",
+    "AdminVariantCreate",
+    "AdminVariantUpdate",
+    "AdminStockUpdate",
+    "AdminUploadResponse",
+    "AdminOrderStatusUpdate",
+    "AdminShippingZoneCreate",
+    "AdminShippingZoneUpdate",
+    "AdminDashboardMetricsResponse",
+    "LowStockVariantItem",
+    "RecentOrderItem",
 ]

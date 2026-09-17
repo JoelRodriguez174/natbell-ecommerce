@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
+from postgrest import CountMethod
 from supabase import Client
 
 from app.models.admin_orders import (
@@ -41,7 +42,7 @@ class AdminOrderService:
         start = (page - 1) * per_page
         end = start + per_page - 1
 
-        query = self.db.table("orders").select("*, order_items(*)", count="exact")
+        query = self.db.table("orders").select("*, order_items(*)", count=CountMethod.exact)
 
         if status:
             query = query.eq("status", status)

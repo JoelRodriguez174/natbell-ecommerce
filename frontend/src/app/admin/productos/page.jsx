@@ -264,7 +264,12 @@ export default function AdminProductosPage() {
                 </tr>
               ) : (
                 products.map((prod) => {
-                  const totalStock = (prod.variants || []).reduce((acc, v) => acc + (v.stock || 0), 0);
+                  const totalStock =
+                    prod.variants && prod.variants.length > 0
+                      ? prod.variants.reduce((acc, v) => acc + (v.stock || 0), 0)
+                      : prod.in_stock
+                      ? "En stock"
+                      : "Agotado";
                   const mainImage = (prod.images && prod.images[0]) || (prod.image_urls && prod.image_urls[0]) || `/products/${prod.slug}.webp`;
 
                   return (
@@ -290,9 +295,9 @@ export default function AdminProductosPage() {
                       </td>
                       <td className="py-3.5 px-4">
                         <p className="font-medium text-zinc-700 dark:text-zinc-300">
-                          {prod.category?.name || "Sin categoría"}
+                          {prod.category_name || prod.category?.name || "Sin categoría"}
                         </p>
-                        <p className="text-[10px] text-zinc-400">{prod.brand?.name || "Sin marca"}</p>
+                        <p className="text-[10px] text-zinc-400">{prod.brand_name || prod.brand?.name || "Sin marca"}</p>
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="font-bold text-zinc-900 dark:text-zinc-100">
@@ -307,10 +312,12 @@ export default function AdminProductosPage() {
                       <td className="py-3.5 px-4">
                         <span
                           className={`font-semibold ${
-                            totalStock <= 5 ? "text-red-500 font-bold" : "text-zinc-700 dark:text-zinc-300"
+                            (typeof totalStock === "number" && totalStock <= 5) || totalStock === "Agotado"
+                              ? "text-red-500 font-bold"
+                              : "text-zinc-700 dark:text-zinc-300"
                           }`}
                         >
-                          {totalStock} un.
+                          {typeof totalStock === "number" ? `${totalStock} un.` : totalStock}
                         </span>
                       </td>
                       <td className="py-3.5 px-4">

@@ -44,15 +44,36 @@ class AdminCatalogService:
             candidate = f"{base}-{suffix}"
             suffix += 1
 
+    async def _resolve_subcategory_id(self, subcategory_id: Optional[UUID], category_id: Optional[UUID]) -> str:
+        if subcategory_id:
+            return str(subcategory_id)
+        if category_id:
+            try:
+                res = (
+                    self.db.table("subcategories")
+                    .select("id")
+                    .eq("category_id", str(category_id))
+                    .limit(1)
+                    .execute()
+                )
+                rows = _as_dict_list(res.data) if res else []
+                if rows and rows[0].get("id"):
+                    return str(rows[0]["id"])
+            except Exception:
+                pass
+            return str(category_id)
+        raise ValueError("Debe proporcionarse subcategory_id o category_id")
+
     async def create_product(self, payload: AdminProductCreate) -> Dict[str, Any]:
         """Crea un nuevo producto en el catálogo junto con sus variantes asociadas."""
         unique_slug = await self._resolve_unique_slug(payload.name)
+        resolved_subcat_id = await self._resolve_subcategory_id(payload.subcategory_id, payload.category_id)
 
         prod_record = {
             "name": payload.name,
             "slug": unique_slug,
             "description": payload.description,
-            "category_id": str(payload.category_id),
+            "subcategory_id": resolved_subcat_id,
             "brand_id": str(payload.brand_id),
             "base_price": float(payload.base_price),
             "sale_price": float(payload.sale_price) if payload.sale_price is not None else None,
@@ -98,8 +119,10 @@ class AdminCatalogService:
             update_data["slug"] = await self._resolve_unique_slug(payload.name, current_product_id=product_id)
         if payload.description is not None:
             update_data["description"] = payload.description
-        if payload.category_id is not None:
-            update_data["category_id"] = str(payload.category_id)
+        if payload.subcategory_id is not None or payload.category_id is not None:
+            update_data["subcategory_id"] = await self._resolve_subcategory_id(
+                payload.subcategory_id, payload.category_id
+            )
         if payload.brand_id is not None:
             update_data["brand_id"] = str(payload.brand_id)
         if payload.base_price is not None:

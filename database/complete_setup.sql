@@ -139,6 +139,7 @@ CREATE TABLE IF NOT EXISTS orders (
     subtotal DECIMAL(12, 2) NOT NULL CHECK (subtotal > 0),
     total DECIMAL(12, 2) NOT NULL CHECK (total > 0),
     notes TEXT,
+    tracking_number VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
