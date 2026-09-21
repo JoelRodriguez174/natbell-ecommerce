@@ -61,3 +61,22 @@ async def update_order_status(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error actualizando orden: {exc}")
+
+
+@router.post(
+    "/{order_number}/generate-andreani-shipment",
+    summary="Generar etiqueta/código de seguimiento con Andreani PyME",
+)
+async def generate_andreani_shipment(
+    order_number: str,
+    _current_admin: AdminUserResponse = Depends(get_current_admin),
+    db: Client = Depends(get_supabase_client),
+) -> Dict[str, Any]:
+    service = AdminOrderService(db)
+    try:
+        return await service.generate_andreani_shipment(order_number)
+    except KeyError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error generando envío en Andreani: {exc}")
+

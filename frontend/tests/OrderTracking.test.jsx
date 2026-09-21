@@ -43,4 +43,25 @@ describe("OrderTrackingView (Natbell)", () => {
     const elements = screen.getAllByText(/pago acreditado/i);
     expect(elements.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("renders Andreani tracking card and link when tracking_number exists", () => {
+    const orderWithTracking = {
+      ...sampleOrder,
+      status: "shipped",
+      tracking_number: "ANDR_999888",
+      tracking_url: "https://www.andreani.com/#!/informacionEnvio/ANDR_999888",
+    };
+
+    render(<OrderTrackingView order={orderWithTracking} />);
+
+    expect(screen.getByText(/envío gestionado por andreani/i)).toBeInTheDocument();
+    expect(screen.getByText("ANDR_999888")).toBeInTheDocument();
+    const trackLink = screen.getByRole("link", { name: /rastrear paquete en andreani/i });
+    expect(trackLink).toBeInTheDocument();
+    expect(trackLink).toHaveAttribute(
+      "href",
+      "https://www.andreani.com/#!/informacionEnvio/ANDR_999888"
+    );
+  });
 });
+

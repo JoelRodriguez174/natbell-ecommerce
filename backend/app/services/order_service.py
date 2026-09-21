@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from uuid import UUID
 
 from app.config import settings
@@ -16,36 +16,17 @@ from app.models.order import (
 )
 from app.services.payment_service import PaymentProvider, get_payment_provider
 from app.utils.order_number import generate_order_number, parse_order_sequence
+from app.utils.postgrest import (
+    as_dict_list as _as_dict_list,
+)
+from app.utils.postgrest import (
+    as_first_dict as _as_first_dict,
+)
+from app.utils.postgrest import (
+    parse_datetime as _parse_datetime,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def _as_dict_list(data: Any) -> List[Dict[str, Any]]:
-    """Convierte de forma segura datos de PostgREST en una lista de diccionarios tipados."""
-    if isinstance(data, list):
-        return [item for item in data if isinstance(item, dict)]
-    return []
-
-
-def _as_first_dict(data: Any) -> Dict[str, Any]:
-    """Obtiene de forma segura el primer diccionario de un payload relacional de PostgREST."""
-    if isinstance(data, list) and data and isinstance(data[0], dict):
-        return data[0]
-    if isinstance(data, dict):
-        return data
-    return {}
-
-
-def _parse_datetime(val: Any) -> datetime:
-    """Parsea de forma robusta strings de fecha ISO provenientes de Supabase/Postgres."""
-    if isinstance(val, datetime):
-        return val
-    if isinstance(val, str):
-        try:
-            return datetime.fromisoformat(val.replace("Z", "+00:00"))
-        except Exception:
-            pass
-    return datetime.now()
 
 
 class OrderService:
@@ -236,6 +217,9 @@ class OrderService:
             for it in items_raw
         ]
 
+        tracking_num = str(order_data["tracking_number"]).strip() if order_data.get("tracking_number") else None
+        tracking_url = f"https://www.andreani.com/#!/informacionEnvio/{tracking_num}" if tracking_num else None
+
         return OrderStatusResponse(
             order_number=str(order_data["order_number"]),
             status=OrderStatus(str(order_data["status"])),
@@ -248,9 +232,39 @@ class OrderService:
             shipping_cost=Decimal(str(order_data.get("shipping_cost", "0.00"))),
             subtotal=Decimal(str(order_data["subtotal"])),
             total=Decimal(str(order_data["total"])),
+            tracking_number=tracking_num,
+            tracking_url=tracking_url,
             created_at=_parse_datetime(order_data.get("created_at")),
             items=items,
         )
+
+    async def delete_draft_order(self, order_number: str) -> bool:
+        """
+        Elimina un intento de compra que quedó en estado 'pending' cuando el cliente
+        retrocede, cancela o no concreta el pago.
+        Si la orden ya fue abonada o despachada, se rechaza la eliminación.
+        """
+        order_res = (
+            self.db.table("orders")
+            .select("id, status")
+            .eq("order_number", order_number)
+            .execute()
+        )
+        order_data = _as_first_dict(order_res.data) if order_res else {}
+        if not order_data or not order_data.get("id"):
+            return True
+
+        current_status = str(order_data.get("status"))
+        if current_status != OrderStatus.PENDING.value:
+            raise ValueError(
+                f"No es posible descartar una orden con estado '{current_status}'. Solo se descartan órdenes pendientes no concretadas."
+            )
+
+        order_id = str(order_data["id"])
+        self.db.table("order_items").delete().eq("order_id", order_id).execute()
+        self.db.table("orders").delete().eq("id", order_id).execute()
+        logger.info(f"Intento de compra pendiente {order_number} eliminado correctamente.")
+        return True
 
     async def mark_order_paid(
         self,

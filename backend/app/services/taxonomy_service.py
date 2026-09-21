@@ -1,26 +1,12 @@
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from supabase import Client
 
 from app.models.brand import Brand
 from app.models.category import Category, Subcategory
 from app.utils.cache import cached
-
-
-def _as_dict_list(data: Any) -> List[Dict[str, Any]]:
-    """Convierte de forma segura datos de PostgREST en una lista de diccionarios tipados."""
-    if isinstance(data, list):
-        return [item for item in data if isinstance(item, dict)]
-    return []
-
-
-def _as_first_dict(data: Any) -> Optional[Dict[str, Any]]:
-    """Obtiene de forma segura el primer diccionario de un payload de PostgREST."""
-    if isinstance(data, list) and data and isinstance(data[0], dict):
-        return data[0]
-    if isinstance(data, dict):
-        return data
-    return None
+from app.utils.postgrest import as_dict_list as _as_dict_list
+from app.utils.postgrest import as_first_dict as _as_first_dict
 
 
 class TaxonomyService:

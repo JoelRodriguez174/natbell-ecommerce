@@ -123,3 +123,19 @@ export async function getOrderStatus(orderNumber) {
   if (!orderNumber) throw new Error("Número de orden requerido");
   return apiFetch(`/api/orders/${encodeURIComponent(orderNumber)}/status`);
 }
+
+/**
+ * Descarta un intento de compra pendiente cuando el cliente cancela o retrocede
+ */
+export async function deleteDraftOrder(orderNumber) {
+  if (!orderNumber) return null;
+  try {
+    return await apiFetch(`/api/orders/${encodeURIComponent(orderNumber)}`, {
+      method: "DELETE",
+    });
+  } catch (err) {
+    // Si la orden ya no existe o falló, no interrumpir la navegación del usuario
+    console.warn("No se pudo descartar orden preliminar:", err);
+    return null;
+  }
+}

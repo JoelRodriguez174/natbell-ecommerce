@@ -1,13 +1,25 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { XCircle, RefreshCw, ShoppingCart } from "lucide-react";
+import { deleteDraftOrder } from "@/lib/api";
 
 function PagoFallidoContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams?.get("order") || searchParams?.get("external_reference");
+
+  useEffect(() => {
+    if (orderNumber) {
+      deleteDraftOrder(orderNumber);
+      try {
+        sessionStorage.removeItem("natbell_pending_order");
+      } catch {
+        // Ignore sessionStorage errors
+      }
+    }
+  }, [orderNumber]);
 
   return (
     <div className="max-w-md w-full text-center bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-8 sm:p-10 shadow-xl shadow-zinc-900/5">
@@ -22,16 +34,19 @@ function PagoFallidoContent() {
         El Pago no se pudo completar
       </h1>
 
-      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6">
-        La entidad bancaria o Mercado Pago rechazó la operación (por fondos insuficientes, datos incorrectos de la tarjeta o límite de compra). No te preocupes, no se ha efectuado ningún cobro.
+      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-4">
+        La entidad bancaria o Mercado Pago rechazó la operación o se canceló el intento de pago. No te preocupes, no se ha efectuado ningún cobro.
       </p>
 
       {orderNumber && (
-        <div className="mb-8 p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-xs">
-          <span className="text-zinc-500 block mb-0.5">Identificador de tu Pedido:</span>
+        <div className="mb-6 p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-xs">
+          <span className="text-zinc-500 block mb-0.5">Identificador descartado:</span>
           <span className="font-mono text-sm font-bold text-zinc-900 dark:text-zinc-100">
             {orderNumber}
           </span>
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1.5 leading-normal">
+            El intento no pagado fue descartado del sistema. Tus artículos permanecen seguros en tu carrito.
+          </p>
         </div>
       )}
 

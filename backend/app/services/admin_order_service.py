@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
@@ -10,19 +11,12 @@ from app.models.admin_orders import (
     AdminShippingZoneCreate,
     AdminShippingZoneUpdate,
 )
+from app.services.andreani_service import get_andreani_service
+from app.services.email_service import get_email_service
+from app.utils.postgrest import as_dict_list as _as_dict_list
+from app.utils.postgrest import as_first_dict as _as_first_dict
 
-
-def _as_dict_list(raw_data: Any) -> List[Dict[str, Any]]:
-    if isinstance(raw_data, list):
-        return [item for item in raw_data if isinstance(item, dict)]
-    if isinstance(raw_data, dict):
-        return [raw_data]
-    return []
-
-
-def _as_first_dict(raw_data: Any) -> Dict[str, Any]:
-    items = _as_dict_list(raw_data)
-    return items[0] if items else {}
+logger = logging.getLogger("natbell.admin_orders")
 
 
 class AdminOrderService:
@@ -37,6 +31,26 @@ class AdminOrderService:
         per_page: int = 20,
     ) -> Dict[str, Any]:
         """Obtiene el listado paginado de órdenes de compra con filtros."""
+        # Limpieza automática de órdenes pendientes abandonadas (+2 horas de antigüedad)
+        try:
+            from datetime import timedelta
+            cutoff = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+            abandoned_res = (
+                self.db.table("orders")
+                .select("id")
+                .eq("status", "pending")
+                .lt("created_at", cutoff)
+                .execute()
+            )
+            abandoned_rows = _as_dict_list(abandoned_res.data) if abandoned_res else []
+            abandoned_ids = [str(r["id"]) for r in abandoned_rows if "id" in r]
+            if abandoned_ids:
+                self.db.table("order_items").delete().in_("order_id", abandoned_ids).execute()
+                self.db.table("orders").delete().in_("id", abandoned_ids).execute()
+                logger.info("Se purgaron %d órdenes pendientes abandonadas", len(abandoned_ids))
+        except Exception as exc:
+            logger.debug("Aviso purgando órdenes abandonadas: %s", exc)
+
         page = max(1, page)
         per_page = max(1, min(100, per_page))
         start = (page - 1) * per_page
@@ -44,7 +58,9 @@ class AdminOrderService:
 
         query = self.db.table("orders").select("*, order_items(*)", count=CountMethod.exact)
 
-        if status:
+        if status == "confirmed":
+            query = query.in_("status", ["paid", "shipped", "delivered"])
+        elif status and status != "all":
             query = query.eq("status", status)
 
         if search:
@@ -107,7 +123,82 @@ class AdminOrderService:
             .execute()
         )
         updated = _as_first_dict(res.data) if res else {}
+
+        # Notificar al cliente si se despacha el paquete y se provee tracking
+        if payload.status.value == "shipped" and payload.tracking_number:
+            try:
+                full_order = await self.get_order_detail(order_number)
+                customer_email = full_order.get("customer_email")
+                customer_name = full_order.get("customer_name") or "Cliente"
+                tracking_num = payload.tracking_number.strip()
+                tracking_url = f"https://www.andreani.com/#!/informacionEnvio/{tracking_num}"
+                if customer_email:
+                    email_service = get_email_service()
+                    await email_service.send_shipping_notification_email(
+                        to_email=customer_email,
+                        customer_name=customer_name,
+                        order_number=order_number,
+                        tracking_number=tracking_num,
+                        tracking_url=tracking_url,
+                    )
+            except Exception as exc:
+                logger.error("Error enviando email de despacho para orden %s: %s", order_number, exc)
+
         return updated or update_data
+
+    async def generate_andreani_shipment(self, order_number: str) -> Dict[str, Any]:
+        """
+        Genera la imposición del envío en Andreani PyME ACOM,
+        obtiene el tracking number asignado, actualiza la orden a 'shipped',
+        y envía el email de notificación al cliente con el código de seguimiento.
+        """
+        order = await self.get_order_detail(order_number)
+
+        andreani_service = get_andreani_service()
+        shipment_result = andreani_service.register_shipment(order)
+
+        tracking_number = shipment_result.get("tracking_number") or ""
+        tracking_url = shipment_result.get("tracking_url") or (
+            f"https://www.andreani.com/#!/informacionEnvio/{tracking_number}" if tracking_number else ""
+        )
+
+        update_data: Dict[str, Any] = {
+            "status": "shipped",
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if tracking_number:
+            update_data["tracking_number"] = tracking_number
+
+        res = (
+            self.db.table("orders")
+            .update(update_data)
+            .eq("order_number", order_number)
+            .execute()
+        )
+        updated = _as_first_dict(res.data) if res else {}
+
+        customer_email = order.get("customer_email")
+        customer_name = order.get("customer_name") or "Cliente"
+        if customer_email and tracking_number:
+            try:
+                email_service = get_email_service()
+                await email_service.send_shipping_notification_email(
+                    to_email=customer_email,
+                    customer_name=customer_name,
+                    order_number=order_number,
+                    tracking_number=tracking_number,
+                    tracking_url=tracking_url,
+                )
+            except Exception as exc:
+                logger.error("Error enviando email de despacho Andreani para %s: %s", order_number, exc)
+
+        return {
+            "order_number": order_number,
+            "status": "shipped",
+            "tracking_number": tracking_number,
+            "tracking_url": tracking_url,
+            "order": updated or {**order, **update_data},
+        }
 
 
 class AdminShippingService:

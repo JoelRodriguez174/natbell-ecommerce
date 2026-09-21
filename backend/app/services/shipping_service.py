@@ -11,6 +11,7 @@ from supabase import Client
 
 from app.config import settings
 from app.models.shipping import ShippingQuote
+from app.utils.postgrest import as_dict_list as _as_dict_list
 
 logger = logging.getLogger(__name__)
 
@@ -38,22 +39,6 @@ DEFAULT_ZONES_CONFIG: List[Dict[str, Any]] = [
         "description": "Despacho a todas las provincias de la República Argentina",
     },
 ]
-
-
-def _as_dict_list(data: Any) -> List[Dict[str, Any]]:
-    """Convierte de forma segura datos de PostgREST en una lista de diccionarios tipados."""
-    if isinstance(data, list):
-        return [item for item in data if isinstance(item, dict)]
-    return []
-
-
-def _as_first_dict(data: Any) -> Optional[Dict[str, Any]]:
-    """Obtiene de forma segura el primer diccionario de un payload de PostgREST."""
-    if isinstance(data, list) and data and isinstance(data[0], dict):
-        return data[0]
-    if isinstance(data, dict):
-        return data
-    return None
 
 
 def extract_numeric_postal_code(postal_code: str) -> int:

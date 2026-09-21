@@ -1,6 +1,6 @@
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List
+from typing import Dict
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -20,17 +20,10 @@ from app.models.admin import (
     AdminVerifyEmailRequest,
 )
 from app.services.email_service import EmailService, get_email_service
+from app.utils.postgrest import as_dict_list as _as_dict_list
 from app.utils.security import create_access_token, hash_password, verify_password
 
 router = APIRouter(prefix="/api/admin/auth", tags=["Admin Auth"])
-
-
-def _as_dict_list(raw_data: Any) -> List[Dict[str, Any]]:
-    if isinstance(raw_data, list):
-        return [item for item in raw_data if isinstance(item, dict)]
-    if isinstance(raw_data, dict):
-        return [raw_data]
-    return []
 
 
 def _generate_otp_code() -> str:

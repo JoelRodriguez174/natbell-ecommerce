@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import List
 from uuid import UUID
 
 from supabase import Client
@@ -11,25 +11,8 @@ from app.models.admin_dashboard import (
     RecentOrderItem,
 )
 from app.models.order import OrderStatus
-
-
-def _as_dict_list(raw_data: Any) -> List[Dict[str, Any]]:
-    if isinstance(raw_data, list):
-        return [item for item in raw_data if isinstance(item, dict)]
-    if isinstance(raw_data, dict):
-        return [raw_data]
-    return []
-
-
-def _parse_datetime(val: Any) -> Optional[datetime]:
-    if not val:
-        return None
-    if isinstance(val, datetime):
-        return val
-    try:
-        return datetime.fromisoformat(str(val).replace("Z", "+00:00"))
-    except Exception:
-        return None
+from app.utils.postgrest import as_dict_list as _as_dict_list
+from app.utils.postgrest import parse_datetime as _parse_datetime
 
 
 class AdminDashboardService:

@@ -4,12 +4,14 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f4f5f7;
+  --background: #fdfafb;
   --foreground: #111827;
-  --primary: #be123c;
-  --primary-hover: #9f1239;
+  --primary: #de1b76;
+  --primary-hover: #c21464;
+  --secondary: #5eb82d;
+  --secondary-hover: #4e9c24;
   --surface: #ffffff;
-  --border: #e5e7eb;
+  --border: #f1e4e8;
   --muted: #6b7280;
   --card: #ffffff;
 }

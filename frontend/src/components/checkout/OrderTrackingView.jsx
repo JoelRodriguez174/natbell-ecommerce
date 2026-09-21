@@ -1,4 +1,16 @@
-import { CheckCircle2, Clock, Truck, PackageCheck, AlertCircle } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import {
+  CheckCircle2,
+  Clock,
+  Truck,
+  PackageCheck,
+  AlertCircle,
+  ExternalLink,
+  Copy,
+  Check,
+} from "lucide-react";
 import { formatCurrency } from "../../lib/utils";
 
 const STEPS = [
@@ -25,10 +37,20 @@ function getStepIndex(status) {
 }
 
 export default function OrderTrackingView({ order }) {
+  const [copied, setCopied] = useState(false);
+
   if (!order) return null;
 
   const currentIndex = getStepIndex(order.status);
   const isCancelled = order.status === "cancelled";
+
+  const handleCopy = () => {
+    if (order.tracking_number && typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(order.tracking_number);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
@@ -101,6 +123,59 @@ export default function OrderTrackingView({ order }) {
           </div>
         )}
       </div>
+
+      {/* Tarjeta de seguimiento oficial Andreani */}
+      {order.tracking_number && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-2xl border border-blue-200 dark:border-blue-800/60 p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-600/10 text-blue-700 dark:text-blue-300 border border-blue-600/20">
+                <Truck className="w-3.5 h-3.5" />
+                <span>Envío gestionado por Andreani</span>
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                Código de seguimiento oficial:
+              </p>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-xl font-black text-blue-950 dark:text-blue-100 tracking-wider">
+                  {order.tracking_number}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                  title="Copiar código al portapapeles"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-600 font-semibold">¡Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-zinc-500" />
+                      <span>Copiar</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <a
+              href={
+                order.tracking_url ||
+                `https://www.andreani.com/#!/informacionEnvio/${order.tracking_number}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-sm font-semibold shadow-md shadow-blue-600/20 transition-all"
+            >
+              <span>Rastrear paquete en Andreani</span>
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Detalle de productos y entrega */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">

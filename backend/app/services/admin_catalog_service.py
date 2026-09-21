@@ -8,20 +8,9 @@ from app.models.admin_catalog import (
     AdminProductCreate,
     AdminProductUpdate,
 )
+from app.utils.postgrest import as_dict_list as _as_dict_list
+from app.utils.postgrest import as_first_dict as _as_first_dict
 from app.utils.slug import slugify
-
-
-def _as_dict_list(raw_data: Any) -> List[Dict[str, Any]]:
-    if isinstance(raw_data, list):
-        return [item for item in raw_data if isinstance(item, dict)]
-    if isinstance(raw_data, dict):
-        return [raw_data]
-    return []
-
-
-def _as_first_dict(raw_data: Any) -> Dict[str, Any]:
-    items = _as_dict_list(raw_data)
-    return items[0] if items else {}
 
 
 class AdminCatalogService:

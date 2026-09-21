@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardFooter } from "@heroui/react";
 import { Package, Truck } from "lucide-react";
@@ -46,12 +47,13 @@ export default function ProductCard({ product }) {
       {/* Contenedor de Imagen de Producto: proporción más ancha y menos alta con imagen más chica */}
       <CardContent className="p-0 overflow-hidden relative aspect-[4/3] w-full bg-white flex items-center justify-center border-b border-gray-100">
         {primaryImage ? (
-          <img
+          <Image
             src={primaryImage}
             alt={name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             onError={() => setImageError(true)}
-            className="h-full w-full object-contain p-5 transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
+            className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <div className="flex flex-col items-center justify-center text-gray-400 gap-1.5 p-4">

@@ -16,6 +16,7 @@ export default function ShippingAddressStep({
   postalCodeValue = "",
   shippingQuote = null,
   isQuoting = false,
+  quoteError = null,
   onQuotePostalCode = () => {},
 }) {
   const [selectedProvince, setSelectedProvince] = useState(
@@ -335,6 +336,14 @@ export default function ShippingAddressStep({
             <p className="text-xs text-red-500 mt-1">
               {getErrorMessage("shipping_postal_code")}
             </p>
+          )}
+
+          {/* Error reactivo de cotización (sin cobertura o no encontrado) */}
+          {quoteError && !cpWarning && (
+            <div className="mt-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 flex items-center gap-2 text-xs text-red-600 dark:text-red-400 animate-in fade-in duration-150">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+              <span>{quoteError}</span>
+            </div>
           )}
 
           {/* Cotización calculada exitosa */}

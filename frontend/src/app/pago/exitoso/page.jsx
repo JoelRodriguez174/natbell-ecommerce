@@ -1,13 +1,28 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight, Package } from "lucide-react";
+import { useCartStore } from "../../../store/useCartStore";
 
 function PagoExitosoContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams?.get("order") || searchParams?.get("external_reference");
+  const clearCart = useCartStore((state) => state.clearCart);
+
+  useEffect(() => {
+    clearCart();
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("natbell_checkout_draft");
+        sessionStorage.removeItem("natbell_pending_order");
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [clearCart]);
+
 
   return (
     <div className="max-w-md w-full text-center bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-8 sm:p-10 shadow-xl shadow-zinc-900/5">

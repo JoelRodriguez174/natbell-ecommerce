@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
@@ -7,20 +7,13 @@ from supabase import Client
 
 from app.database import get_supabase_client
 from app.models.admin import AdminUserResponse
+from app.utils.postgrest import as_dict_list as _as_dict_list
 from app.utils.security import decode_access_token
 
 security_scheme = HTTPBearer(
     auto_error=False,
     description="Ingrese el token JWT de administrador (formato: Bearer <token>)",
 )
-
-
-def _as_dict_list(raw_data: Any) -> List[Dict[str, Any]]:
-    if isinstance(raw_data, list):
-        return [item for item in raw_data if isinstance(item, dict)]
-    if isinstance(raw_data, dict):
-        return [raw_data]
-    return []
 
 
 async def get_current_admin(

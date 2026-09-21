@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,11 +22,14 @@ export default function ProductGallery({ images = [], productName = "Producto" }
       {/* Visor Principal integrado (sin marco propio, tamaño moderado) */}
       <div className="relative w-full h-72 sm:h-84 md:h-96 flex items-center justify-center bg-white overflow-hidden p-4">
         {currentImage && !hasCurrentError ? (
-          <img
+          <Image
             src={currentImage}
             alt={`${productName} - Vista ${selectedIndex + 1}`}
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 50vw"
             onError={() => handleImageError(selectedIndex)}
-            className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
+            className="object-contain p-4 transition-transform duration-300 hover:scale-105"
           />
         ) : (
           <div className="flex flex-col items-center justify-center text-gray-400 gap-2">
@@ -52,14 +56,16 @@ export default function ProductGallery({ images = [], productName = "Producto" }
                 className={cn(
                   "relative w-16 h-16 rounded-xl overflow-hidden border p-1.5 bg-white shrink-0 transition-all duration-150 cursor-pointer flex items-center justify-center",
                   isSelected
-                    ? "border-2 border-black shadow-xs ring-1 ring-black/10"
+                    ? "border-2 border-[#DE1B76] shadow-xs ring-1 ring-[#DE1B76]/20"
                     : "border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-400"
                 )}
               >
                 {!isError ? (
-                  <img
+                  <Image
                     src={img}
                     alt={`${productName} miniatura ${idx + 1}`}
+                    width={64}
+                    height={64}
                     onError={() => handleImageError(idx)}
                     className="w-full h-full object-contain"
                   />

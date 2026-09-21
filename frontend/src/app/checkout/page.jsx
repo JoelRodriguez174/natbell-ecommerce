@@ -2,29 +2,36 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, AlertCircle } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useCartStore } from "../../store/useCartStore";
-import { getShippingQuote, createOrder } from "../../lib/api";
+import { getShippingQuote, createOrder, deleteDraftOrder } from "../../lib/api";
 import EmptyCheckout from "../../components/checkout/EmptyCheckout";
 import CustomerInfoStep from "../../components/checkout/CustomerInfoStep";
 import ShippingAddressStep from "../../components/checkout/ShippingAddressStep";
 import OrderSummary from "../../components/checkout/OrderSummary";
 
 export default function CheckoutPage() {
-  const { items, getSubtotal, clearCart } = useCartStore();
+  const router = useRouter();
+  const { items, getSubtotal } = useCartStore();
   const [hasMounted, setHasMounted] = useState(false);
   const [shippingQuote, setShippingQuote] = useState(null);
   const [isQuoting, setIsQuoting] = useState(false);
+  const [quoteError, setQuoteError] = useState(null);
   const [submitError, setSubmitError] = useState(null);
+
+  const CHECKOUT_DRAFT_KEY = "natbell_checkout_draft";
 
   const {
     register,
     handleSubmit,
+    control,
     watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm({
+    mode: "onChange",
     defaultValues: {
       customer_name: "",
       customer_email: "",
@@ -37,29 +44,98 @@ export default function CheckoutPage() {
     },
   });
 
-  const postalCode = watch("shipping_postal_code");
+  const postalCode = useWatch({ control, name: "shipping_postal_code" });
+  const formValues = useWatch({ control });
 
+  // Al montar en cliente, restaurar borrador guardado en localStorage
   useEffect(() => {
     setHasMounted(true);
-  }, []);
+    try {
+      const saved = localStorage.getItem(CHECKOUT_DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        Object.entries(parsed).forEach(([key, val]) => {
+          if (val) setValue(key, val, { shouldValidate: true });
+        });
+      }
+    } catch (err) {
+      console.warn("No se pudo cargar el borrador de compra:", err);
+    }
+  }, [setValue]);
+
+  // Persistir cambios del formulario en localStorage en tiempo real
+  useEffect(() => {
+    if (!hasMounted) return;
+    try {
+      localStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(formValues));
+    } catch (err) {
+      // ignore
+    }
+  }, [formValues, hasMounted]);
 
   const handleQuotePostalCode = async (cp) => {
-    if (!cp || cp.length < 4) return;
+    if (!cp || cp.trim().length < 4) {
+      setShippingQuote(null);
+      setQuoteError(null);
+      return;
+    }
     setIsQuoting(true);
+    setQuoteError(null);
     try {
-      const quote = await getShippingQuote(cp);
+      const quote = await getShippingQuote(cp.trim());
       setShippingQuote(quote);
+      setQuoteError(null);
     } catch (err) {
-      console.warn("No se pudo obtener cotización automática para el CP:", err.message);
+      setShippingQuote(null);
+      setQuoteError(
+        err.message || "No encontramos tarifas de entrega para este código postal"
+      );
     } finally {
       setIsQuoting(false);
     }
   };
 
+  // Refetch reactivo con debounce al tipear el código postal (sin necesidad de apretar botones)
+  useEffect(() => {
+    if (!postalCode) {
+      setShippingQuote(null);
+      setQuoteError(null);
+      return;
+    }
+
+    const trimmed = postalCode.trim().toUpperCase();
+    const numericMatch = trimmed.match(/\d+/g);
+    const digitsCount = numericMatch ? numericMatch.join("").length : 0;
+
+    // Código postal argentino: 4 dígitos o formato CPA
+    if (digitsCount === 4 && /^[A-Z]?\d{4}[A-Z]{0,3}$/i.test(trimmed)) {
+      const debounceTimer = setTimeout(() => {
+        handleQuotePostalCode(trimmed);
+      }, 400);
+      return () => clearTimeout(debounceTimer);
+    } else {
+      setShippingQuote(null);
+      if (digitsCount > 4) {
+        setQuoteError("El código postal argentino consta de 4 números.");
+      } else {
+        setQuoteError(null);
+      }
+    }
+  }, [postalCode]);
+
   const onSubmit = async (data) => {
     setSubmitError(null);
 
     try {
+      // Si existía un intento previo pendiente sin abonar, descartarlo limpiamente
+      if (typeof window !== "undefined") {
+        const prevPending = sessionStorage.getItem("natbell_pending_order");
+        if (prevPending) {
+          deleteDraftOrder(prevPending);
+          sessionStorage.removeItem("natbell_pending_order");
+        }
+      }
+
       const orderItems = items.map((item) => ({
         product_variant_id: item.variantId || item.id,
         quantity: item.quantity,
@@ -81,9 +157,12 @@ export default function CheckoutPage() {
       const response = await createOrder(payload);
 
       if (response && response.checkout_url) {
-        clearCart();
-        // Redirección inmediata a Mercado Pago Checkout Pro o Simulador
-        window.location.href = response.checkout_url;
+        if (response.order_number && typeof window !== "undefined") {
+          sessionStorage.setItem("natbell_pending_order", response.order_number);
+        }
+        // Redirección inmediata a Mercado Pago Checkout Pro o Simulador sin vaciar carrito
+        // El carrito solo se limpia cuando se concreta la compra en /pago/exitoso
+        window.location.assign(response.checkout_url);
       } else {
         throw new Error("No se recibió la URL de pago de la pasarela.");
       }
@@ -156,6 +235,7 @@ export default function CheckoutPage() {
                 postalCodeValue={postalCode}
                 shippingQuote={shippingQuote}
                 isQuoting={isQuoting}
+                quoteError={quoteError}
                 onQuotePostalCode={handleQuotePostalCode}
               />
             </div>
@@ -169,6 +249,26 @@ export default function CheckoutPage() {
                 isLoading={isSubmitting}
                 onSubmit={handleSubmit(onSubmit)}
               />
+
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm("¿Seguro que deseás cancelar tu compra y vaciar el carrito?")) {
+                      useCartStore.getState().clearCart();
+                      try {
+                        localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+                      } catch (e) {
+                        // ignore
+                      }
+                      router.push("/productos");
+                    }
+                  }}
+                  className="text-xs text-zinc-400 hover:text-red-500 underline transition-colors cursor-pointer"
+                >
+                  Cancelar compra y vaciar carrito
+                </button>
+              </div>
             </div>
           </div>
         </form>

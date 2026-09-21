@@ -85,3 +85,29 @@ def test_get_email_service():
     """get_email_service returns EmailService instance."""
     service = get_email_service()
     assert isinstance(service, EmailService)
+
+
+@pytest.mark.anyio
+async def test_email_service_shipping_notification():
+    """Shipping notification email contains tracking number and Andreani link."""
+    mock_response = httpx.Response(200, json={"id": "msg_ship_123"})
+
+    with patch("app.services.email_service.settings.resend_api_key", "re_test_key_123"), \
+         patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_post.return_value = mock_response
+
+        service = EmailService()
+        sent = await service.send_shipping_notification_email(
+            to_email="cliente@gmail.com",
+            customer_name="Laura Rodriguez",
+            order_number="ORD-2026-00001",
+            tracking_number="ANDR999888777",
+            tracking_url="https://www.andreani.com/#!/informacionEnvio/ANDR999888777",
+        )
+
+        assert sent is True
+        mock_post.assert_called_once()
+        call_kwargs = mock_post.call_args.kwargs
+        assert "ANDR999888777" in call_kwargs["json"]["html"]
+        assert "https://www.andreani.com/#!/informacionEnvio/ANDR999888777" in call_kwargs["json"]["html"]
+

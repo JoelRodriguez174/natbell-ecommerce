@@ -120,6 +120,8 @@ class OrderStatusResponse(BaseModel):
     shipping_cost: Decimal
     subtotal: Decimal
     total: Decimal
+    tracking_number: Optional[str] = None
+    tracking_url: Optional[str] = None
     created_at: datetime
     items: List[OrderItem] = Field(default_factory=list)
 

@@ -15,24 +15,10 @@ from app.models.catalog import (
 )
 from app.models.product import ProductVariant
 from app.utils.cache import cached
+from app.utils.postgrest import as_dict_list as _as_dict_list
+from app.utils.postgrest import as_first_dict as _as_first_dict
 
 logger = logging.getLogger(__name__)
-
-
-def _as_dict_list(data: Any) -> List[Dict[str, Any]]:
-    """Convierte de forma segura el payload de PostgREST en una lista de diccionarios."""
-    if isinstance(data, list):
-        return [item for item in data if isinstance(item, dict)]
-    return []
-
-
-def _as_first_dict(data: Any) -> Optional[Dict[str, Any]]:
-    """Obtiene de forma segura el primer diccionario de un payload de PostgREST."""
-    if isinstance(data, list) and data and isinstance(data[0], dict):
-        return data[0]
-    if isinstance(data, dict):
-        return data
-    return None
 
 
 class CatalogService:

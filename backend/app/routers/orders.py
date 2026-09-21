@@ -63,3 +63,28 @@ async def get_order_status(order_number: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error interno al consultar el pedido.",
         )
+
+
+@router.delete(
+    "/{order_number}",
+    status_code=status.HTTP_200_OK,
+    summary="Descartar un intento de compra no concretado",
+    description="Elimina la orden y sus items si aún se encuentra en estado 'pending'.",
+)
+async def delete_draft_order(order_number: str):
+    service = OrderService()
+    try:
+        await service.delete_draft_order(order_number)
+        return {"status": "deleted", "order_number": order_number}
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
+    except Exception as exc:
+        logger.error(f"Error al eliminar intento de compra {order_number}: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno al descartar el pedido.",
+        )
+

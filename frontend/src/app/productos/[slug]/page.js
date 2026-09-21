@@ -260,9 +260,37 @@ export default function ProductDetailPage({ params }) {
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-9 text-center text-sm font-bold text-gray-900 select-none">
-                      {quantity}
-                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      max={availableStock}
+                      value={quantity}
+                      disabled={isOutOfStock}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "") return;
+                        const parsed = parseInt(val, 10);
+                        if (isNaN(parsed)) return;
+                        if (parsed > availableStock) {
+                          setQuantity(availableStock);
+                        } else if (parsed <= 0) {
+                          setQuantity(1);
+                        } else {
+                          setQuantity(parsed);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const parsed = parseInt(e.target.value, 10);
+                        if (isNaN(parsed) || parsed < 1) {
+                          setQuantity(1);
+                        } else if (parsed > availableStock) {
+                          setQuantity(availableStock);
+                        }
+                      }}
+                      className="w-10 text-center text-sm font-bold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-amber-500 rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                      aria-label="Cantidad a comprar"
+                      data-testid="product-qty-input"
+                    />
                     <button
                       type="button"
                       disabled={quantity >= availableStock || isOutOfStock}

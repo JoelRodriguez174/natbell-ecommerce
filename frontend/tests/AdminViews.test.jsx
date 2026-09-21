@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AdminDashboardPage from "../src/app/admin/page";
 import AdminProductosPage from "../src/app/admin/productos/page";
+import AdminPedidosPage from "../src/app/admin/pedidos/page";
 import { useAdminAuthStore } from "../src/store/useAdminAuthStore";
 
 describe("Admin Views", () => {
@@ -126,4 +127,144 @@ describe("Admin Views", () => {
       expect(screen.getByText("Guardar Producto")).toBeInTheDocument();
     });
   });
+
+  it("renderiza gestión de pedidos y permite generar código de seguimiento con Andreani", async () => {
+    const mockOrders = [
+      {
+        id: "ord-uuid-1",
+        order_number: "ORD-2026-00099",
+        customer_name: "Lucia Perez",
+        customer_email: "lucia@example.com",
+        customer_phone: "1198765432",
+        status: "paid",
+        total: 18500,
+        shipping_cost: 2500,
+        shipping_address: "Mitre 450",
+        shipping_city: "Moron",
+        shipping_province: "Buenos Aires",
+        shipping_postal_code: "1708",
+        created_at: "2026-09-18T14:00:00Z",
+      },
+    ];
+
+    global.fetch = vi.fn().mockImplementation((url) => {
+      if (url.includes("/api/admin/orders?")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ items: mockOrders, total: 1 }),
+        });
+      }
+      if (url.includes("/generate-andreani-shipment")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            order_number: "ORD-2026-00099",
+            status: "shipped",
+            tracking_number: "ANDR_TRACK_9999",
+            tracking_url: "https://www.andreani.com/#!/informacionEnvio/ANDR_TRACK_9999",
+          }),
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+
+    render(<AdminPedidosPage />);
+
+    expect(await screen.findByText("Gestión de Pedidos")).toBeInTheDocument();
+    expect(await screen.findByText("ORD-2026-00099")).toBeInTheDocument();
+    expect(screen.getByText("Lucia Perez")).toBeInTheDocument();
+
+    // Abrir modal de gestión
+    const gestionarBtn = screen.getByRole("button", { name: /gestionar/i });
+    fireEvent.click(gestionarBtn);
+
+    expect(await screen.findByText("Actualizar Pedido ORD-2026-00099")).toBeInTheDocument();
+
+    // Verificar botón de generación
+    const generarBtn = screen.getByRole("button", { name: /generar (número|codigo) de seguimiento/i });
+    expect(generarBtn).toBeInTheDocument();
+
+    // Disparar generación
+    fireEvent.click(generarBtn);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/admin/orders/ORD-2026-00099/generate-andreani-shipment"),
+        expect.objectContaining({ method: "POST" })
+      );
+    });
+
+    // Debe actualizar el input de tracking a ANDR_TRACK_9999
+    expect(await screen.findByDisplayValue("ANDR_TRACK_9999")).toBeInTheDocument();
+  });
+
+  it("muestra indicaciones de entrega del cliente como solo lectura sin modificarlas en PATCH", async () => {
+    const mockOrderWithNotes = {
+      id: "ord-uuid-2",
+      order_number: "ORD-2026-00100",
+      customer_name: "Mariano Alvarez",
+      customer_email: "mariano@example.com",
+      customer_phone: "1122334455",
+      status: "paid",
+      total: 24000,
+      shipping_cost: 0,
+      shipping_address: "Av. Corrientes 1500 Piso 4B",
+      shipping_city: "CABA",
+      shipping_province: "Buenos Aires",
+      shipping_postal_code: "1042",
+      notes: "Dejar en portería con el encargado Carlos",
+      created_at: "2026-09-18T15:00:00Z",
+    };
+
+    global.fetch = vi.fn().mockImplementation((url, opts) => {
+      if (url.includes("/api/admin/orders?")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ items: [mockOrderWithNotes], total: 1 }),
+        });
+      }
+      if (url.includes("/status") && opts?.method === "PATCH") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ status: "shipped" }),
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+
+    render(<AdminPedidosPage />);
+
+    // Verifica que figure en la tabla
+    expect(await screen.findByText("ORD-2026-00100")).toBeInTheDocument();
+    expect(screen.getByText(/Dejar en portería con el encargado Carlos/i)).toBeInTheDocument();
+
+    // Abrir modal
+    const gestionarBtn = screen.getByRole("button", { name: /gestionar/i });
+    fireEvent.click(gestionarBtn);
+
+    // Debe mostrar la sección de solo lectura de indicaciones del cliente
+    expect(await screen.findByText("Indicaciones de Entrega del Cliente")).toBeInTheDocument();
+    expect(screen.getAllByText(/“Dejar en portería con el encargado Carlos”|«Dejar en portería con el encargado Carlos»|"Dejar en portería con el encargado Carlos"/i)).toHaveLength(2);
+
+    // No debe haber un textarea para editar las notas del cliente
+    expect(screen.queryByPlaceholderText(/observaciones de despacho/i)).not.toBeInTheDocument();
+
+    // Guardar cambios
+    const guardarBtn = screen.getByRole("button", { name: /guardar cambios/i });
+    fireEvent.click(guardarBtn);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/admin/orders/ORD-2026-00100/status"),
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({
+            status: "shipped",
+            tracking_number: null,
+          }),
+        })
+      );
+    });
+  });
 });
+

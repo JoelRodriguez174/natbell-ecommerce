@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Mail, MapPin } from "lucide-react";
+import NatbellLogo from "@/components/ui/NatbellLogo";
 
 export default function Footer() {
   const pathname = usePathname();
@@ -12,24 +13,14 @@ export default function Footer() {
   }
 
   return (
-    <footer className="w-full bg-white border-t border-gray-200 text-gray-600 text-xs mt-auto">
+    <footer className="w-full bg-white border-t border-rose-100/60 text-gray-600 text-xs mt-auto">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
           {/* Brand Col */}
           <div className="space-y-4">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-lg bg-black flex items-center justify-center text-white font-black text-lg tracking-tighter">
-                N
-              </div>
-              <div className="flex flex-col">
-                <span className="font-black text-xl tracking-tight text-gray-950 leading-none">
-                  NATBELL
-                </span>
-                <span className="text-[9px] uppercase font-bold tracking-widest text-gray-500 mt-0.5">
-                  Cosmética & Peluquería
-                </span>
-              </div>
+              <NatbellLogo size="md" />
             </Link>
 
             <div className="text-[11px] text-gray-500 space-y-1.5 pt-1">

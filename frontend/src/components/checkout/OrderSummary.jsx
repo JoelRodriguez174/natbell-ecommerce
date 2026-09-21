@@ -22,9 +22,11 @@ export default function OrderSummary({
           <div key={item.itemKey} className="flex items-center gap-3 pt-3 first:pt-0">
             <div className="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 overflow-hidden relative">
               {item.image ? (
-                <img
+                <Image
                   src={item.image}
                   alt={item.name}
+                  width={48}
+                  height={48}
                   className="w-full h-full object-cover"
                 />
               ) : (

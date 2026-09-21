@@ -244,3 +244,149 @@ def test_admin_shipping_zones_crud():
         assert res_up.json()["cost"] == 3500.0
     finally:
         app.dependency_overrides.clear()
+
+
+def test_admin_generate_andreani_shipment_success():
+    from unittest.mock import AsyncMock, patch
+
+    mock_db = _setup_mock_db()
+    token = create_access_token(subject=TEST_ADMIN_ID)
+    order_num = "ORD-2026-00002"
+
+    order_data = {
+        "id": str(uuid4()),
+        "order_number": order_num,
+        "customer_name": "Mauro Rodriguez",
+        "customer_email": "mauro@example.com",
+        "status": "paid",
+        "total": "25000.00",
+        "shipping_cost": "3500.00",
+        "shipping_address": "Av. Rivadavia 1234",
+        "shipping_city": "Ramos Mejia",
+        "shipping_province": "Buenos Aires",
+        "shipping_postal_code": "1704",
+        "order_items": [],
+    }
+
+    # Detail query
+    detail_sel = MagicMock()
+    detail_eq = MagicMock()
+    detail_eq.execute.return_value = MagicMock(data=[order_data])
+    detail_sel.eq.return_value = detail_eq
+
+    # Update query
+    up_mock = MagicMock()
+    up_eq = MagicMock()
+    up_eq.execute.return_value = MagicMock(
+        data=[{**order_data, "status": "shipped", "tracking_number": "ANDR_TRACK_123"}]
+    )
+    up_mock.eq.return_value = up_eq
+
+    def table_router(name):
+        m = MagicMock()
+        if name == "admin_users":
+            s = MagicMock()
+            e = MagicMock()
+            e.execute.return_value = MagicMock(
+                data=[{"id": TEST_ADMIN_ID, "email": TEST_EMAIL, "name": "Admin"}]
+            )
+            s.eq.return_value = e
+            m.select.return_value = s
+            return m
+        elif name == "orders":
+            m.select.return_value = detail_sel
+            m.update.return_value = up_mock
+            return m
+        return m
+
+    mock_db.table.side_effect = table_router
+    app.dependency_overrides[get_supabase_client] = lambda: mock_db
+
+    mock_andreani_resp = {
+        "tracking_number": "ANDR_TRACK_123",
+        "tracking_url": "https://www.andreani.com/#!/informacionEnvio/ANDR_TRACK_123",
+    }
+
+    with patch("app.services.admin_order_service.get_andreani_service") as mock_get_andreani, \
+         patch("app.services.admin_order_service.get_email_service") as mock_get_email:
+        mock_andreani_svc = MagicMock()
+        mock_andreani_svc.register_shipment.return_value = mock_andreani_resp
+        mock_get_andreani.return_value = mock_andreani_svc
+
+        mock_email_svc = MagicMock()
+        mock_email_svc.send_shipping_notification_email = AsyncMock(return_value=True)
+        mock_get_email.return_value = mock_email_svc
+
+        try:
+            res = client.post(
+                f"/api/admin/orders/{order_num}/generate-andreani-shipment",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            assert res.status_code == 200
+            data = res.json()
+            assert data["order_number"] == order_num
+            assert data["status"] == "shipped"
+            assert data["tracking_number"] == "ANDR_TRACK_123"
+            assert "https://www.andreani.com" in data["tracking_url"]
+
+            mock_andreani_svc.register_shipment.assert_called_once()
+            mock_email_svc.send_shipping_notification_email.assert_called_once()
+        finally:
+            app.dependency_overrides.clear()
+
+
+def test_admin_generate_andreani_shipment_failure():
+    from unittest.mock import patch
+
+    mock_db = _setup_mock_db()
+    token = create_access_token(subject=TEST_ADMIN_ID)
+    order_num = "ORD-2026-00003"
+
+    order_data = {
+        "id": str(uuid4()),
+        "order_number": order_num,
+        "customer_name": "Mauro Rodriguez",
+        "customer_email": "mauro@example.com",
+        "status": "paid",
+        "order_items": [],
+    }
+
+    detail_sel = MagicMock()
+    detail_eq = MagicMock()
+    detail_eq.execute.return_value = MagicMock(data=[order_data])
+    detail_sel.eq.return_value = detail_eq
+
+    def table_router(name):
+        m = MagicMock()
+        if name == "admin_users":
+            s = MagicMock()
+            e = MagicMock()
+            e.execute.return_value = MagicMock(
+                data=[{"id": TEST_ADMIN_ID, "email": TEST_EMAIL, "name": "Admin"}]
+            )
+            s.eq.return_value = e
+            m.select.return_value = s
+            return m
+        elif name == "orders":
+            m.select.return_value = detail_sel
+            return m
+        return m
+
+    mock_db.table.side_effect = table_router
+    app.dependency_overrides[get_supabase_client] = lambda: mock_db
+
+    with patch("app.services.admin_order_service.get_andreani_service") as mock_get_andreani:
+        mock_andreani_svc = MagicMock()
+        mock_andreani_svc.register_shipment.side_effect = RuntimeError("Andreani API Timeout")
+        mock_get_andreani.return_value = mock_andreani_svc
+
+        try:
+            res = client.post(
+                f"/api/admin/orders/{order_num}/generate-andreani-shipment",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            assert res.status_code == 400
+            assert "Error generando envío en Andreani" in res.json()["detail"]
+        finally:
+            app.dependency_overrides.clear()
+
