@@ -58,7 +58,7 @@ export default function OrderTrackingView({ order }) {
       <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-100 dark:border-zinc-800">
           <div>
-            <span className="text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">
+            <span className="text-xs uppercase tracking-wider text-[#DE1B76] font-bold">
               Natbell Cosmética
             </span>
             <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-0.5">
@@ -69,7 +69,7 @@ export default function OrderTrackingView({ order }) {
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold self-start sm:self-auto bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold self-start sm:self-auto bg-rose-50 text-[#DE1B76] border border-rose-200">
             <span>Estado: {isCancelled ? "Cancelado" : STEPS[currentIndex]?.label}</span>
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function OrderTrackingView({ order }) {
               <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-1 bg-zinc-200 dark:bg-zinc-800 -z-0" />
               {/* Línea conectora activa */}
               <div
-                className="absolute top-1/2 left-0 -translate-y-1/2 h-1 bg-amber-500 transition-all duration-500 -z-0"
+                className="absolute top-1/2 left-0 -translate-y-1/2 h-1 bg-[#DE1B76] transition-all duration-500 -z-0"
                 style={{ width: `${(currentIndex / (STEPS.length - 1)) * 100}%` }}
               />
 
@@ -96,9 +96,9 @@ export default function OrderTrackingView({ order }) {
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
                         isPassed
-                          ? "bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/20"
+                          ? "bg-[#DE1B76] border-[#DE1B76] text-white shadow-md shadow-[#DE1B76]/20"
                           : "bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-400"
-                      } ${isCurrent ? "ring-4 ring-amber-500/20" : ""}`}
+                      } ${isCurrent ? "ring-4 ring-[#DE1B76]/20" : ""}`}
                     >
                       <Icon className="w-5 h-5" />
                     </div>
@@ -221,7 +221,7 @@ export default function OrderTrackingView({ order }) {
             </div>
             <div className="flex justify-between text-sm font-bold text-zinc-900 dark:text-zinc-100 pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800">
               <span>Total Abonado</span>
-              <span className="text-amber-600 dark:text-amber-400">
+              <span className="text-[#DE1B76]">
                 {formatCurrency(order.total)}
               </span>
             </div>

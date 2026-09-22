@@ -71,7 +71,7 @@ export default function ProductFilters({
             <span className="text-xs font-semibold text-gray-500">Filtros aplicados</span>
             <button
               onClick={handleReset}
-              className="text-xs text-rose-600 hover:text-rose-700 font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+              className="text-xs text-[#DE1B76] hover:text-[#c21464] font-semibold transition-colors flex items-center gap-1 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               <span>Limpiar</span>
@@ -94,13 +94,13 @@ export default function ProductFilters({
                   page: 1,
                 })
               }
-              className="w-4 h-4 rounded border-gray-300 text-rose-600 focus:ring-rose-500 cursor-pointer accent-rose-600"
+              className="w-4 h-4 rounded border-gray-300 text-[#DE1B76] focus:ring-[#DE1B76] cursor-pointer accent-[#DE1B76]"
             />
             <span
               className={cn(
                 "transition-colors",
                 onSale
-                  ? "font-bold text-rose-600"
+                  ? "font-bold text-[#DE1B76]"
                   : "text-gray-700 group-hover:text-black"
               )}
             >
@@ -121,10 +121,10 @@ export default function ProductFilters({
                 <button
                   onClick={() => onFilterChange({ category: undefined, page: 1 })}
                   className={cn(
-                    "text-left block py-0.5 hover:text-black transition-colors cursor-pointer w-full truncate",
+                    "text-left block py-0.5 transition-colors cursor-pointer w-full truncate",
                     !selectedCategory
-                      ? "font-bold text-gray-950"
-                      : "text-gray-600 font-normal hover:underline"
+                      ? "font-bold text-[#DE1B76]"
+                      : "text-gray-600 font-normal hover:text-black hover:underline"
                   )}
                   title="Todas las categorías"
                 >
@@ -137,10 +137,10 @@ export default function ProductFilters({
                   <button
                     onClick={() => onFilterChange({ category: cat.slug, page: 1 })}
                     className={cn(
-                      "text-left block py-0.5 hover:text-black transition-colors cursor-pointer w-full truncate",
+                      "text-left block py-0.5 transition-colors cursor-pointer w-full truncate",
                       selectedCategory === cat.slug
-                        ? "font-bold text-gray-950"
-                        : "text-gray-600 font-normal hover:underline"
+                        ? "font-bold text-[#DE1B76]"
+                        : "text-gray-600 font-normal hover:text-black hover:underline"
                     )}
                     title={cat.name}
                   >
@@ -153,7 +153,7 @@ export default function ProductFilters({
             {categories.length > 6 && (
               <button
                 onClick={() => setShowAllCategories(!showAllCategories)}
-                className="mt-1.5 text-[11px] sm:text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline cursor-pointer flex items-center gap-0.5"
+                className="mt-1.5 text-[11px] sm:text-xs font-medium text-[#DE1B76] hover:text-[#c21464] hover:underline cursor-pointer flex items-center gap-0.5"
               >
                 <span>{showAllCategories ? "Menos" : `+${categories.length - 6} más`}</span>
               </button>
@@ -170,10 +170,10 @@ export default function ProductFilters({
                 <button
                   onClick={() => onFilterChange({ brand: undefined, page: 1 })}
                   className={cn(
-                    "text-left block py-0.5 hover:text-black transition-colors cursor-pointer w-full truncate",
+                    "text-left block py-0.5 transition-colors cursor-pointer w-full truncate",
                     !selectedBrand
-                      ? "font-bold text-gray-950"
-                      : "text-gray-600 font-normal hover:underline"
+                      ? "font-bold text-[#DE1B76]"
+                      : "text-gray-600 font-normal hover:text-black hover:underline"
                   )}
                   title="Todas las marcas"
                 >
@@ -186,10 +186,10 @@ export default function ProductFilters({
                   <button
                     onClick={() => onFilterChange({ brand: b.slug, page: 1 })}
                     className={cn(
-                      "text-left block py-0.5 hover:text-black transition-colors cursor-pointer w-full truncate",
+                      "text-left block py-0.5 transition-colors cursor-pointer w-full truncate",
                       selectedBrand === b.slug
-                        ? "font-bold text-gray-950"
-                        : "text-gray-600 font-normal hover:underline"
+                        ? "font-bold text-[#DE1B76]"
+                        : "text-gray-600 font-normal hover:text-black hover:underline"
                     )}
                     title={b.name}
                   >
@@ -202,7 +202,7 @@ export default function ProductFilters({
             {brands.length > 6 && (
               <button
                 onClick={() => setShowAllBrands(!showAllBrands)}
-                className="mt-1.5 text-[11px] sm:text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline cursor-pointer flex items-center gap-0.5"
+                className="mt-1.5 text-[11px] sm:text-xs font-medium text-[#DE1B76] hover:text-[#c21464] hover:underline cursor-pointer flex items-center gap-0.5"
               >
                 <span>{showAllBrands ? "Menos" : `+${brands.length - 6} más`}</span>
               </button>

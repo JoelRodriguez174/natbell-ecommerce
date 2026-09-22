@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Package } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,20 +13,27 @@ export default function ProductGallery({ images = [], productName = "Producto" }
   const currentImage = validImages[selectedIndex];
   const hasCurrentError = imageErrors[selectedIndex];
 
+  // Reiniciar estado al cambiar de producto o repertorio de imágenes
+  useEffect(() => {
+    setImageErrors({});
+    setSelectedIndex(0);
+  }, [images]);
+
   const handleImageError = (index) => {
     setImageErrors((prev) => ({ ...prev, [index]: true }));
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Visor Principal integrado (sin marco propio, tamaño moderado) */}
-      <div className="relative w-full h-72 sm:h-84 md:h-96 flex items-center justify-center bg-white overflow-hidden p-4">
+    <div className="flex flex-col gap-4 w-full">
+      {/* Visor Principal integrado a escala completa */}
+      <div className="relative w-full h-72 sm:h-84 md:h-96 flex items-center justify-center bg-white rounded-2xl overflow-hidden p-4 border border-gray-100 shadow-2xs">
         {currentImage && !hasCurrentError ? (
           <Image
             src={currentImage}
             alt={`${productName} - Vista ${selectedIndex + 1}`}
             fill
             priority
+            unoptimized={Boolean(currentImage?.startsWith("http"))}
             sizes="(max-width: 768px) 100vw, 50vw"
             onError={() => handleImageError(selectedIndex)}
             className="object-contain p-4 transition-transform duration-300 hover:scale-105"
@@ -66,6 +73,7 @@ export default function ProductGallery({ images = [], productName = "Producto" }
                     alt={`${productName} miniatura ${idx + 1}`}
                     width={64}
                     height={64}
+                    unoptimized={Boolean(img?.startsWith("http"))}
                     onError={() => handleImageError(idx)}
                     className="w-full h-full object-contain"
                   />

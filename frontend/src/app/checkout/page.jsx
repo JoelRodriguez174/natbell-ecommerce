@@ -127,7 +127,7 @@ export default function CheckoutPage() {
     setSubmitError(null);
 
     try {
-      // Si existía un intento previo pendiente sin abonar, descartarlo limpiamente
+      // Si el cliente reintenta la compra generando una nueva orden, descartar el intento anterior no pagado
       if (typeof window !== "undefined") {
         const prevPending = sessionStorage.getItem("natbell_pending_order");
         if (prevPending) {

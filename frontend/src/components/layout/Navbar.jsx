@@ -10,6 +10,7 @@ import NatbellLogo from "@/components/ui/NatbellLogo";
 import CartDrawer from "@/components/cart/CartDrawer";
 import NavbarBanner from "@/components/layout/NavbarBanner";
 import NavbarSearchDropdown from "@/components/layout/NavbarSearchDropdown";
+import NavbarDesktopNav from "@/components/layout/NavbarDesktopNav";
 import NavbarMobileMenu from "@/components/layout/NavbarMobileMenu";
 import { useCartStore } from "@/store/useCartStore";
 import { searchProducts } from "@/lib/api";
@@ -113,7 +114,8 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-rose-100/60 bg-white/95 backdrop-blur-md shadow-2xs">
+    <>
+      <header className="sticky top-0 z-40 w-full border-b border-rose-100/60 bg-white/95 backdrop-blur-md shadow-2xs">
       <NavbarBanner />
 
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -143,7 +145,7 @@ export default function Navbar() {
                 type="submit"
                 variant="primary"
                 size="sm"
-                className="bg-zinc-900 hover:bg-[#DE1B76] text-white px-4 py-2 text-xs font-semibold rounded-xl shrink-0 transition-colors"
+                className="bg-[#DE1B76] hover:bg-[#c21464] text-white px-5 py-2 text-xs font-bold rounded-xl shrink-0 shadow-sm shadow-[#DE1B76]/20 transition-all cursor-pointer border-none"
               >
                 Buscar
               </Button>
@@ -164,21 +166,21 @@ export default function Navbar() {
             <button
               type="button"
               onClick={openCart}
-              className="relative flex items-center gap-2 p-2 rounded-xl text-gray-700 hover:text-[#DE1B76] hover:bg-rose-50/50 transition-colors cursor-pointer"
+              className="relative flex items-center gap-2.5 px-3 py-2 rounded-xl bg-rose-50/70 hover:bg-rose-100/80 border border-rose-200/80 text-[#DE1B76] transition-all cursor-pointer shadow-2xs active:scale-95 group"
               title="Carrito de compras"
               aria-label="Ver carrito de compras"
               data-testid="navbar-cart-btn"
             >
               <div className="relative">
-                <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-800" />
+                <ShoppingBag className="w-5 h-5 text-[#DE1B76] transition-transform group-hover:scale-105" />
                 <span
-                  className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 min-w-4 h-4 px-1 rounded-full bg-[#DE1B76] text-white text-[9px] sm:text-[10px] font-bold flex items-center justify-center shadow-xs"
+                  className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-[#DE1B76] text-white text-[10px] font-bold flex items-center justify-center shadow-xs"
                   data-testid="cart-badge"
                 >
                   {mounted ? totalItems : 0}
                 </span>
               </div>
-              <span className="text-xs font-semibold text-gray-800 hidden md:inline">
+              <span className="text-xs font-bold text-zinc-800 group-hover:text-[#DE1B76] hidden md:inline transition-colors">
                 Mi Carrito
               </span>
             </button>
@@ -216,7 +218,7 @@ export default function Navbar() {
               type="submit"
               variant="primary"
               size="sm"
-              className="bg-zinc-900 hover:bg-[#DE1B76] text-white px-3 py-1.5 text-xs font-semibold rounded-lg shrink-0"
+              className="bg-[#DE1B76] hover:bg-[#c21464] text-white px-4 py-1.5 text-xs font-bold rounded-lg shrink-0 shadow-sm shadow-[#DE1B76]/20 transition-all cursor-pointer border-none"
             >
               Buscar
             </Button>
@@ -233,14 +235,21 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* Subnavegación de categorías y accesos directos en desktop */}
+      <NavbarDesktopNav
+        navCategories={NAV_CATEGORIES}
+        currentPath={pathname}
+      />
+
       <NavbarMobileMenu
         isOpen={mobileMenuOpen}
         navCategories={NAV_CATEGORIES}
         currentPath={pathname}
         onClose={() => setMobileMenuOpen(false)}
       />
-
-      <CartDrawer />
     </header>
+
+    <CartDrawer />
+    </>
   );
 }

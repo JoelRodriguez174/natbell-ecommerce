@@ -29,7 +29,7 @@ export default function CartOrderSummary({
 
           <div className="flex items-center justify-between text-gray-600">
             <span className="flex items-center gap-1.5">
-              <Truck className="w-4 h-4 text-gray-400" />
+              <Truck className="w-4 h-4 text-[#5EB82D]" />
               <span>Costo de envío</span>
             </span>
             {quote ? (
@@ -37,7 +37,7 @@ export default function CartOrderSummary({
                 {formatCurrency(quote.cost)}
               </span>
             ) : (
-              <span className="text-xs text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded-md">
+              <span className="text-xs text-[#DE1B76] font-medium bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md">
                 Calculá con tu CP arriba
               </span>
             )}
@@ -68,7 +68,7 @@ export default function CartOrderSummary({
           <button
             type="button"
             onClick={onProceedToCheckout}
-            className="w-full h-12 bg-zinc-950 hover:bg-black text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer"
+            className="w-full h-12 bg-[#DE1B76] hover:bg-[#c21464] text-white text-sm font-black rounded-xl shadow-md hover:shadow-[#DE1B76]/25 flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer"
             data-testid="proceed-to-checkout-btn"
           >
             <Lock className="w-4 h-4" />

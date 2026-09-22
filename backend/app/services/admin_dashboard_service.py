@@ -21,6 +21,25 @@ class AdminDashboardService:
 
     async def get_metrics(self) -> AdminDashboardMetricsResponse:
         """Calcula las métricas de negocio para el dashboard del administrador."""
+        # Limpieza automática de órdenes pendientes abandonadas (+30 minutos de antigüedad)
+        try:
+            from datetime import timedelta
+            cutoff = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+            abandoned_res = (
+                self.db.table("orders")
+                .select("id")
+                .eq("status", "pending")
+                .lt("created_at", cutoff)
+                .execute()
+            )
+            abandoned_rows = _as_dict_list(abandoned_res.data) if abandoned_res else []
+            abandoned_ids = [str(r["id"]) for r in abandoned_rows if "id" in r]
+            if abandoned_ids:
+                self.db.table("order_items").delete().in_("order_id", abandoned_ids).execute()
+                self.db.table("orders").delete().in_("id", abandoned_ids).execute()
+        except Exception:
+            pass
+
         # 1. Consulta de todas las órdenes
         orders_res = (
             self.db.table("orders")

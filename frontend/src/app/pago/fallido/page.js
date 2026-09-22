@@ -27,7 +27,7 @@ function PagoFallidoContent() {
         <XCircle className="w-10 h-10" />
       </div>
 
-      <span className="text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">
+      <span className="text-xs uppercase tracking-wider text-[#DE1B76] font-bold">
         Natbell Cosmética
       </span>
       <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 mt-1 mb-3">
@@ -53,7 +53,7 @@ function PagoFallidoContent() {
       <div className="space-y-3">
         <Link
           href="/checkout"
-          className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm transition-all shadow-md shadow-amber-500/20"
+          className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl bg-[#DE1B76] hover:bg-[#c21464] text-white font-semibold text-sm transition-all shadow-md shadow-[#DE1B76]/20"
         >
           <RefreshCw className="w-4 h-4" />
           <span>Reintentar con otro medio de pago</span>
@@ -74,7 +74,7 @@ function PagoFallidoContent() {
 export default function PagoFallidoPage() {
   return (
     <div className="min-h-[75vh] flex items-center justify-center py-12 px-4">
-      <Suspense fallback={<div className="w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />}>
+      <Suspense fallback={<div className="w-8 h-8 rounded-full border-2 border-[#DE1B76] border-t-transparent animate-spin" />}>
         <PagoFallidoContent />
       </Suspense>
     </div>

@@ -63,7 +63,7 @@ export default function ShippingCalculator({ className = "", compact = false }) 
       data-testid="shipping-calculator"
     >
       <div className="flex items-center gap-2 mb-2.5">
-        <Truck className="w-4 h-4 text-zinc-900 shrink-0" />
+        <Truck className="w-4 h-4 text-[#5EB82D] shrink-0" />
         <h4 className="text-xs sm:text-sm font-bold text-gray-900">
           Cotizador de Envíos
         </h4>
@@ -82,7 +82,7 @@ export default function ShippingCalculator({ className = "", compact = false }) 
             value={localCP}
             onChange={(e) => setLocalCP(e.target.value)}
             disabled={isLoading}
-            className="text-xs py-1.5"
+            className="text-xs py-1.5 focus:border-[#DE1B76]"
             maxLength={10}
             data-testid="postal-code-input"
           />
@@ -92,7 +92,7 @@ export default function ShippingCalculator({ className = "", compact = false }) 
           variant="primary"
           size="sm"
           disabled={isLoading || !localCP.trim()}
-          className="bg-zinc-900 hover:bg-black text-white shrink-0 text-xs px-3.5 py-2 font-semibold rounded-lg"
+          className="bg-[#DE1B76] hover:bg-[#c21464] text-white shrink-0 text-xs px-3.5 py-2 font-bold rounded-lg shadow-sm hover:shadow-[#DE1B76]/20 transition-all"
           data-testid="calculate-shipping-btn"
         >
           {isLoading ? (

@@ -30,14 +30,14 @@ export default function DashboardKpiGrid({ metrics }) {
           <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
             Por Despachar
           </span>
-          <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
+          <p className="text-2xl font-black text-[#DE1B76] mt-1">
             {metrics?.paid_orders || 0}
           </p>
           <p className="text-[11px] text-zinc-500 mt-1">
             Pagadas listas para envío
           </p>
         </div>
-        <div className="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+        <div className="w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-[#DE1B76] flex items-center justify-center">
           <PackageCheck className="w-5 h-5" />
         </div>
       </div>

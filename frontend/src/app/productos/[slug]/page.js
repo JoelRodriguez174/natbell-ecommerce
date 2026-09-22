@@ -179,7 +179,7 @@ export default function ProductDetailPage({ params }) {
         {/* BLOQUE SUPERIOR: Galería y Módulo de Compra */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start pb-10">
           {/* Columna Izquierda: Galería Integrada */}
-          <div className="lg:col-span-7 flex justify-center">
+          <div className="lg:col-span-7 flex justify-center w-full">
             <ProductGallery images={productImages} productName={product.name} />
           </div>
 
@@ -193,7 +193,7 @@ export default function ProductDetailPage({ params }) {
 
               <div className="flex items-center gap-1.5">
                 {product.is_on_sale && (
-                  <span className="text-xs font-bold text-orange-600 tracking-wider uppercase">
+                  <span className="text-xs font-bold text-[#DE1B76] bg-[#DE1B76]/10 border border-[#DE1B76]/20 px-2.5 py-0.5 rounded-full tracking-wider uppercase">
                     OFERTA
                   </span>
                 )}
@@ -287,7 +287,7 @@ export default function ProductDetailPage({ params }) {
                           setQuantity(availableStock);
                         }
                       }}
-                      className="w-10 text-center text-sm font-bold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-amber-500 rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+                      className="w-10 text-center text-sm font-bold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-[#DE1B76] rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
                       aria-label="Cantidad a comprar"
                       data-testid="product-qty-input"
                     />
@@ -313,7 +313,7 @@ export default function ProductDetailPage({ params }) {
                   type="button"
                   disabled={isOutOfStock}
                   onClick={handleBuyNow}
-                  className="w-full h-12 bg-zinc-950 hover:bg-black text-white text-sm sm:text-base font-bold rounded-xl shadow-sm flex items-center justify-center transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full h-12 bg-[#DE1B76] hover:bg-[#c21464] text-white text-sm sm:text-base font-black rounded-xl shadow-md hover:shadow-[#DE1B76]/25 flex items-center justify-center transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <span>{isOutOfStock ? "Producto Agotado" : "Comprar ahora"}</span>
                 </button>
@@ -323,9 +323,9 @@ export default function ProductDetailPage({ params }) {
                   type="button"
                   disabled={isOutOfStock}
                   onClick={handleAddToCart}
-                  className="w-full h-12 bg-gray-100 hover:bg-gray-200 text-gray-900 text-sm sm:text-base font-bold rounded-xl border border-gray-200 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full h-12 bg-white hover:bg-rose-50/50 text-gray-950 text-sm sm:text-base font-bold rounded-xl border border-gray-300 hover:border-[#DE1B76]/50 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
                 >
-                  <ShoppingBag className="w-4 h-4 text-gray-700" />
+                  <ShoppingBag className="w-4 h-4 text-[#DE1B76]" />
                   <span>Agregar al Carrito</span>
                 </button>
               </div>
@@ -345,7 +345,7 @@ export default function ProductDetailPage({ params }) {
             {/* Beneficios de Compra integrados sin tarjeta pesada */}
             <div className="pt-4 border-t border-gray-100 space-y-3 text-xs text-gray-600">
               <div className="flex items-center gap-2.5">
-                <Truck className="w-4 h-4 text-emerald-700 shrink-0" />
+                <Truck className="w-4 h-4 text-[#5EB82D] shrink-0" />
                 <span>Envíos a todo el país con tarifas fijas por zona</span>
               </div>
               <div className="flex items-center gap-2.5">
@@ -398,7 +398,7 @@ export default function ProductDetailPage({ params }) {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 p-3.5 bg-gray-50/70">
                 <span className="font-semibold text-gray-600 text-xs sm:text-sm">Disponibilidad de stock</span>
-                <span className="sm:col-span-2 text-emerald-700 font-semibold">
+                <span className="sm:col-span-2 text-[#5EB82D] font-bold">
                   {availableStock > 0 ? `${availableStock} unidades en stock` : "Agotado"}
                 </span>
               </div>
@@ -418,7 +418,7 @@ export default function ProductDetailPage({ params }) {
             {product.category_slug && (
               <Link
                 href={`/productos?category=${product.category_slug}`}
-                className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-black underline underline-offset-4"
+                className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-[#DE1B76] underline underline-offset-4 transition-colors"
               >
                 Ver más en {product.category_name}
               </Link>
@@ -438,7 +438,7 @@ export default function ProductDetailPage({ params }) {
             {product.brand_slug && (
               <Link
                 href={`/productos?brand=${product.brand_slug}`}
-                className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-black underline underline-offset-4"
+                className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-[#DE1B76] underline underline-offset-4 transition-colors"
               >
                 Ver todo de {product.brand_name}
               </Link>

@@ -9,12 +9,12 @@ export default function RecentOrdersCard({ recentOrders }) {
     <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-          <ShoppingBag className="w-4 h-4 text-amber-500" />
+          <ShoppingBag className="w-4 h-4 text-[#DE1B76]" />
           <span>Pedidos Recientes</span>
         </h2>
         <Link
           href="/admin/pedidos"
-          className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+          className="text-xs font-semibold text-[#DE1B76] hover:text-[#c21464] hover:underline flex items-center gap-1"
         >
           <span>Ver todos</span>
           <ArrowRight className="w-3.5 h-3.5" />

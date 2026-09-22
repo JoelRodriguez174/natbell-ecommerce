@@ -29,6 +29,11 @@ const Button = forwardRef(
       primary: {
         variant: "solid",
         className:
+          "bg-[#DE1B76] hover:bg-[#c21464] text-white font-semibold shadow-sm shadow-[#DE1B76]/20 active:scale-[0.99] transition-all rounded-lg",
+      },
+      dark: {
+        variant: "solid",
+        className:
           "bg-zinc-900 hover:bg-black text-white font-medium shadow-sm active:scale-[0.99] transition-all rounded-lg",
       },
       secondary: {

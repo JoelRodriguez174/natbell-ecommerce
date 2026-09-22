@@ -65,7 +65,7 @@ export default function SobreNosotrosPage() {
       {/* Banner Mayorista */}
       <div className="bg-zinc-950 text-white rounded-2xl p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8">
         <div className="space-y-4 max-w-2xl text-center lg:text-left">
-          <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#DE1B76]">
             Atención Mayorista
           </span>
           <h2 className="text-2xl sm:text-3xl font-black">
@@ -76,15 +76,15 @@ export default function SobreNosotrosPage() {
           </p>
           <ul className="flex flex-wrap gap-4 text-xs text-zinc-300 justify-center lg:justify-start pt-2">
             <li className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-[#5EB82D]" />
               <span>Listas de precios diferenciales</span>
             </li>
             <li className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-[#5EB82D]" />
               <span>Factura A y B</span>
             </li>
             <li className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-[#5EB82D]" />
               <span>Garantía oficial en máquinas</span>
             </li>
           </ul>
@@ -99,7 +99,7 @@ export default function SobreNosotrosPage() {
             <Button
               variant="primary"
               size="md"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3.5 rounded-xl shadow-md text-sm w-full sm:w-auto"
+              className="bg-[#5EB82D] hover:bg-[#4ea024] text-white font-bold px-6 py-3.5 rounded-xl shadow-md text-sm w-full sm:w-auto border-none"
             >
               Consultar por WhatsApp
             </Button>

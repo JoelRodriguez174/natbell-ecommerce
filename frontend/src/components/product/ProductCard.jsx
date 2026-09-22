@@ -51,6 +51,7 @@ export default function ProductCard({ product }) {
             src={primaryImage}
             alt={name}
             fill
+            unoptimized={Boolean(primaryImage?.startsWith("http"))}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             onError={() => setImageError(true)}
             className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
@@ -95,7 +96,7 @@ export default function ProductCard({ product }) {
               <span />
             )}
             {is_on_sale && (
-              <span className="text-[11px] font-bold text-orange-600 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-[#DE1B76] uppercase tracking-wider">
                 OFERTA
               </span>
             )}
@@ -111,8 +112,8 @@ export default function ProductCard({ product }) {
             <p className="text-[11px] text-gray-500 font-normal">
               Mismo precio en <span className="font-semibold text-gray-700">3 cuotas</span> de {formatCurrency(cuotaPrice)}
             </p>
-            <p className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
-              <Truck className="w-3 h-3 text-emerald-600" />
+            <p className="text-[11px] text-[#5EB82D] font-semibold flex items-center gap-1">
+              <Truck className="w-3 h-3 text-[#5EB82D]" />
               <span>Envío a todo el país</span>
             </p>
           </div>

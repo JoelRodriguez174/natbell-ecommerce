@@ -39,7 +39,7 @@ export default function CustomerInfoStep({
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-100 dark:border-zinc-800">
-        <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-semibold text-sm">
+        <div className="w-8 h-8 rounded-lg bg-[#DE1B76]/10 text-[#DE1B76] flex items-center justify-center font-bold text-sm">
           1
         </div>
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
@@ -66,7 +66,7 @@ export default function CustomerInfoStep({
               className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 transition-all ${
                 getErrorMessage("customer_name")
                   ? "border-red-500 focus:ring-red-500/20"
-                  : "border-zinc-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20"
+                  : "border-zinc-200 dark:border-zinc-700 focus:border-[#DE1B76] focus:ring-[#DE1B76]/20"
               }`}
             />
           </div>
@@ -95,7 +95,7 @@ export default function CustomerInfoStep({
               className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 transition-all ${
                 getErrorMessage("customer_email")
                   ? "border-red-500 focus:ring-red-500/20"
-                  : "border-zinc-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20"
+                  : "border-zinc-200 dark:border-zinc-700 focus:border-[#DE1B76] focus:ring-[#DE1B76]/20"
               }`}
             />
           </div>
@@ -127,7 +127,7 @@ export default function CustomerInfoStep({
               className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 transition-all ${
                 getErrorMessage("customer_phone")
                   ? "border-red-500 focus:ring-red-500/20"
-                  : "border-zinc-200 dark:border-zinc-700 focus:border-amber-500 focus:ring-amber-500/20"
+                  : "border-zinc-200 dark:border-zinc-700 focus:border-[#DE1B76] focus:ring-[#DE1B76]/20"
               }`}
             />
           </div>

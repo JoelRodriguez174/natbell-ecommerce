@@ -65,6 +65,43 @@ def test_andreani_service_register_shipment_success():
         assert "ANDR123456789" in result["tracking_url"]
 
 
+def test_andreani_service_register_shipment_branch_pickup():
+    service = AndreaniService(credential_id="TEST_CREDENTIAL")
+    service._access_token = "valid-cached-token"
+    service._token_expiry_timestamp = 9999999999.0
+
+    mock_reg_resp = MagicMock()
+    mock_reg_resp.status_code = 200
+    mock_reg_resp.json.return_value = {
+        "response": {
+            "numeroDeEnvio": "ANDR987654321",
+            "status": "Registered",
+        }
+    }
+
+    sample_order = {
+        "order_number": "ORD-2026-00002",
+        "customer_name": "Martín Gomez",
+        "customer_email": "martin@example.com",
+        "customer_phone": "3512345678",
+        "shipping_address": "Retiro en Sucursal Andreani - Córdoba",
+        "shipping_city": "Córdoba",
+        "shipping_province": "Córdoba",
+        "shipping_postal_code": "5000",
+        "shipping_cost": 2200,
+    }
+
+    with patch("httpx.Client.post", return_value=mock_reg_resp) as mock_post:
+        result = service.register_shipment(sample_order)
+        assert result["tracking_number"] == "ANDR987654321"
+
+        # Verificar que el payload no fragmentó la dirección con regex y asignó number S/N
+        called_payload = mock_post.call_args.kwargs["json"]
+        assert called_payload["destination"]["street"] == "Retiro en Sucursal Andreani - Córdoba"
+        assert called_payload["destination"]["number"] == "S/N"
+        assert called_payload["destination"]["postal_code"] == "5000"
+
+
 def test_andreani_service_register_shipment_without_credentials():
     service = AndreaniService(credential_id="")
     with pytest.raises(ValueError, match="No se encontraron credenciales"):

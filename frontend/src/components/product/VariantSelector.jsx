@@ -22,7 +22,7 @@ export default function VariantSelector({
           Presentación / Tono / Medida
         </label>
         {selectedVariant && (
-          <span className="text-xs text-rose-700 font-semibold">
+          <span className="text-xs text-[#DE1B76] font-bold">
             {selectedVariant.name}
           </span>
         )}
@@ -48,7 +48,7 @@ export default function VariantSelector({
               className={cn(
                 "p-3 rounded-xl border text-left transition-all duration-150 cursor-pointer select-none",
                 isSelected
-                  ? "bg-white border-2 border-black text-black shadow-xs ring-1 ring-black/10"
+                  ? "bg-rose-50/40 border-2 border-[#DE1B76] text-gray-950 shadow-xs ring-1 ring-[#DE1B76]/20"
                   : "bg-white border-gray-200 text-gray-800 hover:border-gray-400 hover:bg-gray-50",
                 isOutOfStock &&
                   "opacity-50 cursor-not-allowed border-gray-200 bg-gray-50 hover:border-gray-200 pointer-events-none"
@@ -60,7 +60,7 @@ export default function VariantSelector({
                     {variant.name}
                   </span>
                   {isSelected && (
-                    <div className="w-4 h-4 rounded-full bg-black flex items-center justify-center shrink-0">
+                    <div className="w-4 h-4 rounded-full bg-[#DE1B76] flex items-center justify-center shrink-0 shadow-xs">
                       <Check className="w-2.5 h-2.5 text-white" />
                     </div>
                   )}

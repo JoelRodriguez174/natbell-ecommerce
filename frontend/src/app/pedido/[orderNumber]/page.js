@@ -59,7 +59,7 @@ export default function OrderTrackingPage() {
 
         {isLoading && (
           <div className="min-h-[40vh] flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-[#DE1B76] animate-spin" />
             <p className="text-xs text-zinc-500">Buscando información de tu pedido...</p>
           </div>
         )}
@@ -73,7 +73,7 @@ export default function OrderTrackingPage() {
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">{error}</p>
             <Link
               href="/productos"
-              className="inline-flex px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold"
+              className="inline-flex px-5 py-2.5 rounded-xl bg-[#DE1B76] hover:bg-[#c21464] text-white text-xs font-semibold"
             >
               Explorar Catálogo
             </Link>

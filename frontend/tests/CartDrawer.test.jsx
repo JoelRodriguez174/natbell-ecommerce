@@ -18,6 +18,7 @@ describe("CartDrawer Component", () => {
     render(<CartDrawer />);
     expect(screen.getByTestId("cart-empty-state")).toBeInTheDocument();
     expect(screen.getByText("Tu carrito está vacío")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /explorar catálogo/i })).toHaveAttribute("href", "/productos");
   });
 
   it("muestra los ítems agregados, permite modificar cantidades y eliminar", () => {

@@ -64,7 +64,7 @@ export default function CartPage() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-950 tracking-tight flex items-center gap-3">
               <span>Carrito de Compras</span>
-              <span className="text-xs sm:text-sm font-bold px-2.5 py-1 rounded-full bg-zinc-900 text-white">
+              <span className="text-xs sm:text-sm font-bold px-2.5 py-1 rounded-full bg-[#DE1B76] text-white">
                 {totalItemsCount} {totalItemsCount === 1 ? "ítem" : "ítems"}
               </span>
             </h1>
@@ -94,7 +94,7 @@ export default function CartPage() {
             className="bg-white rounded-2xl border border-gray-200 p-12 text-center max-w-xl mx-auto space-y-5 shadow-xs"
             data-testid="cart-page-empty"
           >
-            <div className="w-20 h-20 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 mx-auto">
+            <div className="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center text-[#DE1B76] mx-auto border border-rose-100">
               <ShoppingBag className="w-10 h-10" />
             </div>
             <div className="space-y-2">
@@ -109,7 +109,7 @@ export default function CartPage() {
               variant="primary"
               size="lg"
               onClick={() => router.push("/productos")}
-              className="bg-zinc-950 hover:bg-black text-white px-8 font-bold rounded-xl"
+              className="bg-[#DE1B76] hover:bg-[#c21464] text-white px-8 font-bold rounded-xl shadow-md hover:shadow-[#DE1B76]/25"
             >
               Explorar Catálogo
             </Button>
@@ -134,7 +134,7 @@ export default function CartPage() {
               <div className="flex items-center justify-between pt-2">
                 <Link
                   href="/productos"
-                  className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 hover:text-black transition-colors"
+                  className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 hover:text-[#DE1B76] transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Seguir agregando productos</span>

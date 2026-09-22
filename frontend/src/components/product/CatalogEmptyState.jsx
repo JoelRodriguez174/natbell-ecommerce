@@ -22,7 +22,7 @@ export default function CatalogEmptyState({
         variant="primary"
         size="sm"
         onClick={onResetFilters}
-        className="bg-zinc-900 hover:bg-[#DE1B76] text-white text-xs px-5 py-2.5 font-bold rounded-xl transition-colors cursor-pointer"
+        className="bg-[#DE1B76] hover:bg-[#c21464] text-white text-xs px-5 py-2.5 font-bold rounded-xl shadow-md shadow-[#DE1B76]/20 transition-all cursor-pointer border-none"
       >
         Limpiar todos los filtros
       </Button>

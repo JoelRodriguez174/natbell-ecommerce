@@ -26,11 +26,11 @@ function PagoExitosoContent() {
 
   return (
     <div className="max-w-md w-full text-center bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-8 sm:p-10 shadow-xl shadow-zinc-900/5">
-      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-500/10 dark:bg-emerald-400/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 animate-bounce">
+      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#5EB82D]/10 border border-[#5EB82D]/20 flex items-center justify-center text-[#5EB82D] animate-bounce">
         <CheckCircle2 className="w-10 h-10" />
       </div>
 
-      <span className="text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">
+      <span className="text-xs uppercase tracking-wider text-[#DE1B76] font-bold">
         Natbell Cosmética
       </span>
       <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 mt-1 mb-3">
@@ -54,7 +54,7 @@ function PagoExitosoContent() {
         {orderNumber && (
           <Link
             href={`/pedido/${orderNumber}`}
-            className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm transition-all shadow-md shadow-amber-500/20"
+            className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl bg-[#DE1B76] hover:bg-[#c21464] text-white font-semibold text-sm transition-all shadow-md shadow-[#DE1B76]/20"
           >
             <Package className="w-4 h-4" />
             <span>Ver Seguimiento del Pedido</span>
@@ -76,7 +76,7 @@ function PagoExitosoContent() {
 export default function PagoExitosoPage() {
   return (
     <div className="min-h-[75vh] flex items-center justify-center py-12 px-4">
-      <Suspense fallback={<div className="w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />}>
+      <Suspense fallback={<div className="w-8 h-8 rounded-full border-2 border-[#DE1B76] border-t-transparent animate-spin" />}>
         <PagoExitosoContent />
       </Suspense>
     </div>

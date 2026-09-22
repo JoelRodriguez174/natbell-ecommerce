@@ -75,7 +75,7 @@ export default function OrderSummary({
 
         <div className="flex justify-between text-sm font-bold text-zinc-900 dark:text-zinc-50 pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800">
           <span>Total final</span>
-          <span className="text-base text-amber-600 dark:text-amber-400">
+          <span className="text-base font-black text-[#DE1B76]">
             {formatPrice(total)}
           </span>
         </div>

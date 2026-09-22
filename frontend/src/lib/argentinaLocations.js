@@ -286,3 +286,275 @@ export const ARGENTINA_CITIES_BY_PROVINCE = {
     "Tolhuin",
   ],
 };
+
+/**
+ * Códigos Postales oficiales y cabeceras por Provincia y Ciudad para autocompletado inteligente
+ */
+export const ARGENTINA_POSTAL_CODES_BY_CITY = {
+  // Ciudad Autónoma de Buenos Aires (CABA)
+  "Ciudad Autónoma de Buenos Aires (CABA)|Palermo": "1425",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Recoleta": "1426",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Belgrano": "1428",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Caballito": "1405",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Almagro": "1199",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Villa Urquiza": "1431",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Flores": "1406",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Balvanera": "1042",
+  "Ciudad Autónoma de Buenos Aires (CABA)|San Telmo": "1063",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Nuñez": "1429",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Colegiales": "1426",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Villa Crespo": "1414",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Barracas": "1272",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Boedo": "1218",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Chacarita": "1427",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Saavedra": "1430",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Devoto": "1419",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Puerto Madero": "1107",
+  "Ciudad Autónoma de Buenos Aires (CABA)|Retiro": "1001",
+
+  // Buenos Aires
+  "Buenos Aires|La Plata": "1900",
+  "Buenos Aires|Mar del Plata": "7600",
+  "Buenos Aires|Bahía Blanca": "8000",
+  "Buenos Aires|San Isidro": "1642",
+  "Buenos Aires|Vicente López": "1638",
+  "Buenos Aires|Tigre": "1648",
+  "Buenos Aires|San Fernando": "1646",
+  "Buenos Aires|Pilar": "1629",
+  "Buenos Aires|Escobar": "1625",
+  "Buenos Aires|Quilmes": "1878",
+  "Buenos Aires|Lanús": "1824",
+  "Buenos Aires|Lomas de Zamora": "1832",
+  "Buenos Aires|Avellaneda": "1870",
+  "Buenos Aires|Morón": "1708",
+  "Buenos Aires|Ramos Mejía": "1704",
+  "Buenos Aires|San Justo": "1754",
+  "Buenos Aires|Castelar": "1712",
+  "Buenos Aires|Ituzaingó": "1714",
+  "Buenos Aires|Merlo": "1722",
+  "Buenos Aires|Moreno": "1744",
+  "Buenos Aires|San Martín": "1650",
+  "Buenos Aires|Tres de Febrero": "1678",
+  "Buenos Aires|Hurlingham": "1686",
+  "Buenos Aires|Tandil": "7000",
+  "Buenos Aires|Olavarría": "7400",
+  "Buenos Aires|Pergamino": "2700",
+  "Buenos Aires|Junín": "6000",
+  "Buenos Aires|Necochea": "7630",
+  "Buenos Aires|Campana": "2804",
+  "Buenos Aires|Zárate": "2800",
+
+  // Córdoba
+  "Córdoba|Córdoba Capital": "5000",
+  "Córdoba|Villa Carlos Paz": "5152",
+  "Córdoba|Río Cuarto": "5800",
+  "Córdoba|Villa María": "5900",
+  "Córdoba|Alta Gracia": "5186",
+  "Córdoba|San Francisco": "2400",
+  "Córdoba|Jesús María": "5220",
+  "Córdoba|Río Tercero": "5850",
+  "Córdoba|Bell Ville": "2550",
+  "Córdoba|La Falda": "5172",
+  "Córdoba|Cosquín": "5166",
+  "Córdoba|Mina Clavero": "5889",
+  "Córdoba|Santa Rosa de Calamuchita": "5196",
+
+  // Santa Fe
+  "Santa Fe|Rosario": "2000",
+  "Santa Fe|Santa Fe Capital": "3000",
+  "Santa Fe|Rafaela": "2300",
+  "Santa Fe|Venado Tuerto": "2600",
+  "Santa Fe|Reconquista": "3560",
+  "Santa Fe|Santo Tomé": "3016",
+  "Santa Fe|Esperanza": "3080",
+  "Santa Fe|Villa Gobernador Gálvez": "2124",
+  "Santa Fe|Granadero Baigorria": "2152",
+  "Santa Fe|San Lorenzo": "2200",
+
+  // Mendoza
+  "Mendoza|Mendoza Capital": "5500",
+  "Mendoza|San Rafael": "5600",
+  "Mendoza|Godoy Cruz": "5501",
+  "Mendoza|Guaymallén": "5519",
+  "Mendoza|Las Heras": "5539",
+  "Mendoza|Luján de Cuyo": "5507",
+  "Mendoza|Maipú": "5515",
+  "Mendoza|San Martín": "5570",
+  "Mendoza|Tunuyán": "5560",
+  "Mendoza|Malargüe": "5613",
+
+  // San Luis
+  "San Luis|San Luis Capital": "5700",
+  "San Luis|Villa Mercedes": "5730",
+  "San Luis|Merlo": "5881",
+  "San Luis|La Punta": "5710",
+  "San Luis|Juana Koslay": "5701",
+  "San Luis|Justo Daract": "5738",
+  "San Luis|Santa Rosa del Conlara": "5777",
+  "San Luis|Concarán": "5770",
+  "San Luis|Tilisarao": "5773",
+
+  // Entre Ríos
+  "Entre Ríos|Paraná": "3100",
+  "Entre Ríos|Concordia": "3200",
+  "Entre Ríos|Gualeguaychú": "2820",
+  "Entre Ríos|Concepción del Uruguay": "3260",
+  "Entre Ríos|Villaguay": "3240",
+  "Entre Ríos|Chajarí": "3228",
+  "Entre Ríos|Gualeguay": "2840",
+  "Entre Ríos|Colón": "3280",
+
+  // Tucumán
+  "Tucumán|San Miguel de Tucumán": "4000",
+  "Tucumán|Yerba Buena": "4107",
+  "Tucumán|Tafí Viejo": "4103",
+  "Tucumán|Banda del Río Salí": "4109",
+  "Tucumán|Aguilares": "4152",
+  "Tucumán|Concepción": "4146",
+  "Tucumán|Famaillá": "4132",
+  "Tucumán|Tafí del Valle": "4137",
+
+  // Salta
+  "Salta|Salta Capital": "4400",
+  "Salta|San Ramón de la Nueva Orán": "4530",
+  "Salta|Tartagal": "4560",
+  "Salta|General Güemes": "4432",
+  "Salta|Rosario de la Frontera": "4190",
+  "Salta|Cafayate": "4427",
+  "Salta|San Lorenzo": "4401",
+
+  // Misiones
+  "Misiones|Posadas": "3300",
+  "Misiones|Oberá": "3360",
+  "Misiones|Eldorado": "3380",
+  "Misiones|Puerto Iguazú": "3370",
+  "Misiones|Apóstoles": "3350",
+  "Misiones|Leandro N. Alem": "3315",
+  "Misiones|San Vicente": "3364",
+
+  // Chaco
+  "Chaco|Resistencia": "3500",
+  "Chaco|Presidencia Roque Sáenz Peña": "3700",
+  "Chaco|Barranqueras": "3503",
+  "Chaco|Fontana": "3514",
+  "Chaco|Villa Ángela": "3540",
+  "Chaco|Castelli": "3705",
+  "Chaco|Charata": "3730",
+
+  // Corrientes
+  "Corrientes|Corrientes Capital": "3400",
+  "Corrientes|Goya": "3450",
+  "Corrientes|Paso de los Libres": "3230",
+  "Corrientes|Curuzú Cuatiá": "3460",
+  "Corrientes|Mercedes": "3470",
+  "Corrientes|Bella Vista": "3432",
+  "Corrientes|Monte Caseros": "3220",
+
+  // Santiago del Estero
+  "Santiago del Estero|Santiago del Estero Capital": "4200",
+  "Santiago del Estero|La Banda": "4300",
+  "Santiago del Estero|Termas de Río Hondo": "4220",
+  "Santiago del Estero|Frías": "4230",
+  "Santiago del Estero|Añatuya": "3760",
+  "Santiago del Estero|Quimilí": "3740",
+
+  // San Juan
+  "San Juan|San Juan Capital": "5400",
+  "San Juan|Rawson": "5425",
+  "San Juan|Rivadavia": "5407",
+  "San Juan|Chimbas": "5413",
+  "San Juan|Santa Lucía": "5411",
+  "San Juan|Pocito": "5427",
+  "San Juan|Caucete": "5442",
+  "San Juan|Jáchal": "5460",
+
+  // Jujuy
+  "Jujuy|San Salvador de Jujuy": "4600",
+  "Jujuy|Palpalá": "4612",
+  "Jujuy|San Pedro de Jujuy": "4500",
+  "Jujuy|Libertador General San Martín": "4512",
+  "Jujuy|Perico": "4610",
+  "Jujuy|Tilcara": "4624",
+  "Jujuy|Humahuaca": "4630",
+
+  // Río Negro
+  "Río Negro|San Carlos de Bariloche": "8400",
+  "Río Negro|General Roca": "8332",
+  "Río Negro|Cipolletti": "8324",
+  "Río Negro|Viedma": "8500",
+  "Río Negro|Villa Regina": "8336",
+  "Río Negro|Cinco Saltos": "8303",
+  "Río Negro|El Bolsón": "8430",
+
+  // Neuquén
+  "Neuquén|Neuquén Capital": "8300",
+  "Neuquén|San Martín de los Andes": "8370",
+  "Neuquén|Plottier": "8316",
+  "Neuquén|Centenario": "8309",
+  "Neuquén|Cutral Có": "8322",
+  "Neuquén|Zapala": "8340",
+  "Neuquén|Villa La Angostura": "8407",
+
+  // Formosa
+  "Formosa|Formosa Capital": "3600",
+  "Formosa|Clorinda": "3610",
+  "Formosa|Pirané": "3606",
+  "Formosa|El Colorado": "3603",
+  "Formosa|Las Lomitas": "3630",
+
+  // Chubut
+  "Chubut|Comodoro Rivadavia": "9000",
+  "Chubut|Trelew": "9100",
+  "Chubut|Puerto Madryn": "9120",
+  "Chubut|Esquel": "9200",
+  "Chubut|Rawson": "9103",
+  "Chubut|Rada Tilly": "9001",
+
+  // Catamarca
+  "Catamarca|San Fernando del Valle de Catamarca": "4700",
+  "Catamarca|Valle Viejo": "4707",
+  "Catamarca|Andalgalá": "4740",
+  "Catamarca|Belén": "4750",
+  "Catamarca|Tinogasta": "5340",
+  "Catamarca|Santa María": "4139",
+
+  // La Rioja
+  "La Rioja|La Rioja Capital": "5300",
+  "La Rioja|Chilecito": "5360",
+  "La Rioja|Aimogasta": "5310",
+  "La Rioja|Chamical": "5380",
+  "La Rioja|Chepes": "5470",
+  "La Rioja|Villa Unión": "5350",
+
+  // La Pampa
+  "La Pampa|Santa Rosa": "6300",
+  "La Pampa|General Pico": "6360",
+  "La Pampa|Toay": "6303",
+  "La Pampa|Realicó": "6200",
+  "La Pampa|Eduardo Castex": "6380",
+  "La Pampa|General Acha": "8200",
+
+  // Santa Cruz
+  "Santa Cruz|Río Gallegos": "9400",
+  "Santa Cruz|Caleta Olivia": "9011",
+  "Santa Cruz|El Calafate": "9405",
+  "Santa Cruz|Pico Truncado": "9015",
+  "Santa Cruz|Las Heras": "9017",
+  "Santa Cruz|Puerto Deseado": "9050",
+
+  // Tierra del Fuego
+  "Tierra del Fuego|Ushuaia": "9410",
+  "Tierra del Fuego|Río Grande": "9420",
+  "Tierra del Fuego|Tolhuin": "9412",
+};
+
+/**
+ * Obtiene el código postal predefinido/oficial para una combinación de provincia y ciudad.
+ * Si no se encuentra una coincidencia exacta, retorna una cadena vacía.
+ */
+export function getDefaultPostalCode(province, city) {
+  if (!province || !city || city === "OTRA") return "";
+  const key = `${province.trim()}|${city.trim()}`;
+  return ARGENTINA_POSTAL_CODES_BY_CITY[key] || "";
+}
+

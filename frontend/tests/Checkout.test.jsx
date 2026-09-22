@@ -10,6 +10,7 @@ import { useCartStore } from "../src/store/useCartStore";
 
 vi.mock("../src/lib/api", () => ({
   createOrder: vi.fn().mockResolvedValue({ checkout_url: "https://mercadopago.com/checkout/123" }),
+  deleteDraftOrder: vi.fn().mockResolvedValue({ status: "deleted" }),
   getShippingQuote: vi.fn().mockResolvedValue({
     zone_name: "CABA",
     cost: 1500,
@@ -89,6 +90,25 @@ describe("Checkout Components (Natbell)", () => {
     expect(screen.getByText("Código postal sin cobertura disponible")).toBeInTheDocument();
   });
 
+  it("autocompleta el código postal y dispara la cotización al seleccionar una ciudad en ShippingAddressStep", () => {
+    const onQuotePostalCode = vi.fn();
+    const setValue = vi.fn();
+
+    render(
+      <ShippingAddressStep
+        formData={{ shipping_province: "Buenos Aires" }}
+        setValue={setValue}
+        onQuotePostalCode={onQuotePostalCode}
+      />
+    );
+
+    const citySelect = screen.getByLabelText(/2\. ciudad \/ localidad/i);
+    fireEvent.change(citySelect, { target: { value: "Mar del Plata" } });
+
+    expect(setValue).toHaveBeenCalledWith("shipping_postal_code", "7600", { shouldValidate: true });
+    expect(onQuotePostalCode).toHaveBeenCalledWith("7600");
+  });
+
   it("limpia el carrito cuando se accede a la página de Pago Exitoso (compra concretada)", () => {
     useCartStore.setState({
       items: [{ itemKey: "p1", name: "Producto Test", price: 1000, quantity: 1 }],
@@ -134,10 +154,93 @@ describe("Checkout Components (Natbell)", () => {
       fireEvent.click(payBtn);
     });
 
-    // El carrito no se vacía aquí; solo se vacía cuando concrete la compra en /pago/exitoso
     expect(useCartStore.getState().items).toHaveLength(1);
   });
 
+  it("permite alternar entre 'Envío a Domicilio' y 'Retiro en Sucursal' en ShippingAddressStep", () => {
+    const setValue = vi.fn();
+    const onChange = vi.fn();
+
+    render(
+      <ShippingAddressStep
+        formData={{ shipping_province: "Córdoba", shipping_city: "Córdoba" }}
+        setValue={setValue}
+        onChange={onChange}
+      />
+    );
+
+    // Inicialmente está en Envío a Domicilio
+    expect(screen.getByLabelText(/calle y número/i)).toBeInTheDocument();
+    expect(screen.queryByText(/retiro en sucursal andreani oficial/i)).not.toBeInTheDocument();
+
+    // Cambiar a Retiro en Sucursal
+    const branchBtn = screen.getByRole("button", { name: /retiro en sucursal/i });
+    fireEvent.click(branchBtn);
+
+    // Debe ocultar Calle y Número y mostrar la información de la sucursal Andreani sin campo ambiguo de preferencia
+    expect(screen.queryByLabelText(/calle y número/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/retiro en sucursal andreani oficial/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/aclaración o sucursal preferida/i)).not.toBeInTheDocument();
+
+    // Debe haber actualizado shipping_address con la sucursal de Córdoba
+    expect(setValue).toHaveBeenCalledWith(
+      "shipping_address",
+      "Retiro en Sucursal Andreani - Córdoba",
+      { shouldValidate: true }
+    );
+
+    // Cambiar de regreso a Domicilio
+    const homeBtn = screen.getByRole("button", { name: /envío a domicilio/i });
+    fireEvent.click(homeBtn);
+
+    // Vuelve a mostrar el campo de Calle y Número
+    expect(screen.getByLabelText(/calle y número/i)).toBeInTheDocument();
+    expect(screen.queryByText(/retiro en sucursal andreani oficial/i)).not.toBeInTheDocument();
+  });
+
+  it("procesa la orden con Retiro en Sucursal sin requerir calle particular", async () => {
+    useCartStore.setState({
+      items: [{ itemKey: "p2", name: "Máscara Capilar", price: 3000, quantity: 1, maxStock: 5 }],
+    });
+
+    render(<CheckoutPage />);
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText(/nombre y apellido/i), {
+        target: { value: "Carlos Branch" },
+      });
+      fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
+        target: { value: "carlos@example.com" },
+      });
+      fireEvent.change(screen.getByLabelText(/teléfono/i), {
+        target: { value: "3512345678" },
+      });
+      // Elegir Retiro en Sucursal
+      fireEvent.click(screen.getByRole("button", { name: /retiro en sucursal/i }));
+
+      // Seleccionar provincia
+      fireEvent.change(screen.getByLabelText(/1\. provincia/i), {
+        target: { value: "Córdoba" },
+      });
+    });
+
+    await act(async () => {
+      // Seleccionar ciudad
+      fireEvent.change(screen.getByLabelText(/2\. ciudad \/ localidad/i), {
+        target: { value: "Villa Carlos Paz" },
+      });
+    });
+
+    // Enviar formulario sin haber completado ninguna dirección de calle de casa
+    await act(async () => {
+      const payBtn = screen.getByText(/pagar con mercado pago/i);
+      fireEvent.click(payBtn);
+    });
+
+    // El carrito permanece intacto (APB) y la orden se procesa
+    expect(useCartStore.getState().items).toHaveLength(1);
+  });
 });
+
 
 

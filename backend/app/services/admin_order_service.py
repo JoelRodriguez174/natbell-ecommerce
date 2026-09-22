@@ -31,10 +31,10 @@ class AdminOrderService:
         per_page: int = 20,
     ) -> Dict[str, Any]:
         """Obtiene el listado paginado de órdenes de compra con filtros."""
-        # Limpieza automática de órdenes pendientes abandonadas (+2 horas de antigüedad)
+        # Limpieza automática de órdenes pendientes abandonadas (+30 minutos de antigüedad)
         try:
             from datetime import timedelta
-            cutoff = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+            cutoff = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
             abandoned_res = (
                 self.db.table("orders")
                 .select("id")

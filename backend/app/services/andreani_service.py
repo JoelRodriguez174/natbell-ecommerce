@@ -85,13 +85,19 @@ class AndreaniService:
 
         # Separación inteligente de calle y altura
         raw_address = (order.get("shipping_address") or "").strip()
-        match = re.search(r"(\d+)", raw_address)
-        if match:
-            number = match.group(1)
-            street = raw_address[: match.start()].strip().rstrip(",") or "Calle"
+        is_branch = raw_address.startswith("Retiro en Sucursal")
+
+        if is_branch:
+            street = raw_address
+            number = "S/N"
         else:
-            street = raw_address or "Domicilio"
-            number = "1"
+            match = re.search(r"(\d+)", raw_address)
+            if match:
+                number = match.group(1)
+                street = raw_address[: match.start()].strip().rstrip(",") or "Calle"
+            else:
+                street = raw_address or "Domicilio"
+                number = "1"
 
         # Nombre y apellido
         full_name = (order.get("customer_name") or "Cliente").strip()
