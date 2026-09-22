@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 /**
  * Hero Banner principal de la página de inicio.
@@ -14,11 +14,6 @@ export default function HomeHeroBanner() {
       <div className="absolute -bottom-24 -right-20 w-80 h-80 rounded-full bg-[#5EB82D]/12 blur-3xl pointer-events-none" />
 
       <div className="relative max-w-4xl mx-auto text-center space-y-6">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/10 text-rose-200 border border-rose-500/20 text-xs font-semibold tracking-wide backdrop-blur-xs">
-          <Sparkles className="w-3.5 h-3.5 text-[#5EB82D]" />
-          <span>Distribuidora Oficial de Belleza y Cosmética Capilar</span>
-        </div>
-
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
           Productos profesionales para tu salón al{" "}
           <span className="bg-gradient-to-r from-[#DE1B76] via-rose-400 to-[#5EB82D] bg-clip-text text-transparent">

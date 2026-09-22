@@ -23,10 +23,8 @@ export default function HomeWholesaleBanner() {
             Accedé a listas de precios preferenciales para profesionales, asesoramiento técnico directo, compras por bulto cerrado y reposición periódica con facturación A y B.
           </p>
           <div className="flex flex-wrap gap-4 pt-2 text-xs text-zinc-300 justify-center lg:justify-start">
-            <span className="flex items-center gap-1.5 font-medium">✓ Descuentos por volumen</span>
             <span className="flex items-center gap-1.5 font-medium">✓ Factura A y B</span>
-            <span className="flex items-center gap-1.5 font-medium">✓ Envíos express a todo el país</span>
-            <span className="flex items-center gap-1.5 font-medium">✓ Asistencia técnica personalizada</span>
+            <span className="flex items-center gap-1.5 font-medium">✓ Envíos a todo el país</span>
           </div>
         </div>
 
