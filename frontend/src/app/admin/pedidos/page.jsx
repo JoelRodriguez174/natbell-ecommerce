@@ -12,7 +12,7 @@ export default function AdminPedidosPage() {
   const { token } = useAdminAuthStore();
 
   const [orders, setOrders] = useState([]);
-  const [selectedStatus, setSelectedStatus] = useState("paid");
+  const [selectedStatus, setSelectedStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 

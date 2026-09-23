@@ -374,7 +374,7 @@ class OrderService:
             }
 
         # Consultar los detalles oficiales del pago en la pasarela externa
-        payment_details = await self.payment_provider.get_payment_details(str(payment_id))
+        payment_details = await self.payment_provider.get_payment_details(payment_id)
         mp_status = payment_details.get("status")
         external_ref = payment_details.get("external_reference")
 
@@ -382,7 +382,7 @@ class OrderService:
         if mp_status != "approved":
             raise ValueError(f"El pago {payment_id} no está aprobado en Mercado Pago (estado actual: {mp_status}).")
 
-        if external_ref and str(external_ref).strip() != str(order_number).strip():
+        if external_ref and str(external_ref).strip() != order_number.strip():
             logger.warning(
                 f"Intento de spoofing: payment {payment_id} tiene external_reference '{external_ref}', no coincide con '{order_number}'"
             )
@@ -393,7 +393,7 @@ class OrderService:
         return {
             "status": "approved",
             "order_number": order_number,
-            "payment_id": str(payment_id),
+            "payment_id": payment_id,
             "message": f"Pago {payment_id} verificado y acreditado exitosamente.",
         }
 

@@ -137,7 +137,8 @@ class AndreaniService:
                     f"{self.base_url}/api/v1/Pyme/ShippingRegistration",
                     json=payload,
                     headers={
-                        "Authorization": f"Bearer {token}",
+                        "X-Auth-Token": token,
+                        "Authorization": token,
                         "Content-Type": "application/json",
                     },
                 )
