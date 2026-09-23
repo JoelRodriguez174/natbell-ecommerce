@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Truck, ExternalLink, Loader2 } from "lucide-react";
+import { X, Truck, ExternalLink, Loader2, Clock } from "lucide-react";
 
 export default function OrderStatusModal({
   selectedOrder,
@@ -16,6 +16,8 @@ export default function OrderStatusModal({
 }) {
   if (!selectedOrder) return null;
 
+  const isPending = selectedOrder.status === "pending";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
       <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl">
@@ -23,7 +25,7 @@ export default function OrderStatusModal({
         <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-4">
           <div>
             <h2 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-              Actualizar Pedido {selectedOrder.order_number}
+              {isPending ? "Detalle de Pedido" : "Actualizar Pedido"} {selectedOrder.order_number}
             </h2>
             <p className="text-[11px] text-zinc-500">
               Cliente: {selectedOrder.customer_name}
@@ -38,17 +40,29 @@ export default function OrderStatusModal({
           </button>
         </div>
 
+        {isPending && (
+          <div className="mb-4 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-start gap-2.5 text-amber-800 dark:text-amber-300 text-xs leading-relaxed">
+            <Clock className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <div>
+              <span className="font-bold block">Orden Pendiente de Pago</span>
+              Las órdenes pendientes no pueden modificarse manualmente. Se actualizarán automáticamente a &ldquo;Pagado&rdquo; una vez que Mercado Pago acredite la transacción.
+            </div>
+          </div>
+        )}
+
         {/* Modal Body Form */}
         <form onSubmit={onSubmit} className="space-y-4 text-xs">
           <div>
             <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Nuevo Estado
+              Estado del Pedido
             </label>
             <select
               value={newStatus}
+              disabled={isPending}
               onChange={(e) => onStatusChange(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500 font-semibold"
+              className="w-full px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500 font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
             >
+              {isPending && <option value="pending">Pendiente de acreditación</option>}
               <option value="paid">Pagado (Listo para embalar / despachar)</option>
               <option value="shipped">Enviado (En camino)</option>
               <option value="delivered">Entregado</option>
@@ -78,8 +92,8 @@ export default function OrderStatusModal({
               <button
                 type="button"
                 onClick={onGenerateAndreaniShipment}
-                disabled={isGeneratingAndreani || isUpdating}
-                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs inline-flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                disabled={isPending || isGeneratingAndreani || isUpdating}
+                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs inline-flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isGeneratingAndreani ? (
                   <>
@@ -108,7 +122,7 @@ export default function OrderStatusModal({
             </div>
           </div>
 
-          {newStatus === "shipped" && (
+          {newStatus === "shipped" && !isPending && (
             <div>
               <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
                 Código de Seguimiento (Tracking Number)
@@ -149,16 +163,18 @@ export default function OrderStatusModal({
               onClick={onClose}
               className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-semibold cursor-pointer"
             >
-              Cancelar
+              {isPending ? "Cerrar" : "Cancelar"}
             </button>
-            <button
-              type="submit"
-              disabled={isUpdating}
-              className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
-            >
-              {isUpdating && <Loader2 className="w-4 h-4 animate-spin" />}
-              <span>Guardar Cambios</span>
-            </button>
+            {!isPending && (
+              <button
+                type="submit"
+                disabled={isUpdating}
+                className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                {isUpdating && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>Guardar Cambios</span>
+              </button>
+            )}
           </div>
         </form>
       </div>

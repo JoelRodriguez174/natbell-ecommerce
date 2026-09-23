@@ -184,3 +184,34 @@ async def test_delete_draft_order_endpoint_already_paid_fails():
             assert res.status_code == 400
             assert "No es posible descartar" in res.json()["detail"]
 
+
+@pytest.mark.anyio
+async def test_confirm_order_payment_endpoint_success():
+    with patch("app.routers.orders.OrderService.confirm_order_payment", new_callable=AsyncMock) as mock_confirm:
+        mock_confirm.return_value = {
+            "status": "approved",
+            "order_number": "ORD-2026-00001",
+            "payment_id": "pay-999",
+            "message": "Pago aprobado.",
+        }
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            res = await client.post("/api/orders/ORD-2026-00001/confirm-payment?payment_id=pay-999")
+            assert res.status_code == 200
+            assert res.json()["status"] == "approved"
+            assert res.json()["payment_id"] == "pay-999"
+
+
+@pytest.mark.anyio
+async def test_confirm_order_payment_endpoint_invalid():
+    with patch("app.routers.orders.OrderService.confirm_order_payment", new_callable=AsyncMock) as mock_confirm:
+        mock_confirm.side_effect = ValueError("El pago pay-999 no está aprobado en Mercado Pago.")
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            res = await client.post("/api/orders/ORD-2026-00001/confirm-payment?payment_id=pay-999")
+            assert res.status_code == 400
+            assert "no está aprobado" in res.json()["detail"]
+
+

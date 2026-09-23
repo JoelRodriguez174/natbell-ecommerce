@@ -8,6 +8,7 @@ import {
   XCircle,
   Loader2,
   Edit,
+  Eye,
   MapPin,
   Mail,
   Phone,
@@ -131,10 +132,23 @@ export default function OrdersTable({ orders, isLoading, onManageOrder }) {
                     <button
                       type="button"
                       onClick={() => onManageOrder(ord)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 text-zinc-700 dark:text-zinc-300 font-semibold transition-colors cursor-pointer"
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+                        ord.status === "pending"
+                          ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                          : "bg-zinc-100 dark:bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 text-zinc-700 dark:text-zinc-300"
+                      }`}
                     >
-                      <Edit className="w-3 h-3" />
-                      <span>Gestionar</span>
+                      {ord.status === "pending" ? (
+                        <>
+                          <Eye className="w-3 h-3" />
+                          <span>Ver detalle</span>
+                        </>
+                      ) : (
+                        <>
+                          <Edit className="w-3 h-3" />
+                          <span>Gestionar</span>
+                        </>
+                      )}
                     </button>
                   </td>
                 </tr>

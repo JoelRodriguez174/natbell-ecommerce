@@ -354,3 +354,47 @@ class OrderService:
 
         return 1
 
+    async def confirm_order_payment(self, order_number: str, payment_id: str) -> Dict[str, Any]:
+        """Consulta la API oficial de Mercado Pago para verificar la acreditación del pago de una orden."""
+        order_res = (
+            self.db.table("orders")
+            .select("id, status, order_number, total")
+            .eq("order_number", order_number)
+            .execute()
+        )
+        order_data = _as_first_dict(order_res.data) if order_res else {}
+        if not order_data or not order_data.get("id"):
+            raise KeyError(f"Orden {order_number} no encontrada")
+
+        if order_data.get("status") == OrderStatus.PAID.value:
+            return {
+                "status": "already_paid",
+                "order_number": order_number,
+                "message": "La orden ya se encuentra acreditada.",
+            }
+
+        # Consultar los detalles oficiales del pago en la pasarela externa
+        payment_details = await self.payment_provider.get_payment_details(str(payment_id))
+        mp_status = payment_details.get("status")
+        external_ref = payment_details.get("external_reference")
+
+        # Seguridad estricta: Verificar que el pago esté aprobado y corresponda a este número de orden
+        if mp_status != "approved":
+            raise ValueError(f"El pago {payment_id} no está aprobado en Mercado Pago (estado actual: {mp_status}).")
+
+        if external_ref and str(external_ref).strip() != str(order_number).strip():
+            logger.warning(
+                f"Intento de spoofing: payment {payment_id} tiene external_reference '{external_ref}', no coincide con '{order_number}'"
+            )
+            raise ValueError("El identificador de pago no corresponde a este pedido.")
+
+        await self.mark_order_paid(order_number, payment_id=payment_id, payment_details=payment_details)
+
+        return {
+            "status": "approved",
+            "order_number": order_number,
+            "payment_id": str(payment_id),
+            "message": f"Pago {payment_id} verificado y acreditado exitosamente.",
+        }
+
+

@@ -4,9 +4,11 @@ import { Search } from "lucide-react";
 
 export const STATUS_FILTERS = [
   { label: "Por despachar (Pagados)", value: "paid" },
+  { label: "Pendientes de pago", value: "pending" },
   { label: "En camino (Enviados)", value: "shipped" },
   { label: "Entregados", value: "delivered" },
   { label: "Todos los confirmados", value: "confirmed" },
+  { label: "Todas las órdenes", value: "all" },
 ];
 
 export default function OrderFilterTabs({

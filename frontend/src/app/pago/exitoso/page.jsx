@@ -1,15 +1,20 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, ArrowRight, Package } from "lucide-react";
+import { CheckCircle2, ArrowRight, Package, Loader2 } from "lucide-react";
 import { useCartStore } from "../../../store/useCartStore";
 
 function PagoExitosoContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams?.get("order") || searchParams?.get("external_reference");
+  const paymentId =
+    searchParams?.get("payment_id") ||
+    searchParams?.get("collection_id") ||
+    searchParams?.get("data.id");
   const clearCart = useCartStore((state) => state.clearCart);
+  const [syncStatus, setSyncStatus] = useState("idle");
 
   useEffect(() => {
     clearCart();
@@ -21,7 +26,30 @@ function PagoExitosoContent() {
         // ignore
       }
     }
-  }, [clearCart]);
+
+    if (orderNumber && paymentId) {
+      let isMounted = true;
+      setSyncStatus("syncing");
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+      fetch(`${API_URL}/api/orders/${orderNumber}/confirm-payment?payment_id=${paymentId}`, {
+        method: "POST",
+      })
+        .then((res) => {
+          if (isMounted) {
+            setSyncStatus(res.ok ? "synced" : "error");
+          }
+        })
+        .catch((err) => {
+          console.error("Error confirmando pago en retorno:", err);
+          if (isMounted) setSyncStatus("error");
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [clearCart, orderNumber, paymentId]);
 
 
   return (
@@ -36,6 +64,19 @@ function PagoExitosoContent() {
       <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 mt-1 mb-3">
         ¡Pago Acreditado con Éxito!
       </h1>
+
+      {syncStatus === "syncing" && (
+        <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-300 text-xs font-medium">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <span>Verificando acreditación con Mercado Pago...</span>
+        </div>
+      )}
+      {syncStatus === "synced" && (
+        <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-300 text-xs font-medium">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>Acreditación verificada en tiempo real</span>
+        </div>
+      )}
 
       <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6">
         Muchas gracias por tu compra. Ya estamos preparando tu pedido para despacharlo lo antes posible.

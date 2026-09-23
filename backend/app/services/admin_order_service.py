@@ -106,6 +106,13 @@ class AdminOrderService:
         if not order_row:
             raise KeyError(f"Orden {order_number} no encontrada")
 
+        current_status = str(order_row.get("status") or "")
+        if current_status == "pending":
+            raise ValueError(
+                "Las órdenes en estado pendiente no pueden modificarse de estado manualmente. "
+                "Deben ser acreditadas automáticamente por la pasarela de pagos."
+            )
+
         update_data: Dict[str, Any] = {
             "status": payload.status.value,
             "updated_at": datetime.now(timezone.utc).isoformat(),

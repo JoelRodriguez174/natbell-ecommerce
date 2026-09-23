@@ -26,8 +26,12 @@ async def mercadopago_webhook(
     raw_body = await request.body()
     headers = dict(request.headers)
 
+    query_data_id = request.query_params.get("data.id")
+
     # 1. Verificar firma criptográfica HMAC
-    is_valid_signature = await provider.verify_webhook_signature(headers, raw_body)
+    is_valid_signature = await provider.verify_webhook_signature(
+        headers, raw_body, data_id=query_data_id
+    )
     if not is_valid_signature:
         logger.warning("Rechazada notificación de webhook de Mercado Pago por firma HMAC inválida")
         raise HTTPException(

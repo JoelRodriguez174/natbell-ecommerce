@@ -21,7 +21,9 @@ class PaymentProvider(ABC):
         pass
 
     @abstractmethod
-    async def verify_webhook_signature(self, headers: Dict[str, Any], body: bytes) -> bool:
+    async def verify_webhook_signature(
+        self, headers: Dict[str, Any], body: bytes, data_id: Optional[str] = None
+    ) -> bool:
         """Verifica la firma criptográfica HMAC de las notificaciones entrantes."""
         pass
 
@@ -46,7 +48,9 @@ class MockPaymentProvider(PaymentProvider):
             sandbox_init_point=mock_checkout_url,
         )
 
-    async def verify_webhook_signature(self, headers: Dict[str, Any], body: bytes) -> bool:
+    async def verify_webhook_signature(
+        self, headers: Dict[str, Any], body: bytes, data_id: Optional[str] = None
+    ) -> bool:
         # En modo mock se aceptan todas las solicitudes legítimas de testing
         return True
 
@@ -134,12 +138,15 @@ class MercadoPagoProvider(PaymentProvider):
             logger.error(f"Error al crear preferencia de MercadoPago: {e}", exc_info=True)
             raise
 
-    async def verify_webhook_signature(self, headers: Dict[str, Any], body: bytes) -> bool:
+    async def verify_webhook_signature(
+        self, headers: Dict[str, Any], body: bytes, data_id: Optional[str] = None
+    ) -> bool:
         """Verifica la cabecera x-signature de Mercado Pago según su documentación oficial:
         x-signature: ts=...,v1=...
         HMAC-SHA256(manifest, secret)
+        donde manifest = "id:<data.id>;request-id:<x-request-id>;ts:<ts>;"
         """
-        secret = settings.mercadopago_webhook_secret
+        secret = (settings.mercadopago_webhook_secret or "").strip()
         if not secret:
             # Si no hay secret configurado en local/dev, permitir si no hay validación estricta
             logger.warning("MERCADOPAGO_WEBHOOK_SECRET no configurado, saltando validación HMAC")
@@ -159,16 +166,22 @@ class MercadoPagoProvider(PaymentProvider):
         if not ts or not v1_hash:
             return False
 
-        # El manifest de MercadoPago concatena id del recurso, request-id y timestamp
-        # Para compatibilidad con payload completo o manifest específico:
-        manifest = f"request-id:{x_request_id};ts:{ts};"
-        expected_hash = hmac.new(
-            secret.encode("utf-8"),
-            manifest.encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
+        # El manifest oficial de Mercado Pago: id:[data.id];request-id:[x-request-id];ts:[ts];
+        manifests = []
+        if data_id:
+            manifests.append(f"id:{data_id};request-id:{x_request_id};ts:{ts};")
+        manifests.append(f"request-id:{x_request_id};ts:{ts};")
 
-        return hmac.compare_digest(v1_hash, expected_hash)
+        for m in manifests:
+            expected_hash = hmac.new(
+                secret.encode("utf-8"),
+                m.encode("utf-8"),
+                hashlib.sha256,
+            ).hexdigest()
+            if hmac.compare_digest(v1_hash, expected_hash):
+                return True
+
+        return False
 
     async def get_payment_details(self, payment_id: str) -> Dict[str, Any]:
         try:

@@ -96,3 +96,26 @@ def test_get_payment_provider_real_when_token_set():
         mock_settings.mercadopago_mode = "auto"
         provider = get_payment_provider()
         assert isinstance(provider, MercadoPagoProvider)
+
+
+@pytest.mark.anyio
+async def test_mercadopago_verify_signature_with_data_id():
+    import hashlib
+    import hmac
+
+    provider = MercadoPagoProvider("TEST-token")
+    with patch("app.services.payment_service.settings") as mock_settings:
+        mock_settings.mercadopago_webhook_secret = "secret123"
+        ts = "1720000000"
+        data_id = "998877"
+        req_id = "req-abc"
+        manifest = f"id:{data_id};request-id:{req_id};ts:{ts};"
+        v1 = hmac.new("secret123".encode("utf-8"), manifest.encode("utf-8"), hashlib.sha256).hexdigest()
+
+        headers = {
+            "x-signature": f"ts={ts},v1={v1}",
+            "x-request-id": req_id,
+        }
+        res = await provider.verify_webhook_signature(headers, b"", data_id=data_id)
+        assert res is True
+

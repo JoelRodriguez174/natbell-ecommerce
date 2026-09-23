@@ -390,3 +390,51 @@ def test_admin_generate_andreani_shipment_failure():
         finally:
             app.dependency_overrides.clear()
 
+
+def test_admin_cannot_update_pending_order_manually():
+    mock_db = _setup_mock_db()
+    token = create_access_token(subject=TEST_ADMIN_ID)
+
+    order_num = "ORD-2026-PENDING-01"
+    order_data = {
+        "id": str(uuid4()),
+        "order_number": order_num,
+        "status": "pending",
+    }
+
+    detail_sel = MagicMock()
+    detail_eq = MagicMock()
+    detail_eq.execute.return_value = MagicMock(data=[order_data])
+    detail_sel.eq.return_value = detail_eq
+
+    def table_router(name):
+        m = MagicMock()
+        if name == "admin_users":
+            s = MagicMock()
+            e = MagicMock()
+            e.execute.return_value = MagicMock(
+                data=[{"id": TEST_ADMIN_ID, "email": TEST_EMAIL, "name": "Admin"}]
+            )
+            s.eq.return_value = e
+            m.select.return_value = s
+            return m
+        elif name == "orders":
+            m.select.return_value = detail_sel
+            return m
+        return m
+
+    mock_db.table.side_effect = table_router
+    app.dependency_overrides[get_supabase_client] = lambda: mock_db
+
+    try:
+        res = client.patch(
+            f"/api/admin/orders/{order_num}/status",
+            json={"status": "paid"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert res.status_code == 400
+        assert "no pueden modificarse de estado manualmente" in res.json()["detail"]
+    finally:
+        app.dependency_overrides.clear()
+
+

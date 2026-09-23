@@ -65,6 +65,35 @@ async def get_order_status(order_number: str):
         )
 
 
+@router.post(
+    "/{order_number}/confirm-payment",
+    status_code=status.HTTP_200_OK,
+    summary="Confirmar acreditación de pago externamente con Mercado Pago",
+    description="Permite que la página de retorno /pago/exitoso confirme el pedido verificando el payment_id directamente contra la API de Mercado Pago.",
+)
+async def confirm_order_payment(order_number: str, payment_id: str):
+    service = OrderService()
+    try:
+        res = await service.confirm_order_payment(order_number, payment_id=payment_id)
+        return res
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Pedido {order_number} no encontrado.",
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error(f"Error confirmando pago para orden {order_number}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno verificando el pago con la pasarela.",
+        )
+
+
 @router.delete(
     "/{order_number}",
     status_code=status.HTTP_200_OK,
@@ -87,4 +116,5 @@ async def delete_draft_order(order_number: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error interno al descartar el pedido.",
         )
+
 
