@@ -65,3 +65,15 @@ async def test_get_product_detail_not_found():
         data = response.json()
         assert "detail" in data
         assert "no encontrado" in data["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_get_products_with_search_parameter():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/products?search=shampoo&page=1&per_page=10")
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert "pagination" in data
+        assert isinstance(data["items"], list)
+

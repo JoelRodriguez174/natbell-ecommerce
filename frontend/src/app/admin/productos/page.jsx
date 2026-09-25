@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Plus, Search, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useAdminAuthStore } from "../../../store/useAdminAuthStore";
 import ProductsTable from "../../../components/admin/products/ProductsTable";
@@ -43,13 +43,13 @@ export default function AdminProductosPage() {
   const [formVariantName, setFormVariantName] = useState("Estándar");
   const [formStock, setFormStock] = useState(10);
 
-  const fetchCatalogData = useCallback(async () => {
+  const fetchCatalogData = useCallback(async (searchQuery = "") => {
     setIsLoading(true);
     try {
       const [prodRes, catRes, brandRes] = await Promise.all([
         fetch(
           `${API_URL}/api/products?per_page=50${
-            search ? `&search=${encodeURIComponent(search)}` : ""
+            searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""
           }`
         ),
         fetch(`${API_URL}/api/categories`),
@@ -75,11 +75,33 @@ export default function AdminProductosPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [search, formCategory, formBrand]);
+  }, [formCategory, formBrand]);
 
   useEffect(() => {
-    fetchCatalogData();
-  }, [fetchCatalogData]);
+    const timer = setTimeout(() => {
+      fetchCatalogData(search);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search, fetchCatalogData]);
+
+  // Filtrado instantáneo en cliente por nombre, SKU, marca o categoría
+  const visibleProducts = useMemo(() => {
+    if (!search || !search.trim()) return products;
+    const q = search.trim().toLowerCase();
+    return products.filter((p) => {
+      const name = (p.name || "").toLowerCase();
+      const sku = String(p.variants?.[0]?.sku || p.sku || "").toLowerCase();
+      const brand = (p.brand_name || "").toLowerCase();
+      const cat = (p.category_name || "").toLowerCase();
+      return (
+        name.includes(q) ||
+        sku.includes(q) ||
+        brand.includes(q) ||
+        cat.includes(q)
+      );
+    });
+  }, [products, search]);
+
 
   // Abrir Modal para Crear Producto
   const handleOpenCreateModal = () => {
@@ -414,14 +436,14 @@ export default function AdminProductosPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar producto por nombre..."
+          placeholder="Buscar por nombre, SKU, marca o categoría..."
           className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500"
         />
       </div>
 
-      {/* Tabla de Productos */}
+      {/* Tabla de Productos con Ordenamiento y Filtros */}
       <ProductsTable
-        products={products}
+        products={visibleProducts}
         isLoading={isLoading}
         onEdit={handleOpenEditModal}
         onDelete={handleDeleteProduct}

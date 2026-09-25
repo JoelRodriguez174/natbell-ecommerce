@@ -34,6 +34,11 @@ class ProductFilters(BaseModel):
         default=None,
         description="Filtrar exclusivamente productos en oferta",
     )
+    search: Optional[str] = Field(
+        default=None,
+        max_length=100,
+        description="Búsqueda por coincidencia de texto en nombre o descripción",
+    )
 
 
 class ProductListItem(BaseModel):

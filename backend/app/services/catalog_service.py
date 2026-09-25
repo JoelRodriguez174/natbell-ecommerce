@@ -278,6 +278,20 @@ class CatalogService:
         if filters.max_price is not None:
             query = query.lte("base_price", str(filters.max_price))
 
+        # 6. Filtro por búsqueda de texto
+        if filters.search and filters.search.strip():
+            clean_search = re.sub(
+                r"[^\w\s\-\.]", "", filters.search.strip()[:100], flags=re.UNICODE
+            ).strip()
+            if clean_search:
+                tokens = [t for t in clean_search.split() if len(t) >= 2] or [clean_search]
+                or_conditions = []
+                for t in tokens[:4]:
+                    or_conditions.append(f"name.ilike.%{t}%")
+                    or_conditions.append(f"description.ilike.%{t}%")
+                if or_conditions:
+                    query = query.or_(",".join(or_conditions))
+
         # 6. Ordenamiento
         if filters.sort == "price_asc":
             query = query.order("base_price", desc=False)
