@@ -8,6 +8,7 @@ from app.models.admin_catalog import (
     AdminProductCreate,
     AdminProductUpdate,
 )
+from app.utils.cache import global_cache
 from app.utils.postgrest import as_dict_list as _as_dict_list
 from app.utils.postgrest import as_first_dict as _as_first_dict
 from app.utils.slug import slugify
@@ -97,6 +98,7 @@ class AdminCatalogService:
                     variants_created.append(created_v)
 
         created_prod["variants"] = variants_created
+        global_cache.invalidate_prefix("catalog:")
         return created_prod
 
     async def update_product(self, product_id: UUID, payload: AdminProductUpdate) -> Dict[str, Any]:
@@ -141,6 +143,7 @@ class AdminCatalogService:
         if not updated:
             raise KeyError(f"Producto {product_id} no encontrado para actualizar")
 
+        global_cache.invalidate_prefix("catalog:")
         return updated
 
     async def delete_product(self, product_id: UUID) -> bool:
@@ -149,6 +152,7 @@ class AdminCatalogService:
         self.db.table("products").update({"is_active": False}).eq("id", str(product_id)).execute()
         # Desactivar variantes
         self.db.table("product_variants").update({"is_active": False}).eq("product_id", str(product_id)).execute()
+        global_cache.invalidate_prefix("catalog:")
         return True
 
     async def update_variant_stock(self, variant_id: UUID, new_stock: int) -> Dict[str, Any]:
@@ -162,6 +166,7 @@ class AdminCatalogService:
         updated = _as_first_dict(res.data) if res else {}
         if not updated:
             raise KeyError(f"Variante {variant_id} no encontrada")
+        global_cache.invalidate_prefix("catalog:")
         return updated
 
     async def upload_image(self, file_bytes: bytes, filename: str, content_type: str) -> str:

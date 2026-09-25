@@ -371,3 +371,55 @@ def test_create_product_missing_categories_fails():
     finally:
         app.dependency_overrides.clear()
 
+
+def test_admin_catalog_mutations_invalidate_cache():
+    from app.utils.cache import global_cache
+
+    mock_db = _setup_admin_override()
+    token = create_access_token(subject=TEST_ADMIN_ID)
+    prod_id = str(uuid4())
+
+    prod_update = MagicMock()
+    prod_update.execute.return_value = MagicMock(
+        data=[{"id": prod_id, "name": "Shampoo Invalida Cache", "base_price": 7000.0}]
+    )
+
+    def table_side_effect(name):
+        m = MagicMock()
+        if name == "admin_users":
+            admin_sel = MagicMock()
+            admin_eq = MagicMock()
+            admin_eq.execute.return_value = MagicMock(
+                data=[{"id": TEST_ADMIN_ID, "email": TEST_EMAIL, "name": "Admin"}]
+            )
+            m.select.return_value = admin_sel
+            admin_sel.eq.return_value = admin_eq
+            return m
+        elif name == "products":
+            m.update.return_value = prod_update
+            prod_update.eq.return_value = prod_update
+            return m
+        return m
+
+    mock_db.table.side_effect = table_side_effect
+    app.dependency_overrides[get_supabase_client] = lambda: mock_db
+
+    try:
+        # Pre-poblar caché con prefijo 'catalog:'
+        global_cache.set("catalog:products:test_key", {"items": []})
+        assert global_cache.get("catalog:products:test_key") is not None
+
+        # Realizar mutación vía PUT
+        res_put = client.put(
+            f"/api/admin/products/{prod_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"base_price": 7000.0},
+        )
+        assert res_put.status_code == 200
+
+        # Verificar que la entrada de caché fue invalidada
+        assert global_cache.get("catalog:products:test_key") is None
+    finally:
+        app.dependency_overrides.clear()
+
+

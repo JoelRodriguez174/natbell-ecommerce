@@ -30,7 +30,14 @@ const NAV_ITEMS = [
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { token, adminUser, logout, checkAuth } = useAdminAuthStore();
+  const {
+    token,
+    adminUser,
+    logout,
+    checkAuth,
+    checkInactivity,
+    updateActivity,
+  } = useAdminAuthStore();
   const { theme, toggleTheme } = useAdminThemeStore();
 
   const [hasMounted, setHasMounted] = useState(false);
@@ -41,9 +48,55 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     setHasMounted(true);
     if (pathname !== "/admin/login") {
+      const isExpired = checkInactivity();
+      if (isExpired) {
+        router.replace("/admin/login?reason=inactivity");
+        return;
+      }
       checkAuth();
     }
-  }, [pathname, checkAuth]);
+  }, [pathname, checkAuth, checkInactivity, router]);
+
+  // Detección de actividad del usuario y expiración tras 5 minutos de inactividad
+  useEffect(() => {
+    if (pathname === "/admin/login" || !token) return;
+
+    let lastThrottle = 0;
+    const handleUserActivity = () => {
+      const now = Date.now();
+      if (now - lastThrottle > 2000) {
+        lastThrottle = now;
+        updateActivity();
+      }
+    };
+
+    const activityEvents = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "scroll",
+      "touchstart",
+      "click",
+    ];
+
+    activityEvents.forEach((evt) => {
+      window.addEventListener(evt, handleUserActivity, { passive: true });
+    });
+
+    const intervalId = setInterval(() => {
+      const isExpired = checkInactivity();
+      if (isExpired) {
+        router.replace("/admin/login?reason=inactivity");
+      }
+    }, 5000);
+
+    return () => {
+      activityEvents.forEach((evt) => {
+        window.removeEventListener(evt, handleUserActivity);
+      });
+      clearInterval(intervalId);
+    };
+  }, [pathname, token, checkInactivity, updateActivity, router]);
 
   useEffect(() => {
     if (isDark) {

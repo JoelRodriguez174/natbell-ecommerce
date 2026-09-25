@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Search, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useAdminAuthStore } from "../../../store/useAdminAuthStore";
 import ProductsTable from "../../../components/admin/products/ProductsTable";
@@ -9,6 +10,7 @@ import ProductFormModal from "../../../components/admin/products/ProductFormModa
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function AdminProductosPage() {
+  const router = useRouter();
   const { token } = useAdminAuthStore();
 
   const [products, setProducts] = useState([]);
@@ -46,14 +48,28 @@ export default function AdminProductosPage() {
   const fetchCatalogData = useCallback(async (searchQuery = "") => {
     setIsLoading(true);
     try {
+      const timestamp = Date.now();
       const [prodRes, catRes, brandRes] = await Promise.all([
         fetch(
           `${API_URL}/api/products?per_page=50${
             searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""
-          }`
+          }&_t=${timestamp}`,
+          {
+            cache: "no-store",
+            headers: {
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+            },
+          }
         ),
-        fetch(`${API_URL}/api/categories`),
-        fetch(`${API_URL}/api/brands`),
+        fetch(`${API_URL}/api/categories?_t=${timestamp}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        }),
+        fetch(`${API_URL}/api/brands?_t=${timestamp}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        }),
       ]);
 
       if (prodRes.ok) {
@@ -355,7 +371,8 @@ export default function AdminProductosPage() {
       }
 
       setIsModalOpen(false);
-      fetchCatalogData();
+      await fetchCatalogData(search);
+      router.refresh();
     } catch (err) {
       setFeedback({ type: "error", message: err.message });
     } finally {
@@ -378,11 +395,15 @@ export default function AdminProductosPage() {
 
       if (!res.ok) throw new Error("Error al eliminar producto");
 
+      // Actualización optimista inmediata en la UI
+      setProducts((prev) => prev.filter((p) => p.id !== prod.id));
+
       setFeedback({
         type: "success",
         message: `Producto '${prod.name}' eliminado.`,
       });
-      fetchCatalogData();
+      await fetchCatalogData(search);
+      router.refresh();
     } catch (err) {
       setFeedback({ type: "error", message: err.message });
     }

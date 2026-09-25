@@ -8,6 +8,7 @@ export const useAdminAuthStore = create(
     (set, get) => ({
       token: null,
       adminUser: null,
+      lastActivity: null,
       isLoading: false,
       error: null,
 
@@ -31,6 +32,7 @@ export const useAdminAuthStore = create(
           set({
             token: data.access_token,
             adminUser: data.user,
+            lastActivity: Date.now(),
             isLoading: false,
             error: null,
           });
@@ -93,6 +95,7 @@ export const useAdminAuthStore = create(
           set({
             token: data.access_token,
             adminUser: data.user,
+            lastActivity: Date.now(),
             isLoading: false,
             error: null,
           });
@@ -160,13 +163,49 @@ export const useAdminAuthStore = create(
         }
       },
 
+      updateActivity: () => {
+        const { token } = get();
+        if (token) {
+          set({ lastActivity: Date.now() });
+        }
+      },
+
+      checkInactivity: () => {
+        const { token, lastActivity, logout } = get();
+        if (!token) return false;
+
+        // Si no hay marca de tiempo de actividad previa pero sí token, inicializar
+        if (!lastActivity) {
+          set({ lastActivity: Date.now() });
+          return false;
+        }
+
+        const INACTIVITY_LIMIT_MS = 5 * 60 * 1000; // 5 minutos de inactividad
+        const isExpired = Date.now() - lastActivity > INACTIVITY_LIMIT_MS;
+        if (isExpired) {
+          logout();
+          return true;
+        }
+        return false;
+      },
+
       logout: () => {
-        set({ token: null, adminUser: null, error: null, isLoading: false });
+        set({
+          token: null,
+          adminUser: null,
+          lastActivity: null,
+          error: null,
+          isLoading: false,
+        });
       },
 
       checkAuth: async () => {
-        const { token } = get();
+        const { token, checkInactivity, logout } = get();
         if (!token) return false;
+
+        if (checkInactivity()) {
+          return false;
+        }
 
         try {
           const res = await fetch(`${API_URL}/api/admin/auth/me`, {
@@ -174,7 +213,7 @@ export const useAdminAuthStore = create(
           });
 
           if (!res.ok) {
-            get().logout();
+            logout();
             return false;
           }
 
@@ -182,7 +221,7 @@ export const useAdminAuthStore = create(
           set({ adminUser: user });
           return true;
         } catch {
-          get().logout();
+          logout();
           return false;
         }
       },
@@ -190,7 +229,11 @@ export const useAdminAuthStore = create(
     {
       name: "natbell-admin-auth-storage",
       storage: createJSONStorage(() => (typeof window !== "undefined" ? localStorage : null)),
-      partialize: (state) => ({ token: state.token, adminUser: state.adminUser }),
+      partialize: (state) => ({
+        token: state.token,
+        adminUser: state.adminUser,
+        lastActivity: state.lastActivity,
+      }),
     }
   )
 );

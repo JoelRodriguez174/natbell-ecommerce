@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Lock, Mail, Loader2, ArrowLeft, AlertCircle, ShieldCheck } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Lock, Mail, Loader2, ArrowLeft, AlertCircle, ShieldCheck, Clock } from "lucide-react";
 import { useAdminAuthStore } from "../../../store/useAdminAuthStore";
 
-export default function AdminLoginPage() {
+function AdminLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reason = searchParams?.get("reason");
   const { login, isLoading, error } = useAdminAuthStore();
 
   const [email, setEmail] = useState("");
@@ -63,6 +65,16 @@ export default function AdminLoginPage() {
             <span>Acceso de Administración</span>
           </div>
         </div>
+
+        {/* Inactivity Notice */}
+        {reason === "inactivity" && !displayedError && (
+          <div className="mb-6 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-start gap-2.5 animate-fadeIn">
+            <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              Tu sesión expiró tras 5 minutos de inactividad por razones de seguridad. Por favor, ingresá nuevamente.
+            </span>
+          </div>
+        )}
 
         {/* Error Alert */}
         {displayedError && (
@@ -129,5 +141,19 @@ export default function AdminLoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-amber-500">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      }
+    >
+      <AdminLoginForm />
+    </Suspense>
   );
 }
