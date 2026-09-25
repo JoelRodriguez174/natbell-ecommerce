@@ -58,6 +58,9 @@ class ProductListItem(BaseModel):
     min_price: Decimal = Field(..., gt=Decimal("0.00"))
     max_price: Decimal = Field(..., gt=Decimal("0.00"))
     in_stock: bool = False
+    stock: int = 0
+    total_stock: int = 0
+    variants: List[dict] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -52,6 +52,9 @@ def test_map_product_to_list_item_price_range_and_stock():
     assert item.max_price == Decimal("3800.00")
     # Stock disponible si alguna variante tiene stock > 0
     assert item.in_stock is True
+    assert item.stock == 5
+    assert item.total_stock == 5
+    assert len(item.variants) == 2
 
 
 def test_map_product_to_detail():

@@ -50,8 +50,9 @@ export default function ProductsTable({
     // 1. Filtrado por estado
     const filtered = products.filter((p) => {
       const totalStock =
-        p.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ??
         p.stock ??
+        p.total_stock ??
+        p.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ??
         0;
 
       if (statusFilter === "active") return p.is_active !== false;
@@ -91,9 +92,15 @@ export default function ProductsTable({
         }
         case "stock": {
           const stockA =
-            a.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ?? a.stock ?? 0;
+            a.stock ??
+            a.total_stock ??
+            a.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ??
+            0;
           const stockB =
-            b.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ?? b.stock ?? 0;
+            b.stock ??
+            b.total_stock ??
+            b.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ??
+            0;
           comparison = stockA - stockB;
           break;
         }
@@ -278,8 +285,9 @@ export default function ProductsTable({
               ) : (
                 filteredAndSortedProducts.map((p) => {
                   const totalStock =
-                    p.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ??
                     p.stock ??
+                    p.total_stock ??
+                    p.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ??
                     0;
                   const isLowStock = totalStock <= 5;
                   const firstImg =

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Search, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useAdminAuthStore } from "../../../store/useAdminAuthStore";
@@ -19,6 +19,8 @@ export default function AdminProductosPage() {
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [feedback, setFeedback] = useState(null);
+
+  const isFirstMount = useRef(true);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -79,21 +81,25 @@ export default function AdminProductosPage() {
       if (catRes.ok) {
         const cData = await catRes.json();
         setCategories(cData || []);
-        if (cData.length > 0 && !formCategory) setFormCategory(cData[0].id);
       }
       if (brandRes.ok) {
         const bData = await brandRes.json();
         setBrands(bData || []);
-        if (bData.length > 0 && !formBrand) setFormBrand(bData[0].id);
       }
     } catch {
       setFeedback({ type: "error", message: "Error al conectar con el servidor." });
     } finally {
       setIsLoading(false);
     }
-  }, [formCategory, formBrand]);
+  }, []);
 
   useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      fetchCatalogData();
+      return;
+    }
+
     const timer = setTimeout(() => {
       fetchCatalogData(search);
     }, 350);
@@ -187,6 +193,8 @@ export default function AdminProductosPage() {
     setFormBrand(matchedBrand?.id || prod.brand_id || brands[0]?.id || "");
 
     const initialStock =
+      prod.stock ??
+      prod.total_stock ??
       prod.variants?.[0]?.stock ??
       (typeof prod.stock === "number" ? prod.stock : 0);
     setFormStock(initialStock);
