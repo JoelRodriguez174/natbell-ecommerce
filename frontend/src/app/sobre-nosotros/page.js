@@ -96,13 +96,6 @@ export default function SobreNosotrosPage() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Button
-              variant="primary"
-              size="md"
-              className="bg-[#5EB82D] hover:bg-[#4ea024] text-white font-bold px-6 py-3.5 rounded-xl shadow-md text-sm w-full sm:w-auto border-none"
-            >
-              Consultar por WhatsApp
-            </Button>
           </a>
           <Link href="/productos">
             <Button
