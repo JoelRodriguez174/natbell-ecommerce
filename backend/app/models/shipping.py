@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -39,4 +39,5 @@ class ShippingQuote(BaseModel):
     postal_code: str
     provider: str = "fixed_rate"
     description: str
+    free_shipping_threshold: Optional[Decimal] = None
 

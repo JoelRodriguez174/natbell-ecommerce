@@ -11,6 +11,7 @@ import EmptyCheckout from "../../components/checkout/EmptyCheckout";
 import CustomerInfoStep from "../../components/checkout/CustomerInfoStep";
 import ShippingAddressStep from "../../components/checkout/ShippingAddressStep";
 import OrderSummary from "../../components/checkout/OrderSummary";
+import { FREE_SHIPPING_THRESHOLD } from "../../lib/constants";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -141,6 +142,11 @@ export default function CheckoutPage() {
         quantity: item.quantity,
       }));
 
+      const freeShippingThreshold = shippingQuote?.free_shipping_threshold
+        ? Number(shippingQuote.free_shipping_threshold)
+        : FREE_SHIPPING_THRESHOLD;
+      const isFree = subtotal >= freeShippingThreshold;
+
       const payload = {
         customer_name: data.customer_name.trim(),
         customer_email: data.customer_email.trim(),
@@ -149,7 +155,7 @@ export default function CheckoutPage() {
         shipping_city: data.shipping_city.trim(),
         shipping_province: data.shipping_province.trim(),
         shipping_postal_code: data.shipping_postal_code.trim(),
-        shipping_cost: shippingQuote?.cost ? Number(shippingQuote.cost) : 0,
+        shipping_cost: isFree ? 0 : (shippingQuote?.cost ? Number(shippingQuote.cost) : 0),
         notes: data.notes?.trim() || null,
         items: orderItems,
       };
@@ -188,7 +194,11 @@ export default function CheckoutPage() {
   }
 
   const subtotal = getSubtotal();
-  const shippingCost = shippingQuote?.cost ? Number(shippingQuote.cost) : 0;
+  const freeShippingThreshold = shippingQuote?.free_shipping_threshold
+    ? Number(shippingQuote.free_shipping_threshold)
+    : FREE_SHIPPING_THRESHOLD;
+  const isFreeShipping = subtotal >= freeShippingThreshold;
+  const shippingCost = isFreeShipping ? 0 : (shippingQuote?.cost ? Number(shippingQuote.cost) : 0);
   const total = subtotal + shippingCost;
 
   return (
@@ -245,6 +255,7 @@ export default function CheckoutPage() {
                 items={items}
                 subtotal={subtotal}
                 shippingCost={shippingCost}
+                isFreeShipping={isFreeShipping}
                 total={total}
                 isLoading={isSubmitting}
                 onSubmit={handleSubmit(onSubmit)}

@@ -193,3 +193,52 @@ async def test_order_service_mark_order_paid_idempotent():
     res_second = await service.mark_order_paid("ORD-2026-00002", payment_id="pay-123")
     assert res_second is True
 
+
+@pytest.mark.anyio
+async def test_order_service_free_shipping_applied_when_subtotal_exceeds_threshold(sample_checkout_request):
+    variant_id = str(sample_checkout_request.items[0].product_variant_id)
+    order_id = str(uuid4())
+
+    mock_supabase = MagicMock()
+    # 1. Variante con precio que supera el umbral de 60000 (ej: 65000 total)
+    variant_data = {
+        "id": variant_id,
+        "sku": "COMBO-GOLD",
+        "variant_name": "Kit Completo",
+        "stock": 10,
+        "price_override": 32500.0,  # x2 = 65000.0
+        "is_active": True,
+        "product_id": str(uuid4()),
+        "products": {
+            "name": "Super Combo Tratamiento",
+            "base_price": 32500.0,
+            "is_active": True,
+        },
+    }
+    mock_supabase.table().select().eq().execute.return_value = MagicMock(data=[variant_data])
+    mock_supabase.table().select().order().limit().execute.return_value = MagicMock(data=[])
+
+    # 3. Order insert capture
+    inserted_records = []
+
+    def mock_insert(payload):
+        inserted_records.append(payload)
+        ret = dict(payload, id=order_id, created_at=datetime.now().isoformat(), updated_at=datetime.now().isoformat())
+        mock_ret = MagicMock()
+        mock_ret.execute.return_value = MagicMock(data=[ret])
+        return mock_ret
+
+    mock_supabase.table().insert.side_effect = mock_insert
+
+    from app.services.payment_service import MockPaymentProvider
+    service = OrderService(db_client=mock_supabase, payment_provider=MockPaymentProvider())
+    resp = await service.create_order(sample_checkout_request)
+
+    assert isinstance(resp, OrderCreateResponse)
+    assert resp.subtotal == Decimal("65000.00")
+    # El envío debe ser bonificado a 0 aunque el request trajera 1200.00
+    assert resp.total == Decimal("65000.00")
+    assert len(inserted_records) >= 1
+    assert inserted_records[0]["shipping_cost"] == 0.0
+    assert inserted_records[0]["total"] == 65000.0
+

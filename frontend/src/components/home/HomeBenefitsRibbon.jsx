@@ -14,8 +14,8 @@ export default function HomeBenefitsRibbon() {
     {
       icon: Truck,
       iconColor: "text-[#5EB82D]",
-      title: "Envíos a Todo el País",
-      subtitle: "Correo Argentino y Andreani",
+      title: "Envío Gratis desde $60.000",
+      subtitle: "A todo el país sin cargo",
     },
     {
       icon: ShieldCheck,

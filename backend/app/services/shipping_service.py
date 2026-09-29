@@ -287,7 +287,10 @@ class ShippingService:
 
     def quote(self, postal_code: str, db: Optional[Client] = None) -> ShippingQuote:
         """Delega la cotización a la estrategia actualmente configurada."""
-        return self._provider.calculate_quote(postal_code, db=db)
+        result = self._provider.calculate_quote(postal_code, db=db)
+        if result.free_shipping_threshold is None and settings.free_shipping_threshold:
+            result.free_shipping_threshold = Decimal(str(settings.free_shipping_threshold))
+        return result
 
     def list_zones(self, db: Optional[Client] = None) -> List[Dict[str, Any]]:
         """Lista todas las zonas configuradas con tipos consistentes."""

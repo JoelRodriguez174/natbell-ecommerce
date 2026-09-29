@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Truck } from "lucide-react";
 
 /**
  * Hero Banner principal de la página de inicio.
@@ -14,6 +14,12 @@ export default function HomeHeroBanner() {
       <div className="absolute -bottom-24 -right-20 w-80 h-80 rounded-full bg-[#5EB82D]/12 blur-3xl pointer-events-none" />
 
       <div className="relative max-w-4xl mx-auto text-center space-y-6">
+        {/* Badge promocional de Envío Gratis */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-semibold tracking-wide backdrop-blur-xs shadow-xs animate-in fade-in">
+          <Truck className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>¡Envío Sin Cargo en compras superiores a $60.000!</span>
+        </div>
+
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
           Productos profesionales para tu salón al{" "}
           <span className="bg-gradient-to-r from-[#DE1B76] via-rose-400 to-[#5EB82D] bg-clip-text text-transparent">
@@ -23,7 +29,7 @@ export default function HomeHeroBanner() {
 
         <p className="text-sm sm:text-base text-zinc-300 max-w-2xl mx-auto font-normal leading-relaxed">
           Comprá directo tinturas, decolorantes, máquinas de corte y tratamientos de marcas líderes.
-          Stock real inmediato con envíos a todo el país y cuotas con MercadoPago.
+          Stock real inmediato con envíos sin cargo desde $60.000 a todo el país y cuotas con MercadoPago.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4 pt-3">

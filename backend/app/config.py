@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     andreani_origin_postal_code: str = "1752"
     andreani_api_base_url: str = "https://woocommerce-api-acom.andreani.com"
 
+    # Shipping Configuration
+    free_shipping_threshold: float = 60000.00
+
     model_config = SettingsConfigDict(
         env_file=(
             str(_BACKEND_DIR / ".env"),

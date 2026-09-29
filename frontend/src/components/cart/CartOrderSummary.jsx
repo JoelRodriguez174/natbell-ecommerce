@@ -7,6 +7,7 @@ export default function CartOrderSummary({
   totalItemsCount,
   subtotalAmount,
   quote,
+  isFreeShipping = false,
   grandTotal,
   cuotaTotal,
   onProceedToCheckout,
@@ -32,7 +33,18 @@ export default function CartOrderSummary({
               <Truck className="w-4 h-4 text-[#5EB82D]" />
               <span>Costo de envío</span>
             </span>
-            {quote ? (
+            {isFreeShipping ? (
+              <span className="flex items-center gap-1.5">
+                {quote?.cost && (
+                  <span className="line-through text-gray-400 text-xs">
+                    {formatCurrency(quote.cost)}
+                  </span>
+                )}
+                <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 text-xs">
+                  ¡Gratis!
+                </span>
+              </span>
+            ) : quote ? (
               <span className="font-semibold text-gray-900">
                 {formatCurrency(quote.cost)}
               </span>

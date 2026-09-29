@@ -9,8 +9,10 @@ import Button from "@/components/ui/Button";
 import ShippingCalculator from "@/components/cart/ShippingCalculator";
 import CartItemRow from "@/components/cart/CartItemRow";
 import CartOrderSummary from "@/components/cart/CartOrderSummary";
+import FreeShippingBar from "@/components/cart/FreeShippingBar";
 import { useCartStore } from "@/store/useCartStore";
 import { useShippingStore } from "@/store/useShippingStore";
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/constants";
 
 export default function CartPage() {
   const router = useRouter();
@@ -44,7 +46,11 @@ export default function CartPage() {
 
   const totalItemsCount = getTotalItems();
   const subtotalAmount = getSubtotal();
-  const shippingCost = quote?.cost ? Number(quote.cost) : 0;
+  const freeShippingThreshold = quote?.free_shipping_threshold
+    ? Number(quote.free_shipping_threshold)
+    : FREE_SHIPPING_THRESHOLD;
+  const isFreeShipping = subtotalAmount >= freeShippingThreshold;
+  const shippingCost = isFreeShipping ? 0 : (quote?.cost ? Number(quote.cost) : 0);
   const grandTotal = subtotalAmount + shippingCost;
   const cuotaTotal = Math.round(grandTotal / 3);
 
@@ -115,47 +121,57 @@ export default function CartPage() {
             </Button>
           </div>
         ) : (
-          /* Grid de Carrito con Productos */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Columna Izquierda: Lista de Productos */}
-            <div className="lg:col-span-8 space-y-4">
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-xs divide-y divide-gray-100 overflow-hidden">
-                {items.map((item) => (
-                  <CartItemRow
-                    key={item.itemKey}
-                    item={item}
-                    onUpdateQuantity={updateQuantity}
-                    onRemoveItem={removeItem}
-                  />
-                ))}
+          <div className="space-y-6">
+            {/* Barra de Progreso de Envío Gratis */}
+            <FreeShippingBar
+              subtotal={subtotalAmount}
+              threshold={freeShippingThreshold}
+            />
+
+            {/* Grid de Carrito con Productos */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Columna Izquierda: Lista de Productos */}
+              <div className="lg:col-span-8 space-y-4">
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-xs divide-y divide-gray-100 overflow-hidden">
+                  {items.map((item) => (
+                    <CartItemRow
+                      key={item.itemKey}
+                      item={item}
+                      onUpdateQuantity={updateQuantity}
+                      onRemoveItem={removeItem}
+                    />
+                  ))}
+                </div>
+
+                {/* Botón Seguir Comprando */}
+                <div className="flex items-center justify-between pt-2">
+                  <Link
+                    href="/productos"
+                    className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 hover:text-[#DE1B76] transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Seguir agregando productos</span>
+                  </Link>
+                </div>
               </div>
 
-              {/* Botón Seguir Comprando */}
-              <div className="flex items-center justify-between pt-2">
-                <Link
-                  href="/productos"
-                  className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 hover:text-[#DE1B76] transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Seguir agregando productos</span>
-                </Link>
+              {/* Columna Derecha: Cotizador de Envíos y Resumen de Pedido */}
+              <div className="lg:col-span-4 space-y-6">
+                {/* Cotizador de Envíos */}
+                <ShippingCalculator />
+
+                {/* Tarjeta de Resumen de Compra */}
+                <CartOrderSummary
+                  totalItemsCount={totalItemsCount}
+                  subtotalAmount={subtotalAmount}
+                  quote={quote}
+                  isFreeShipping={isFreeShipping}
+                  freeShippingThreshold={freeShippingThreshold}
+                  grandTotal={grandTotal}
+                  cuotaTotal={cuotaTotal}
+                  onProceedToCheckout={() => router.push("/checkout")}
+                />
               </div>
-            </div>
-
-            {/* Columna Derecha: Cotizador de Envíos y Resumen de Pedido */}
-            <div className="lg:col-span-4 space-y-6">
-              {/* Cotizador de Envíos */}
-              <ShippingCalculator />
-
-              {/* Tarjeta de Resumen de Compra */}
-              <CartOrderSummary
-                totalItemsCount={totalItemsCount}
-                subtotalAmount={subtotalAmount}
-                quote={quote}
-                grandTotal={grandTotal}
-                cuotaTotal={cuotaTotal}
-                onProceedToCheckout={() => router.push("/checkout")}
-              />
             </div>
           </div>
         )}

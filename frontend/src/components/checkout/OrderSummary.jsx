@@ -6,6 +6,7 @@ export default function OrderSummary({
   items = [],
   subtotal = 0,
   shippingCost = 0,
+  isFreeShipping = false,
   total = 0,
   isLoading = false,
   onSubmit = () => {},
@@ -69,7 +70,15 @@ export default function OrderSummary({
         <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
           <span>Costo de envío</span>
           <span className="font-medium text-zinc-900 dark:text-zinc-100">
-            {shippingCost > 0 ? formatPrice(shippingCost) : "Gratis o a calcular"}
+            {isFreeShipping ? (
+              <span className="text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded text-xs">
+                ¡Bonificado (Gratis)!
+              </span>
+            ) : shippingCost > 0 ? (
+              formatPrice(shippingCost)
+            ) : (
+              "Gratis o a calcular"
+            )}
           </span>
         </div>
 

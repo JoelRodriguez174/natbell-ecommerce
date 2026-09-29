@@ -6,9 +6,13 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { getShippingQuote } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/constants";
 import { useShippingStore } from "@/store/useShippingStore";
+import { useCartStore } from "@/store/useCartStore";
 
 export default function ShippingCalculator({ className = "", compact = false }) {
+  const { getSubtotal } = useCartStore();
+  const subtotal = getSubtotal();
   const {
     postalCode,
     quote,
@@ -20,6 +24,9 @@ export default function ShippingCalculator({ className = "", compact = false }) 
     setIsLoading,
     clearShipping,
   } = useShippingStore();
+
+  const threshold = quote?.free_shipping_threshold ? Number(quote.free_shipping_threshold) : FREE_SHIPPING_THRESHOLD;
+  const isFreeShipping = subtotal >= threshold;
 
   const [localCP, setLocalCP] = useState(postalCode || "");
 
@@ -133,10 +140,26 @@ export default function ShippingCalculator({ className = "", compact = false }) 
               </p>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-sm font-black text-gray-950 block">
-                {formatCurrency(quote.cost)}
-              </span>
-              <span className="text-[10px] text-gray-400">Tarifa fija</span>
+              {isFreeShipping ? (
+                <>
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span className="text-xs line-through text-gray-400">
+                      {formatCurrency(quote.cost)}
+                    </span>
+                    <span className="text-sm font-black text-emerald-600 block">
+                      ¡Gratis!
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-emerald-600 font-semibold">Envío bonificado</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-black text-gray-950 block">
+                    {formatCurrency(quote.cost)}
+                  </span>
+                  <span className="text-[10px] text-gray-400">Tarifa fija</span>
+                </>
+              )}
             </div>
           </div>
 

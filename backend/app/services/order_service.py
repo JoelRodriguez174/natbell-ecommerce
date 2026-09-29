@@ -89,7 +89,12 @@ class OrderService:
                 }
             )
 
-        shipping_cost = Decimal(str(request.shipping_cost or "0.00"))
+        free_shipping_threshold = Decimal(str(settings.free_shipping_threshold))
+        if free_shipping_threshold > Decimal("0.00") and calculated_subtotal >= free_shipping_threshold:
+            shipping_cost = Decimal("0.00")
+        else:
+            shipping_cost = Decimal(str(request.shipping_cost or "0.00"))
+
         if shipping_cost < Decimal("0.00"):
             raise ValueError("El costo de envío no puede ser negativo.")
 
