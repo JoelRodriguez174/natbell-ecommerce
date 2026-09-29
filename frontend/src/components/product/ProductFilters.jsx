@@ -8,14 +8,21 @@ import { cn } from "@/lib/utils";
 export default function ProductFilters({
   categories = [],
   brands = [],
-  selectedCategory = "",
-  selectedBrand = "",
-  minPrice = "",
-  maxPrice = "",
-  onSale = false,
+  filters = {},
+  selectedCategory: propCategory = "",
+  selectedBrand: propBrand = "",
+  minPrice: propMinPrice = "",
+  maxPrice: propMaxPrice = "",
+  onSale: propOnSale = false,
   onFilterChange,
   onResetFilters,
 }) {
+  const selectedCategory = filters.category ?? propCategory;
+  const selectedBrand = filters.brand ?? propBrand;
+  const minPrice = filters.min_price ?? propMinPrice;
+  const maxPrice = filters.max_price ?? propMaxPrice;
+  const onSale = filters.on_sale ?? propOnSale;
+
   const [localMin, setLocalMin] = useState("");
   const [localMax, setLocalMax] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);

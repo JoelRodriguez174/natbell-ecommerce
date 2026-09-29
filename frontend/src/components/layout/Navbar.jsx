@@ -56,6 +56,7 @@ export default function Navbar() {
     if (!clean || clean.length < 2) {
       setSearchResults([]);
       setIsSearching(false);
+      setShowDropdown(false);
       return;
     }
 

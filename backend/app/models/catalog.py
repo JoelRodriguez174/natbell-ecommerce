@@ -39,6 +39,11 @@ class ProductFilters(BaseModel):
         max_length=100,
         description="Búsqueda por coincidencia de texto en nombre o descripción",
     )
+    q: Optional[str] = Field(
+        default=None,
+        max_length=100,
+        description="Alias de búsqueda por coincidencia de texto (compatibilidad con ?q=)",
+    )
 
 
 class ProductListItem(BaseModel):

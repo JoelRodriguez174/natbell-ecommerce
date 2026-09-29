@@ -1,5 +1,6 @@
 import logging
 import re
+import unicodedata
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
@@ -152,6 +153,85 @@ class CatalogService:
         )
 
     @classmethod
+    def _build_search_or_conditions(
+        cls, client: Client, search_term: str
+    ) -> Optional[str]:
+        """
+        Construye condiciones OR optimizadas y tolerantes a acentos, plurales,
+        marcas y subcategorías para PostgREST.
+        """
+        if not search_term or not search_term.strip():
+            return None
+
+        clean = re.sub(
+            r"[^\w\s\-\.]", "", search_term.strip()[:100], flags=re.UNICODE
+        ).strip()
+        if not clean:
+            return None
+
+        # 1. Normalizar acentos (e.g. 'argán' -> 'argan', 'máscara' -> 'mascara')
+        unaccented = "".join(
+            c for c in unicodedata.normalize("NFD", clean)
+            if unicodedata.category(c) != "Mn"
+        )
+
+        # 2. Generar tokens únicos preservando términos originales y sin tildes
+        raw_tokens = [t for t in clean.split() if len(t) >= 2] or [clean]
+        norm_tokens = [t for t in unaccented.split() if len(t) >= 2] or [unaccented]
+
+        tokens_set = set()
+        for tok in raw_tokens + norm_tokens:
+            tok_clean = tok.strip().lower()
+            if len(tok_clean) >= 2:
+                tokens_set.add(tok_clean)
+                # Variante singular si termina en 's' (e.g. 'shampoos' -> 'shampoo', 'tinturas' -> 'tintura')
+                if tok_clean.endswith("s") and len(tok_clean) > 3:
+                    tokens_set.add(tok_clean[:-1])
+                # Variante si termina en 'es' (e.g. 'acondicionadores' -> 'acondicionador')
+                if tok_clean.endswith("es") and len(tok_clean) > 4:
+                    tokens_set.add(tok_clean[:-2])
+
+        tokens = list(tokens_set)[:6]
+        if not tokens:
+            return None
+
+        or_conditions = []
+        for t in tokens:
+            or_conditions.append(f"name.ilike.%{t}%")
+            or_conditions.append(f"slug.ilike.%{t}%")
+            or_conditions.append(f"description.ilike.%{t}%")
+
+        # 3. Búsqueda de marcas coincidentes
+        try:
+            brand_filter = ",".join(f"name.ilike.%{t}%" for t in tokens[:3])
+            brand_res = client.table("brands").select("id").or_(brand_filter).limit(10).execute()
+            brand_ids = [str(b["id"]) for b in _as_dict_list(brand_res.data) if "id" in b]
+            if brand_ids:
+                if len(brand_ids) == 1:
+                    or_conditions.append(f"brand_id.eq.{brand_ids[0]}")
+                else:
+                    ids_str = ",".join(brand_ids)
+                    or_conditions.append(f"brand_id.in.({ids_str})")
+        except Exception as e:
+            logger.debug("No se pudieron resolver marcas en búsqueda: %s", e)
+
+        # 4. Búsqueda de subcategorías coincidentes
+        try:
+            subcat_filter = ",".join(f"name.ilike.%{t}%" for t in tokens[:3])
+            subcat_res = client.table("subcategories").select("id").or_(subcat_filter).limit(10).execute()
+            subcat_ids = [str(s["id"]) for s in _as_dict_list(subcat_res.data) if "id" in s]
+            if subcat_ids:
+                if len(subcat_ids) == 1:
+                    or_conditions.append(f"subcategory_id.eq.{subcat_ids[0]}")
+                else:
+                    ids_str = ",".join(subcat_ids)
+                    or_conditions.append(f"subcategory_id.in.({ids_str})")
+        except Exception as e:
+            logger.debug("No se pudieron resolver subcategorías en búsqueda: %s", e)
+
+        return ",".join(or_conditions) if or_conditions else None
+
+    @classmethod
     @cached(ttl_seconds=60, prefix="catalog:products")
     def get_products(
         cls, client: Client, filters: ProductFilters
@@ -282,19 +362,24 @@ class CatalogService:
         if filters.max_price is not None:
             query = query.lte("base_price", str(filters.max_price))
 
-        # 6. Filtro por búsqueda de texto
-        if filters.search and filters.search.strip():
-            clean_search = re.sub(
-                r"[^\w\s\-\.]", "", filters.search.strip()[:100], flags=re.UNICODE
-            ).strip()
-            if clean_search:
-                tokens = [t for t in clean_search.split() if len(t) >= 2] or [clean_search]
-                or_conditions = []
-                for t in tokens[:4]:
-                    or_conditions.append(f"name.ilike.%{t}%")
-                    or_conditions.append(f"description.ilike.%{t}%")
-                if or_conditions:
-                    query = query.or_(",".join(or_conditions))
+        # 6. Filtro por búsqueda de texto (soporta search y alias q)
+        search_term = (filters.search or filters.q or "").strip()
+        if search_term:
+            or_conditions = cls._build_search_or_conditions(client, search_term)
+            if or_conditions:
+                query = query.or_(or_conditions)
+            else:
+                return PaginatedProductsResponse(
+                    items=[],
+                    pagination=PaginationMetadata(
+                        page=filters.page,
+                        per_page=filters.per_page,
+                        total_items=0,
+                        total_pages=0,
+                        has_next=False,
+                        has_prev=False,
+                    ),
+                )
 
         # 6. Ordenamiento
         if filters.sort == "price_asc":
@@ -418,26 +503,12 @@ class CatalogService:
         if not client or not query or not query.strip():
             return []
 
-        # Sanitización defensiva: solo permitir caracteres alfanuméricos, espacios, guiones y puntos
-        clean_query = re.sub(
-            r"[^\w\s\-\.]", "", query.strip()[:100], flags=re.UNICODE
-        ).strip()
-        if not clean_query:
-            return []
-
-        tokens = [t for t in clean_query.split() if len(t) >= 2]
-        if not tokens:
-            tokens = [clean_query]
-
         safe_limit = min(max(1, limit), 50)
 
         try:
-            or_conditions = []
-            for t in tokens[:4]:
-                or_conditions.append(f"name.ilike.%{t}%")
-                or_conditions.append(f"description.ilike.%{t}%")
-
-            or_query = ",".join(or_conditions)
+            or_query = cls._build_search_or_conditions(client, query)
+            if not or_query:
+                return []
 
             res = (
                 client.table("products")
@@ -456,25 +527,45 @@ class CatalogService:
             items = [it for it in items if it.in_stock]
 
             # Puntuación predictiva de relevancia
+            clean_query = re.sub(
+                r"[^\w\s\-\.]", "", query.strip()[:100], flags=re.UNICODE
+            ).strip()
+            unaccented_query = "".join(
+                c for c in unicodedata.normalize("NFD", clean_query)
+                if unicodedata.category(c) != "Mn"
+            )
             query_lower = clean_query.lower()
-            tokens_lower = [t.lower() for t in tokens]
+            unaccented_lower = unaccented_query.lower()
+
+            tokens = [t.lower() for t in clean_query.split() if len(t) >= 2]
+            norm_tokens = [t.lower() for t in unaccented_query.split() if len(t) >= 2]
+            all_tokens = list(set(tokens + norm_tokens))
 
             def score_product(item: ProductListItem) -> int:
                 score = 0
                 name_l = (item.name or "").lower()
+                name_norm = "".join(
+                    c for c in unicodedata.normalize("NFD", name_l)
+                    if unicodedata.category(c) != "Mn"
+                )
                 brand_l = (item.brand_name or "").lower()
                 cat_l = (item.category_name or "").lower()
+                slug_l = (item.slug or "").lower()
 
-                if query_lower in name_l:
+                if query_lower in name_l or unaccented_lower in name_norm:
                     score += 100
-                if query_lower in brand_l:
-                    score += 60
+                if query_lower in brand_l or unaccented_lower in brand_l:
+                    score += 70
+                if query_lower in slug_l or unaccented_lower in slug_l:
+                    score += 50
 
-                for t in tokens_lower:
-                    if t in name_l:
+                for t in all_tokens:
+                    if t in name_l or t in name_norm:
                         score += 30
                     if t in brand_l:
                         score += 25
+                    if t in slug_l:
+                        score += 20
                     if t in cat_l:
                         score += 15
 

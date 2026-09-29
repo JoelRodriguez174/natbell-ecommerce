@@ -39,9 +39,16 @@ export default function ProductCard({ product }) {
   const currentPrice = is_on_sale && sale_price ? sale_price : base_price;
   const cuotaPrice = Math.round(Number(currentPrice) / 3);
 
+  const handleCardClick = () => {
+    router.push(`/productos/${slug}`, { scroll: true });
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  };
+
   return (
     <Card
-      onClick={() => router.push(`/productos/${slug}`)}
+      onClick={handleCardClick}
       className="group relative flex flex-col rounded-xl bg-white hover:border-gray-300 border border-gray-200 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer h-full"
     >
       {/* Contenedor de Imagen de Producto: proporción más ancha y menos alta con imagen más chica */}

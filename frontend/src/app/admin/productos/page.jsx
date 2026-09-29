@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Search, AlertCircle, CheckCircle2, FileSpreadsheet } from "lucide-react";
 import { useAdminAuthStore } from "../../../store/useAdminAuthStore";
 import ProductsTable from "../../../components/admin/products/ProductsTable";
 import ProductFormModal from "../../../components/admin/products/ProductFormModal";
+import ProductImportModal from "../../../components/admin/products/ProductImportModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -24,6 +25,7 @@ export default function AdminProductosPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create"); // "create" | "edit"
   const [editingProductId, setEditingProductId] = useState(null);
   const [editingVariantId, setEditingVariantId] = useState(null);
@@ -430,14 +432,25 @@ export default function AdminProductosPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenCreateModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-sm transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nuevo Producto</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 font-bold text-xs shadow-sm transition-all cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Importar Excel / CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenCreateModal}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-sm transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nuevo Producto</span>
+          </button>
+        </div>
       </div>
 
       {/* Feedback Banner */}
@@ -519,6 +532,20 @@ export default function AdminProductosPage() {
         onFileUpload={handleFileUpload}
         isUploading={isUploading}
         uploadingPreview={uploadingPreview}
+      />
+
+      {/* Modal Importación Masiva Excel / CSV */}
+      <ProductImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        token={token}
+        onImportSuccess={() => {
+          fetchCatalogData(search);
+          setFeedback({
+            type: "success",
+            message: "Importación completada y catálogo actualizado.",
+          });
+        }}
       />
     </div>
   );

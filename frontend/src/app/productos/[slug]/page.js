@@ -72,6 +72,15 @@ export default function ProductDetailPage({ params }) {
     .filter((p) => p.slug !== slug)
     .slice(0, 4);
 
+  // Volver arriba de todo y resetear estados locales al navegar a otro producto
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+    setQuantity(1);
+    setAddedNotice(false);
+  }, [slug]);
+
   // Inicializar la primera variante disponible cuando carga el producto
   useEffect(() => {
     if (product?.variants && product.variants.length > 0) {
@@ -418,6 +427,7 @@ export default function ProductDetailPage({ params }) {
             {product.category_slug && (
               <Link
                 href={`/productos?category=${product.category_slug}`}
+                scroll={true}
                 className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-[#DE1B76] underline underline-offset-4 transition-colors"
               >
                 Ver más en {product.category_name}
@@ -438,6 +448,7 @@ export default function ProductDetailPage({ params }) {
             {product.brand_slug && (
               <Link
                 href={`/productos?brand=${product.brand_slug}`}
+                scroll={true}
                 className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-[#DE1B76] underline underline-offset-4 transition-colors"
               >
                 Ver todo de {product.brand_name}

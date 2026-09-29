@@ -76,4 +76,39 @@ async def test_get_products_with_search_parameter():
         assert "items" in data
         assert "pagination" in data
         assert isinstance(data["items"], list)
+        assert len(data["items"]) >= 1
+        assert any("shampoo" in item["name"].lower() for item in data["items"])
+
+
+@pytest.mark.asyncio
+async def test_get_products_with_q_parameter():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/products?q=shampoo&page=1&per_page=10")
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert len(data["items"]) >= 1
+        assert any("shampoo" in item["name"].lower() for item in data["items"])
+
+
+@pytest.mark.asyncio
+async def test_get_products_with_q_plural_parameter():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/products?q=shampoos&page=1&per_page=10")
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert len(data["items"]) >= 1
+        assert any("shampoo" in item["name"].lower() for item in data["items"])
+
+
+@pytest.mark.asyncio
+async def test_get_products_with_q_not_found():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/products?q=xyzterminoinexistente999&page=1&per_page=10")
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert len(data["items"]) == 0
+        assert data["pagination"]["total_items"] == 0
 

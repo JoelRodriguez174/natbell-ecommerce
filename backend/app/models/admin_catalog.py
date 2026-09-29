@@ -63,3 +63,12 @@ class AdminStockUpdate(BaseModel):
 class AdminUploadResponse(BaseModel):
     url: str
     filename: str
+
+
+class AdminImportSummary(BaseModel):
+    success: bool
+    products_created: int = 0
+    variants_created: int = 0
+    total_rows_processed: int = 0
+    warnings: List[str] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)

@@ -37,7 +37,11 @@ export async function apiFetch(endpoint, options = {}) {
  * Listado paginado de productos con filtros
  */
 export async function getProducts(params = {}) {
-  const query = buildQueryString(params);
+  const queryParams = { ...params };
+  if (queryParams.q && !queryParams.search) {
+    queryParams.search = queryParams.q;
+  }
+  const query = buildQueryString(queryParams);
   return apiFetch(`/api/products${query}`);
 }
 
@@ -138,4 +142,47 @@ export async function deleteDraftOrder(orderNumber) {
     console.warn("No se pudo descartar orden preliminar:", err);
     return null;
   }
+}
+
+/**
+ * Descarga la plantilla oficial para importación masiva (XLSX o CSV)
+ */
+export async function downloadImportTemplate(format = "xlsx", token) {
+  const url = `${API_URL}/api/admin/import/template?format=${encodeURIComponent(format)}`;
+  const res = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    throw new Error("No se pudo descargar la plantilla de importación");
+  }
+  const blob = await res.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = downloadUrl;
+  a.download = `plantilla_productos_natbell.${format}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(downloadUrl);
+}
+
+/**
+ * Importa productos y variantes masivamente desde archivo Excel o CSV
+ */
+export async function importProductsFile(file, token) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const url = `${API_URL}/api/admin/import`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.detail || `Error al importar archivo (${res.status})`);
+  }
+  return data;
 }

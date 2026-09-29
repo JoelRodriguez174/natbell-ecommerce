@@ -52,6 +52,7 @@ function CatalogoContent() {
     queryFn: () =>
       getProducts({
         q: q || undefined,
+        search: q || undefined,
         category: category || undefined,
         brand: brand || undefined,
         min_price: minPrice ? Number(minPrice) : undefined,
@@ -153,8 +154,16 @@ function CatalogoContent() {
         <section className="lg:col-span-3 space-y-8">
           {products.length === 0 && !loadingProducts ? (
             <CatalogEmptyState
-              emptyTitle="No encontramos productos con los filtros seleccionados"
-              emptySubtitle="Intenta remover algunos filtros o buscar con términos más amplios."
+              emptyTitle={
+                q
+                  ? `No se encontraron resultados para "${q}"`
+                  : "No encontramos productos con los filtros seleccionados"
+              }
+              emptySubtitle={
+                q
+                  ? "No encontramos ningún producto que coincida con tu búsqueda. Intenta con otros términos o verifica la ortografía."
+                  : "Intenta remover algunos filtros o buscar con términos más amplios."
+              }
               onResetFilters={handleResetFilters}
             />
           ) : (
