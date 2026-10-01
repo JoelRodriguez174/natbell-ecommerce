@@ -14,6 +14,7 @@ from app.models.admin_catalog import (
     AdminProductUpdate,
     AdminStockUpdate,
     AdminUploadResponse,
+    AdminVariantCreate,
 )
 from app.services.admin_catalog_service import AdminCatalogService
 from app.services.admin_import_service import AdminImportService
@@ -43,6 +44,29 @@ async def create_product(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Error al crear producto: {exc}",
+        )
+
+
+@router.post(
+    "/products/{product_id}/variants",
+    status_code=status.HTTP_201_CREATED,
+    summary="Añadir una variante a un producto existente",
+)
+async def create_variant(
+    product_id: UUID,
+    payload: AdminVariantCreate,
+    _current_admin: AdminUserResponse = Depends(get_current_admin),
+    db: Client = Depends(get_supabase_client),
+) -> Dict[str, Any]:
+    service = AdminCatalogService(db)
+    try:
+        return await service.create_variant(product_id, payload)
+    except KeyError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error al crear variante: {exc}",
         )
 
 

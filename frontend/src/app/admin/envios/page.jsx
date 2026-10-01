@@ -1,93 +1,41 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import {
-  Truck,
-  Edit,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  X,
-  Clock,
-} from "lucide-react";
-import { useAdminAuthStore } from "../../../store/useAdminAuthStore";
+import { useState } from "react";
+import { Truck, Edit, CheckCircle2, AlertCircle, Loader2, Clock } from "lucide-react";
 import { formatCurrency } from "../../../lib/utils";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { useShippingZones, useShippingMutations } from "../../../hooks/admin/useAdminShipping";
+import ShippingZoneModal from "../../../components/admin/shipping/ShippingZoneModal";
 
 export default function AdminEnviosPage() {
-  const { token } = useAdminAuthStore();
+  const { data: zones = [], isLoading } = useShippingZones();
+  const { updateZone } = useShippingMutations();
 
-  const [zones, setZones] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [feedback, setFeedback] = useState(null);
-
-  // Modal para editar tarifa
   const [editingZone, setEditingZone] = useState(null);
-  const [costInput, setCostInput] = useState("");
-  const [daysInput, setDaysInput] = useState("");
-  const [isActiveInput, setIsActiveInput] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const fetchZones = useCallback(async () => {
-    if (!token) return;
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/api/admin/shipping/zones`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setZones(data || []);
-      }
-    } catch {
-      setFeedback({ type: "error", message: "Error al cargar zonas de envío" });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    fetchZones();
-  }, [fetchZones]);
 
   const handleOpenEdit = (zone) => {
     setEditingZone(zone);
-    setCostInput(zone.cost?.toString() || "");
-    setDaysInput(zone.estimated_days?.toString() || "");
-    setIsActiveInput(zone.is_active !== false);
+    setFeedback(null);
   };
 
-  const handleSaveZone = async (e) => {
-    e.preventDefault();
-    if (!token || !editingZone) return;
+  const handleSaveZone = async (data) => {
+    if (!editingZone) return;
 
-    setIsSaving(true);
     setFeedback(null);
-
     try {
-      const res = await fetch(`${API_URL}/api/admin/shipping/zones/${editingZone.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      await updateZone.mutateAsync({
+        zoneId: editingZone.id,
+        payload: {
+          cost: parseFloat(data.cost),
+          estimated_days: parseInt(data.estimated_days, 10),
+          is_active: data.is_active,
         },
-        body: JSON.stringify({
-          cost: parseFloat(costInput),
-          estimated_days: parseInt(daysInput, 10),
-          is_active: isActiveInput,
-        }),
       });
-
-      if (!res.ok) throw new Error("Error al actualizar la tarifa");
 
       setFeedback({ type: "success", message: `Tarifa de '${editingZone.zone_name}' actualizada.` });
       setEditingZone(null);
-      fetchZones();
     } catch (err) {
       setFeedback({ type: "error", message: err.message });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -211,85 +159,12 @@ export default function AdminEnviosPage() {
       </div>
 
       {/* Modal: Editar Tarifa */}
-      {editingZone && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-4">
-              <h2 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                Editar Tarifa: {editingZone.zone_name}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setEditingZone(null)}
-                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveZone} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Costo de Envío (ARS) *
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  min={0}
-                  value={costInput}
-                  onChange={(e) => setCostInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500 font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Plazo de Entrega Estimado (Días hábiles) *
-                </label>
-                <input
-                  type="number"
-                  required
-                  min={1}
-                  value={daysInput}
-                  onChange={(e) => setDaysInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <div className="pt-1">
-                <label className="flex items-center gap-2 cursor-pointer font-semibold text-zinc-700 dark:text-zinc-300">
-                  <input
-                    type="checkbox"
-                    checked={isActiveInput}
-                    onChange={(e) => setIsActiveInput(e.target.checked)}
-                    className="rounded text-amber-500 focus:ring-amber-400"
-                  />
-                  <span>Zona Activa y Disponible en Cotizador</span>
-                </label>
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800">
-                <button
-                  type="button"
-                  onClick={() => setEditingZone(null)}
-                  className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-semibold cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
-                >
-                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <span>Guardar Tarifa</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ShippingZoneModal
+        editingZone={editingZone}
+        onClose={() => setEditingZone(null)}
+        isUpdating={updateZone.isPending}
+        onSubmit={handleSaveZone}
+      />
     </div>
   );
 }

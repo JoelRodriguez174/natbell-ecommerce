@@ -1,19 +1,35 @@
 "use client";
 
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { X, Truck, ExternalLink, Loader2, Clock } from "lucide-react";
 
 export default function OrderStatusModal({
   selectedOrder,
   onClose,
-  newStatus,
-  onStatusChange,
-  trackingNumber,
-  onTrackingNumberChange,
   isUpdating,
   isGeneratingAndreani,
   onGenerateAndreaniShipment,
   onSubmit,
 }) {
+  const { register, handleSubmit, watch, setValue, reset } = useForm({
+    defaultValues: {
+      status: "shipped",
+      tracking_number: "",
+    },
+  });
+
+  useEffect(() => {
+    if (selectedOrder) {
+      reset({
+        status: selectedOrder.status === "paid" ? "shipped" : selectedOrder.status,
+        tracking_number: selectedOrder.tracking_number || "",
+      });
+    }
+  }, [selectedOrder, reset]);
+
+  const newStatus = watch("status");
+  const trackingNumber = watch("tracking_number");
   if (!selectedOrder) return null;
 
   const isPending = selectedOrder.status === "pending";
@@ -51,15 +67,14 @@ export default function OrderStatusModal({
         )}
 
         {/* Modal Body Form */}
-        <form onSubmit={onSubmit} className="space-y-4 text-xs">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-xs">
           <div>
             <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
               Estado del Pedido
             </label>
             <select
-              value={newStatus}
               disabled={isPending}
-              onChange={(e) => onStatusChange(e.target.value)}
+              {...register("status")}
               className="w-full px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500 font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isPending && <option value="pending">Pendiente de acreditación</option>}
@@ -129,8 +144,7 @@ export default function OrderStatusModal({
               </label>
               <input
                 type="text"
-                value={trackingNumber}
-                onChange={(e) => onTrackingNumberChange(e.target.value)}
+                {...register("tracking_number")}
                 placeholder="Ej: AR123456789 (Correo Arg / Andreani)"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 font-mono focus:outline-none focus:border-amber-500"
               />

@@ -7,6 +7,7 @@ from supabase import Client
 from app.models.admin_catalog import (
     AdminProductCreate,
     AdminProductUpdate,
+    AdminVariantCreate,
 )
 from app.utils.cache import global_cache
 from app.utils.postgrest import as_dict_list as _as_dict_list
@@ -145,6 +146,29 @@ class AdminCatalogService:
 
         global_cache.invalidate_prefix("catalog:")
         return updated
+
+    async def create_variant(self, product_id: UUID, payload: AdminVariantCreate) -> Dict[str, Any]:
+        """Agrega una variante a un producto existente."""
+        # Verificar que el producto exista
+        prod_res = self.db.table("products").select("id").eq("id", str(product_id)).execute()
+        if not prod_res.data:
+            raise KeyError(f"Producto {product_id} no encontrado")
+
+        v_record = {
+            "product_id": str(product_id),
+            "sku": payload.sku.strip(),
+            "variant_name": payload.variant_name.strip(),
+            "price_override": float(payload.price_override) if payload.price_override is not None else None,
+            "stock": payload.stock,
+            "is_active": payload.is_active,
+        }
+        v_res = self.db.table("product_variants").insert(v_record).execute()
+        created_v = _as_first_dict(v_res.data) if v_res else {}
+        if not created_v:
+            raise RuntimeError("No se pudo crear la variante")
+
+        global_cache.invalidate_prefix("catalog:")
+        return created_v
 
     async def delete_product(self, product_id: UUID) -> bool:
         """Desactiva lógicamente (soft-delete) el producto y sus variantes."""

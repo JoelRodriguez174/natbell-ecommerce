@@ -1,17 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import { Upload, X, Loader2, Plus } from "lucide-react";
 
 export default function ProductImageManager({
-  images,
+  images = [],
   onRemoveImage,
   onAddImageUrl,
-  urlInput,
-  onUrlInputChange,
   onFileUpload,
   isUploading,
   uploadingPreview,
 }) {
+  const [urlInput, setUrlInput] = useState("");
+
+  const handleAddUrl = (e) => {
+    if (e) e.preventDefault();
+    if (!urlInput.trim()) return;
+    onAddImageUrl(urlInput.trim());
+    setUrlInput("");
+  };
   return (
     <div className="space-y-3">
       <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
@@ -108,13 +115,13 @@ export default function ProductImageManager({
           <input
             type="url"
             value={urlInput}
-            onChange={(e) => onUrlInputChange(e.target.value)}
+            onChange={(e) => setUrlInput(e.target.value)}
             placeholder="Pegar URL (https://...)"
             className="flex-1 px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500"
           />
           <button
             type="button"
-            onClick={onAddImageUrl}
+            onClick={handleAddUrl}
             className="px-3 py-2 rounded-xl bg-zinc-200 dark:bg-zinc-700 hover:bg-amber-500 hover:text-zinc-950 text-zinc-700 dark:text-zinc-200 font-bold text-xs transition-colors cursor-pointer"
             title="Agregar foto por URL"
           >

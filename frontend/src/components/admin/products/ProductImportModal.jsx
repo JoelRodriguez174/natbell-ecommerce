@@ -14,6 +14,78 @@ import {
 } from "lucide-react";
 import { downloadImportTemplate, importProductsFile } from "../../../lib/api";
 
+function ImportResultSummary({ result }) {
+  if (!result) return null;
+
+  return (
+    <div className="space-y-3 pt-2">
+      <div
+        className={`p-4 rounded-2xl border ${
+          result.success
+            ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800"
+            : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
+        }`}
+      >
+        <div className="flex items-center gap-2 mb-3">
+          {result.success ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+          )}
+          <h3
+            className={`font-bold text-sm ${
+              result.success
+                ? "text-emerald-800 dark:text-emerald-200"
+                : "text-red-800 dark:text-red-200"
+            }`}
+          >
+            {result.success
+              ? "¡Importación completada con éxito!"
+              : "La importación no pudo completarse"}
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800">
+            <p className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+              {result.products_created || 0}
+            </p>
+            <p className="text-[10px] text-zinc-500 font-medium">Productos Nuevos</p>
+          </div>
+          <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800">
+            <p className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+              {result.products_updated || 0}
+            </p>
+            <p className="text-[10px] text-zinc-500 font-medium">Actualizados</p>
+          </div>
+          <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800">
+            <p className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+              {result.variants_created || 0}
+            </p>
+            <p className="text-[10px] text-zinc-500 font-medium">Variantes Creadas</p>
+          </div>
+        </div>
+      </div>
+
+      {result.errors && result.errors.length > 0 && (
+        <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+          <div className="flex items-center gap-1.5 mb-2 text-amber-800 dark:text-amber-400">
+            <AlertTriangle className="w-4 h-4" />
+            <span className="text-xs font-bold">Advertencias o Filas Omitidas:</span>
+          </div>
+          <ul className="text-[11px] text-amber-700 dark:text-amber-500 space-y-1 list-disc list-inside max-h-24 overflow-y-auto pl-1">
+            {result.errors.map((err, idx) => (
+              <li key={idx} className="line-clamp-2" title={err}>
+                {err}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProductImportModal({
   isOpen,
   onClose,
@@ -211,87 +283,7 @@ export default function ProductImportModal({
           )}
 
           {/* Resumen de Resultados tras la Importación */}
-          {importResult && (
-            <div className="space-y-3 pt-2">
-              <div
-                className={`p-4 rounded-2xl border ${
-                  importResult.success
-                    ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800"
-                    : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  {importResult.success ? (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                  )}
-                  <h3
-                    className={`font-bold text-sm ${
-                      importResult.success
-                        ? "text-emerald-800 dark:text-emerald-200"
-                        : "text-red-800 dark:text-red-200"
-                    }`}
-                  >
-                    {importResult.success
-                      ? "¡Importación completada con éxito!"
-                      : "La importación no pudo completarse"}
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800">
-                    <p className="text-lg font-black text-zinc-900 dark:text-zinc-100">
-                      {importResult.products_created}
-                    </p>
-                    <p className="text-[10px] text-zinc-500 font-medium">Productos Nuevos</p>
-                  </div>
-                  <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800">
-                    <p className="text-lg font-black text-zinc-900 dark:text-zinc-100">
-                      {importResult.variants_created}
-                    </p>
-                    <p className="text-[10px] text-zinc-500 font-medium">Variantes / SKUs</p>
-                  </div>
-                  <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800">
-                    <p className="text-lg font-black text-zinc-900 dark:text-zinc-100">
-                      {importResult.total_rows_processed}
-                    </p>
-                    <p className="text-[10px] text-zinc-500 font-medium">Filas Leídas</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Advertencias */}
-              {importResult.warnings && importResult.warnings.length > 0 && (
-                <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/80 text-xs text-amber-800 dark:text-amber-200 space-y-1 max-h-32 overflow-y-auto">
-                  <div className="flex items-center gap-1.5 font-bold mb-1">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span>Observaciones ({importResult.warnings.length}):</span>
-                  </div>
-                  <ul className="list-disc list-inside space-y-0.5 text-[11px]">
-                    {importResult.warnings.map((w, idx) => (
-                      <li key={idx}>{w}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Errores */}
-              {importResult.errors && importResult.errors.length > 0 && (
-                <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-xs text-red-800 dark:text-red-200 space-y-1 max-h-32 overflow-y-auto">
-                  <div className="flex items-center gap-1.5 font-bold mb-1">
-                    <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
-                    <span>Errores detectados ({importResult.errors.length}):</span>
-                  </div>
-                  <ul className="list-disc list-inside space-y-0.5 text-[11px]">
-                    {importResult.errors.map((e, idx) => (
-                      <li key={idx}>{e}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
+          <ImportResultSummary result={importResult} />
         </div>
 
         {/* Footer Actions */}
