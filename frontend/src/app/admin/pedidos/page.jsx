@@ -22,10 +22,14 @@ export default function AdminPedidosPage() {
   const handleGenerateAndreaniShipment = async () => {
     if (!selectedOrder) return;
     try {
-      await generateAndreaniShipment.mutateAsync(selectedOrder.order_number);
+      const res = await generateAndreaniShipment.mutateAsync(selectedOrder.order_number);
       // Actualizamos el modal local para no tener que cerrarlo
       // El invalidateQueries actualizará la tabla
-      setSelectedOrder((prev) => ({ ...prev, status: "shipped" }));
+      setSelectedOrder((prev) => ({ 
+        ...prev, 
+        status: "shipped",
+        tracking_number: res.tracking_number 
+      }));
     } catch (err) {
       alert(err.message);
     }

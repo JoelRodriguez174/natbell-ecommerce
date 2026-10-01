@@ -120,7 +120,7 @@ describe("Admin Views", () => {
     fireEvent.click(editBtn);
 
     expect(await screen.findByText("Modificar Producto")).toBeInTheDocument();
-    expect(screen.getByText("Actualizando: Shampoo Neutro 1L")).toBeInTheDocument();
+    expect(screen.getByText("Actualizando producto en el catálogo")).toBeInTheDocument();
     expect(screen.getByText("Actualizar Producto")).toBeInTheDocument();
 
     // Verificar previsualización de imagen cargada
@@ -141,7 +141,7 @@ describe("Admin Views", () => {
       </QueryClientProvider>
     );
 
-    const nuevoBtn = await screen.findByText("Nuevo Producto");
+    const nuevoBtn = await screen.findByText("Crear Producto");
     fireEvent.click(nuevoBtn);
 
     await waitFor(() => {

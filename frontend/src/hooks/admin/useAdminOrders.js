@@ -52,7 +52,7 @@ export function useOrderMutations() {
 
   const generateAndreaniShipment = useMutation({
     mutationFn: async (orderId) => {
-      const res = await fetch(`${API_URL}/api/admin/orders/${orderId}/andreani`, {
+      const res = await fetch(`${API_URL}/api/admin/orders/${orderId}/generate-andreani-shipment`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
