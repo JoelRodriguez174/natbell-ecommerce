@@ -4,6 +4,16 @@ import AdminDashboardPage from "../src/app/admin/page";
 import AdminProductosPage from "../src/app/admin/productos/page";
 import AdminPedidosPage from "../src/app/admin/pedidos/page";
 import { useAdminAuthStore } from "../src/store/useAdminAuthStore";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
 
 describe("Admin Views", () => {
   beforeEach(() => {
@@ -32,7 +42,11 @@ describe("Admin Views", () => {
       }),
     });
 
-    render(<AdminDashboardPage />);
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <AdminDashboardPage />
+      </QueryClientProvider>
+    );
 
     expect(await screen.findByText(/Resumen General/i)).toBeInTheDocument();
     expect(await screen.findByText(/Valeria Admin/i)).toBeInTheDocument();
@@ -89,7 +103,11 @@ describe("Admin Views", () => {
       return Promise.resolve({ ok: true, json: async () => ({}) });
     });
 
-    render(<AdminProductosPage />);
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <AdminProductosPage />
+      </QueryClientProvider>
+    );
 
     expect(await screen.findByText("Catálogo de Productos")).toBeInTheDocument();
     expect(await screen.findByText("Shampoo Neutro 1L")).toBeInTheDocument();
@@ -117,7 +135,11 @@ describe("Admin Views", () => {
       json: async () => [],
     });
 
-    render(<AdminProductosPage />);
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <AdminProductosPage />
+      </QueryClientProvider>
+    );
 
     const nuevoBtn = await screen.findByText("Nuevo Producto");
     fireEvent.click(nuevoBtn);
@@ -168,7 +190,11 @@ describe("Admin Views", () => {
       return Promise.resolve({ ok: true, json: async () => ({}) });
     });
 
-    render(<AdminPedidosPage />);
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <AdminPedidosPage />
+      </QueryClientProvider>
+    );
 
     expect(await screen.findByText("Gestión de Pedidos")).toBeInTheDocument();
     expect(await screen.findByText("ORD-2026-00099")).toBeInTheDocument();
@@ -232,7 +258,11 @@ describe("Admin Views", () => {
       return Promise.resolve({ ok: true, json: async () => ({}) });
     });
 
-    render(<AdminPedidosPage />);
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <AdminPedidosPage />
+      </QueryClientProvider>
+    );
 
     // Verifica que figure en la tabla
     expect(await screen.findByText("ORD-2026-00100")).toBeInTheDocument();
