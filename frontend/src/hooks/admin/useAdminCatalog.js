@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAdminAuthStore } from "../../../store/useAdminAuthStore";
+import { useAdminAuthStore } from "../../store/useAdminAuthStore";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
