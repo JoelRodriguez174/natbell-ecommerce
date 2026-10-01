@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, AlertCircle, CheckCircle2, FileSpreadsheet } from "lucide-react";
+import { Plus, Search, AlertCircle, CheckCircle2, FileSpreadsheet, X } from "lucide-react";
 import { useAdminAuthStore } from "../../../store/useAdminAuthStore";
 import { useCatalogData, useProductMutations } from "../../../hooks/admin/useAdminCatalog";
 import ProductsTable from "../../../components/admin/products/ProductsTable";
