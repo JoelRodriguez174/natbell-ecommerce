@@ -26,7 +26,7 @@ export default function AdminProductosPage() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isVariantModalOpen, setIsVariantModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create"); // "create" | "edit"
-  
+
   const [selectedProduct, setSelectedProduct] = useState(null); // Used for edit product or parent product for variant
 
   const [isUploading, setIsUploading] = useState(false);
@@ -125,7 +125,7 @@ export default function AdminProductosPage() {
           stock: parseInt(data.stock, 10) || 0,
         },
       ];
-      
+
       createProduct.mutate(payload, {
         onSuccess: () => {
           setFeedback({ type: "success", message: `¡Producto '${data.name}' creado exitosamente!` });
@@ -218,7 +218,7 @@ export default function AdminProductosPage() {
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
         <input
           type="text"
-          placeholder="Buscar producto por nombre, SKU, categoría..."
+          placeholder="Buscar producto por nombre..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
@@ -227,11 +227,10 @@ export default function AdminProductosPage() {
 
       {feedback && (
         <div
-          className={`p-4 rounded-xl flex items-start gap-3 animate-fadeIn ${
-            feedback.type === "error"
+          className={`p-4 rounded-xl flex items-start gap-3 animate-fadeIn ${feedback.type === "error"
               ? "bg-red-50 text-red-900 border border-red-200 dark:bg-red-950/30 dark:text-red-200 dark:border-red-900/50"
               : "bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-200 dark:border-emerald-900/50"
-          }`}
+            }`}
         >
           {feedback.type === "error" ? (
             <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
