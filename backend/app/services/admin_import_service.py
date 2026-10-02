@@ -5,12 +5,13 @@ import logging
 import re
 import unicodedata
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.worksheet import Worksheet
 from supabase import Client
 
 from app.models.admin_catalog import AdminImportSummary
@@ -164,7 +165,7 @@ def _strip_accents(text: str) -> str:
 
 def _clean_token(text: str) -> str:
     """Normaliza un texto eliminando acentos, caracteres especiales, guiones y signos de puntuación."""
-    norm = _strip_accents(str(text or "").strip().lower())
+    norm = _strip_accents(text.strip().lower())
     return re.sub(r"[^a-z0-9]+", "", norm)
 
 
@@ -244,7 +245,9 @@ class AdminImportService:
     @classmethod
     def _generate_xlsx_template(cls) -> bytes:
         wb = Workbook()
-        ws = wb.active
+        ws = cast(Worksheet, wb.active)
+        if ws is None:
+            ws = cast(Worksheet, wb.create_sheet())
         ws.title = "Productos Natbell"
 
         # Estilos visuales elegantes
@@ -317,6 +320,8 @@ class AdminImportService:
     def _parse_xlsx(self, file_bytes: bytes) -> List[Dict[str, Any]]:
         wb = load_workbook(io.BytesIO(file_bytes), data_only=True)
         ws = wb.active
+        if ws is None:
+            return []
         rows = list(ws.iter_rows(values_only=True))
         if not rows:
             return []
@@ -407,13 +412,13 @@ class AdminImportService:
 
     def _resolve_brand_id(self, brand_name: str, taxonomies: Dict[str, Any]) -> str:
         """Encuentra la marca por nombre/slug o la crea automáticamente si no existe."""
-        if not brand_name or not str(brand_name).strip():
+        if not brand_name or not brand_name.strip():
             # Fallback a la primera marca disponible o Genérica
             if taxonomies["brands"]:
                 return str(taxonomies["brands"][0]["id"])
             brand_name = "Natbell"
 
-        clean_name = str(brand_name).strip()
+        clean_name = brand_name.strip()
         norm = _strip_accents(clean_name.lower())
 
         # 1. Búsqueda exacta normalizada (ignora mayúsculas y acentos)
@@ -451,8 +456,8 @@ class AdminImportService:
         taxonomies: Dict[str, Any],
     ) -> str:
         """Resuelve el subcategory_id a partir del nombre de categoría y subcategoría."""
-        clean_subcat = str(subcat_name or "").strip()
-        clean_cat = str(cat_name or "").strip()
+        clean_subcat = subcat_name.strip()
+        clean_cat = cat_name.strip()
 
         # 1. Búsqueda en subcategorías (exacta y difusa)
         if clean_subcat:
@@ -488,8 +493,8 @@ class AdminImportService:
                     # Si la categoría no tiene subcategorías, crear una subcategoría "General"
                     new_sub_record = {
                         "category_id": cat_id,
-                        "name": f"General - {c['name']}",
-                        "slug": f"general-{c['slug']}",
+                        "name": f"General - {matched_cat['name']}",
+                        "slug": f"general-{matched_cat.get('slug', 'slug')}",
                         "is_active": True,
                     }
                     res = self.db.table("subcategories").insert(new_sub_record).execute()
@@ -636,6 +641,7 @@ class AdminImportService:
                     continue
 
             # Crear variante asociada
+            sku_raw = ""
             try:
                 sku_raw = str(row.get("sku_variante") or "").strip()
                 variant_name_raw = str(row.get("nombre_variante") or "").strip() or "Estándar"

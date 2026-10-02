@@ -49,6 +49,7 @@ def test_generate_template_xlsx():
 
     wb = load_workbook(io.BytesIO(content))
     ws = wb.active
+    assert ws is not None
     assert ws.title == "Productos Natbell"
     headers = [cell.value for cell in ws[1]]
     assert "Nombre del Producto *" in headers
@@ -178,6 +179,7 @@ def test_import_from_xlsx_success():
     # Create XLSX in-memory
     wb = Workbook()
     ws = wb.active
+    assert ws is not None
     ws.append(["nombre", "categoria", "marca", "precio_base", "sku_variante", "stock_variante"])
     ws.append(["Shampoo Reparador", "Cuidado Capilar", "Nov", 8500.0, "SHP-REP-01", 15])
     excel_bytes = io.BytesIO()
