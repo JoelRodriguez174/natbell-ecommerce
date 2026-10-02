@@ -172,6 +172,19 @@ export default function AdminProductosPage() {
     });
   };
 
+  const handleBulkDelete = async (selectedIds) => {
+    const confirm = window.confirm(`¿Estás seguro de eliminar ${selectedIds.size} productos? Esta acción no se puede deshacer.`);
+    if (!confirm) return;
+
+    try {
+      const promises = Array.from(selectedIds).map(id => deleteProduct.mutateAsync(id));
+      await Promise.all(promises);
+      setFeedback({ type: "success", message: `Se han eliminado ${selectedIds.size} productos exitosamente.` });
+    } catch (err) {
+      setFeedback({ type: "error", message: "Hubo un error al eliminar algunos productos." });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -243,6 +256,7 @@ export default function AdminProductosPage() {
         onEdit={handleOpenEditModal}
         onAddVariant={handleOpenVariantModal}
         onDelete={handleDeleteProduct}
+        onBulkDelete={handleBulkDelete}
       />
 
       <ProductFormModal

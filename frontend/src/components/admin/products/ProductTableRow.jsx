@@ -3,7 +3,7 @@
 import { Pencil, Trash2, AlertCircle } from "lucide-react";
 import { formatCurrency } from "../../../lib/utils";
 
-export default function ProductTableRow({ product: p, onEdit, onAddVariant, onDelete }) {
+export default function ProductTableRow({ product: p, isSelected, onSelect, onEdit, onAddVariant, onDelete }) {
   const totalStock =
     p.stock ??
     p.total_stock ??
@@ -16,7 +16,16 @@ export default function ProductTableRow({ product: p, onEdit, onAddVariant, onDe
   const sku = p.variants?.[0]?.sku || p.sku || "N/A";
 
   return (
-    <tr className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition-colors">
+    <tr className={`hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition-colors ${isSelected ? "bg-amber-50/50 dark:bg-amber-900/10" : ""}`}>
+      {/* Checkbox */}
+      <td className="py-3.5 px-4">
+        <input
+          type="checkbox"
+          checked={isSelected || false}
+          onChange={onSelect}
+          className="w-4 h-4 rounded border-zinc-300 text-amber-500 focus:ring-amber-500/50 cursor-pointer"
+        />
+      </td>
       {/* ID / SKU */}
       <td className="py-3.5 px-4">
         <span className="font-mono text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/80 px-2 py-0.5 rounded-md">

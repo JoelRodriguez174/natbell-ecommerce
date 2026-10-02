@@ -16,8 +16,10 @@ from app.models.admin_catalog import (
     AdminUploadResponse,
     AdminVariantCreate,
 )
+from app.models.catalog import PaginatedProductsResponse, ProductFilters
 from app.services.admin_catalog_service import AdminCatalogService
 from app.services.admin_import_service import AdminImportService
+from app.services.catalog_service import CatalogService
 
 router = APIRouter(prefix="/api/admin", tags=["Admin Catalog"])
 
@@ -25,6 +27,24 @@ ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5MB
 ALLOWED_IMPORT_EXTENSIONS = {"xlsx", "csv", "xls"}
 MAX_IMPORT_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10MB
+
+
+
+
+@router.get(
+    "/products",
+    response_model=PaginatedProductsResponse,
+    summary="Listado de productos para el administrador (incluye inactivos)",
+)
+async def list_admin_products(
+    response: Response,
+    filters: ProductFilters = Depends(),
+    _current_admin: AdminUserResponse = Depends(get_current_admin),
+    client: Client = Depends(get_supabase_client),
+):
+    # Sin caché para el panel de administración
+    response.headers["Cache-Control"] = "no-store"
+    return CatalogService.get_admin_products(client, filters)
 
 
 @router.post(

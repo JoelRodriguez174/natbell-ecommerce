@@ -490,18 +490,18 @@ class AdminImportService:
                     if str(s.get("category_id")) == cat_id:
                         return str(s["id"])
 
-                    # Si la categoría no tiene subcategorías, crear una subcategoría "General"
-                    new_sub_record = {
-                        "category_id": cat_id,
-                        "name": f"General - {matched_cat['name']}",
-                        "slug": f"general-{matched_cat.get('slug', 'slug')}",
-                        "is_active": True,
-                    }
-                    res = self.db.table("subcategories").insert(new_sub_record).execute()
-                    created = _as_first_dict(res.data) if res else {}
-                    if created and created.get("id"):
-                        taxonomies["subcategories"].append(created)
-                        return str(created["id"])
+                # Si la categoría no tiene subcategorías, crear una subcategoría "General"
+                new_sub_record = {
+                    "category_id": cat_id,
+                    "name": f"General - {matched_cat['name']}",
+                    "slug": f"general-{matched_cat.get('slug', 'slug')}",
+                    "is_active": True,
+                }
+                res = self.db.table("subcategories").insert(new_sub_record).execute()
+                created = _as_first_dict(res.data) if res else {}
+                if created and created.get("id"):
+                    taxonomies["subcategories"].append(created)
+                    return str(created["id"])
 
         # 3. Fallback a la primera subcategoría disponible en el sistema
         if taxonomies["subcategories"]:

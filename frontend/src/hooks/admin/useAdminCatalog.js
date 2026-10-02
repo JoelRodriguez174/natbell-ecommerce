@@ -4,12 +4,13 @@ import { useAdminAuthStore } from "../../store/useAdminAuthStore";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // --- FETCHERS ---
-const fetchProducts = async (search = "") => {
+const fetchProducts = async (search = "", token) => {
   const params = new URLSearchParams({ per_page: 50 });
   if (search) params.append("search", search);
 
-  const res = await fetch(`${API_URL}/api/products?${params.toString()}`);
-  if (!res.ok) throw new Error("Error fetching products");
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const res = await fetch(`${API_URL}/api/admin/products?${params.toString()}`, { headers });
+  if (!res.ok) throw new Error("Error fetching admin products");
   const data = await res.json();
   return data.items || [];
 };
@@ -29,10 +30,13 @@ const fetchBrands = async () => {
 // --- HOOKS ---
 
 export function useCatalogData(search = "") {
+  const token = useAdminAuthStore((s) => s.token);
+
   const productsQuery = useQuery({
     queryKey: ["admin_products", search],
-    queryFn: () => fetchProducts(search),
-    staleTime: 60 * 1000,
+    queryFn: () => fetchProducts(search, token),
+    staleTime: 0,
+    enabled: !!token,
   });
 
   const categoriesQuery = useQuery({

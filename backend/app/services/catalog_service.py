@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class CatalogService:
     @classmethod
-    def _map_to_list_item(cls, p: Dict[str, Any]) -> ProductListItem:
+    def _map_to_list_item(cls, p: Dict[str, Any], admin_mode: bool = False) -> ProductListItem:
         """Transforma el payload relacional de PostgREST en un ProductListItem optimizado."""
         base_price = Decimal(str(p.get("base_price") or "0.00"))
         sale_price = (
@@ -34,11 +34,14 @@ class CatalogService:
         )
         is_on_sale = bool(p.get("is_on_sale"))
 
-        # Extraer variantes activas
+        # Extraer variantes
         raw_variants = p.get("product_variants")
-        active_variants = [
-            v for v in _as_dict_list(raw_variants) if v.get("is_active", True)
-        ]
+        if admin_mode:
+            active_variants = _as_dict_list(raw_variants)
+        else:
+            active_variants = [
+                v for v in _as_dict_list(raw_variants) if v.get("is_active", True)
+            ]
 
         # Calcular precios extremos (mínimo y máximo)
         active_base = sale_price if (is_on_sale and sale_price is not None) else base_price
@@ -153,88 +156,8 @@ class CatalogService:
         )
 
     @classmethod
-    def _build_search_or_conditions(
-        cls, client: Client, search_term: str
-    ) -> Optional[str]:
-        """
-        Construye condiciones OR optimizadas y tolerantes a acentos, plurales,
-        marcas y subcategorías para PostgREST.
-        """
-        if not search_term or not search_term.strip():
-            return None
-
-        clean = re.sub(
-            r"[^\w\s\-\.]", "", search_term.strip()[:100], flags=re.UNICODE
-        ).strip()
-        if not clean:
-            return None
-
-        # 1. Normalizar acentos (e.g. 'argán' -> 'argan', 'máscara' -> 'mascara')
-        unaccented = "".join(
-            c for c in unicodedata.normalize("NFD", clean)
-            if unicodedata.category(c) != "Mn"
-        )
-
-        # 2. Generar tokens únicos preservando términos originales y sin tildes
-        raw_tokens = [t for t in clean.split() if len(t) >= 2] or [clean]
-        norm_tokens = [t for t in unaccented.split() if len(t) >= 2] or [unaccented]
-
-        tokens_set = set()
-        for tok in raw_tokens + norm_tokens:
-            tok_clean = tok.strip().lower()
-            if len(tok_clean) >= 2:
-                tokens_set.add(tok_clean)
-                # Variante singular si termina en 's' (e.g. 'shampoos' -> 'shampoo', 'tinturas' -> 'tintura')
-                if tok_clean.endswith("s") and len(tok_clean) > 3:
-                    tokens_set.add(tok_clean[:-1])
-                # Variante si termina en 'es' (e.g. 'acondicionadores' -> 'acondicionador')
-                if tok_clean.endswith("es") and len(tok_clean) > 4:
-                    tokens_set.add(tok_clean[:-2])
-
-        tokens = list(tokens_set)[:6]
-        if not tokens:
-            return None
-
-        or_conditions = []
-        for t in tokens:
-            or_conditions.append(f"name.ilike.%{t}%")
-            or_conditions.append(f"slug.ilike.%{t}%")
-            or_conditions.append(f"description.ilike.%{t}%")
-
-        # 3. Búsqueda de marcas coincidentes
-        try:
-            brand_filter = ",".join(f"name.ilike.%{t}%" for t in tokens[:3])
-            brand_res = client.table("brands").select("id").or_(brand_filter).limit(10).execute()
-            brand_ids = [str(b["id"]) for b in _as_dict_list(brand_res.data) if "id" in b]
-            if brand_ids:
-                if len(brand_ids) == 1:
-                    or_conditions.append(f"brand_id.eq.{brand_ids[0]}")
-                else:
-                    ids_str = ",".join(brand_ids)
-                    or_conditions.append(f"brand_id.in.({ids_str})")
-        except Exception as e:
-            logger.debug("No se pudieron resolver marcas en búsqueda: %s", e)
-
-        # 4. Búsqueda de subcategorías coincidentes
-        try:
-            subcat_filter = ",".join(f"name.ilike.%{t}%" for t in tokens[:3])
-            subcat_res = client.table("subcategories").select("id").or_(subcat_filter).limit(10).execute()
-            subcat_ids = [str(s["id"]) for s in _as_dict_list(subcat_res.data) if "id" in s]
-            if subcat_ids:
-                if len(subcat_ids) == 1:
-                    or_conditions.append(f"subcategory_id.eq.{subcat_ids[0]}")
-                else:
-                    ids_str = ",".join(subcat_ids)
-                    or_conditions.append(f"subcategory_id.in.({ids_str})")
-        except Exception as e:
-            logger.debug("No se pudieron resolver subcategorías en búsqueda: %s", e)
-
-        return ",".join(or_conditions) if or_conditions else None
-
-    @classmethod
-    @cached(ttl_seconds=60, prefix="catalog:products")
-    def get_products(
-        cls, client: Client, filters: ProductFilters
+    def _get_products_impl(
+        cls, client: Client, filters: ProductFilters, admin_mode: bool = False
     ) -> PaginatedProductsResponse:
         """Obtiene productos con filtros multicriterio y paginación defensiva."""
         if not client:
@@ -256,8 +179,10 @@ class CatalogService:
                 "*, brands(*), subcategories(*, categories(*)), product_variants(*)",
                 count=CountMethod.exact,
             )
-            .eq("is_active", True)
         )
+
+        if not admin_mode:
+            query = query.eq("is_active", True)
 
         # 1. Filtro por marca
         if filters.brand:
@@ -365,21 +290,34 @@ class CatalogService:
         # 6. Filtro por búsqueda de texto (soporta search y alias q)
         search_term = (filters.search or filters.q or "").strip()
         if search_term:
-            or_conditions = cls._build_search_or_conditions(client, search_term)
-            if or_conditions:
-                query = query.or_(or_conditions)
-            else:
-                return PaginatedProductsResponse(
-                    items=[],
-                    pagination=PaginationMetadata(
-                        page=filters.page,
-                        per_page=filters.per_page,
-                        total_items=0,
-                        total_pages=0,
-                        has_next=False,
-                        has_prev=False,
-                    ),
+            clean = re.sub(r"[^\w\s\-\.]", "", search_term[:100], flags=re.UNICODE).strip()
+            if clean:
+                unaccented = "".join(
+                    c for c in unicodedata.normalize("NFD", clean)
+                    if unicodedata.category(c) != "Mn"
                 )
+                raw_words = [t for t in clean.split() if len(t) >= 2] or [clean]
+                norm_words = [t for t in unaccented.split() if len(t) >= 2] or [unaccented]
+
+                for i, word in enumerate(raw_words[:6]):
+                    norm_w = norm_words[i] if i < len(norm_words) else word
+                    word_l = word.lower()
+                    norm_w_l = norm_w.lower()
+
+                    variations = {word_l, norm_w_l}
+                    if word_l.endswith("s") and len(word_l) > 3:
+                        variations.add(word_l[:-1])
+                    if norm_w_l.endswith("s") and len(norm_w_l) > 3:
+                        variations.add(norm_w_l[:-1])
+                    if word_l.endswith("es") and len(word_l) > 4:
+                        variations.add(word_l[:-2])
+
+                    var_list = list(variations)
+                    if len(var_list) == 1:
+                        query = query.ilike("name", f"%{var_list[0]}%")
+                    else:
+                        or_conds = ",".join(f"name.ilike.%{v}%" for v in var_list)
+                        query = query.or_(or_conds)
 
         # 6. Ordenamiento
         if filters.sort == "price_asc":
@@ -407,7 +345,7 @@ class CatalogService:
         )
 
         rows = _as_dict_list(res.data)
-        items = [cls._map_to_list_item(p) for p in rows]
+        items = [cls._map_to_list_item(p, admin_mode=admin_mode) for p in rows]
 
         return PaginatedProductsResponse(
             items=items,
@@ -420,6 +358,19 @@ class CatalogService:
                 has_prev=filters.page > 1,
             ),
         )
+
+    @classmethod
+    @cached(ttl_seconds=60, prefix="catalog:products")
+    def get_products(
+        cls, client: Client, filters: ProductFilters
+    ) -> PaginatedProductsResponse:
+        return cls._get_products_impl(client, filters, admin_mode=False)
+
+    @classmethod
+    def get_admin_products(
+        cls, client: Client, filters: ProductFilters
+    ) -> PaginatedProductsResponse:
+        return cls._get_products_impl(client, filters, admin_mode=True)
 
     @classmethod
     @cached(ttl_seconds=60, prefix="catalog:detail")
@@ -506,20 +457,44 @@ class CatalogService:
         safe_limit = min(max(1, limit), 50)
 
         try:
-            or_query = cls._build_search_or_conditions(client, query)
-            if not or_query:
+            query_obj = (
+                client.table("products")
+                .select("*, brands(*), subcategories(*, categories(*)), product_variants(*)")
+                .eq("is_active", True)
+            )
+
+            clean = re.sub(r"[^\w\s\-\.]", "", query[:100], flags=re.UNICODE).strip()
+            if not clean:
                 return []
 
-            res = (
-                client.table("products")
-                .select(
-                    "*, brands(*), subcategories(*, categories(*)), product_variants(*)"
-                )
-                .eq("is_active", True)
-                .or_(or_query)
-                .limit(safe_limit * 2)
-                .execute()
+            unaccented = "".join(
+                c for c in unicodedata.normalize("NFD", clean)
+                if unicodedata.category(c) != "Mn"
             )
+            raw_words = [t for t in clean.split() if len(t) >= 2] or [clean]
+            norm_words = [t for t in unaccented.split() if len(t) >= 2] or [unaccented]
+
+            for i, word in enumerate(raw_words[:6]):
+                norm_w = norm_words[i] if i < len(norm_words) else word
+                word_l = word.lower()
+                norm_w_l = norm_w.lower()
+
+                variations = {word_l, norm_w_l}
+                if word_l.endswith("s") and len(word_l) > 3:
+                    variations.add(word_l[:-1])
+                if norm_w_l.endswith("s") and len(norm_w_l) > 3:
+                    variations.add(norm_w_l[:-1])
+                if word_l.endswith("es") and len(word_l) > 4:
+                    variations.add(word_l[:-2])
+
+                var_list = list(variations)
+                if len(var_list) == 1:
+                    query_obj = query_obj.ilike("name", f"%{var_list[0]}%")
+                else:
+                    or_conds = ",".join(f"name.ilike.%{v}%" for v in var_list)
+                    query_obj = query_obj.or_(or_conds)
+
+            res = query_obj.limit(safe_limit * 2).execute()
             rows = _as_dict_list(res.data)
             items = [cls._map_to_list_item(p) for p in rows]
 

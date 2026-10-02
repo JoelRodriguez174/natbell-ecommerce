@@ -6,6 +6,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Trash2,
 } from "lucide-react";
 import ProductTableRow from "./ProductTableRow";
 
@@ -15,6 +16,7 @@ export default function ProductsTable({
   onEdit,
   onAddVariant,
   onDelete,
+  onBulkDelete,
 }) {
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState("asc"); // "asc" | "desc"
@@ -116,6 +118,31 @@ export default function ProductsTable({
     });
   }, [products, sortField, sortDirection, statusFilter]);
 
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(new Set(filteredAndSortedProducts.map((p) => p.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelect = (id) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedIds(newSet);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    onBulkDelete?.(selectedIds);
+    setSelectedIds(new Set());
+  };
+
+  const isAllSelected = filteredAndSortedProducts.length > 0 && selectedIds.size === filteredAndSortedProducts.length;
+
   return (
     <div className="space-y-3">
       {/* Pestañas de filtrado rápido por Estado */}
@@ -167,20 +194,31 @@ export default function ProductsTable({
           </button>
         </div>
 
-        {/* Indicador de orden actual */}
-        <div className="text-[11px] text-zinc-500 flex items-center gap-1.5">
-          <span>Orden actual:</span>
-          <span className="font-semibold text-zinc-800 dark:text-zinc-200 capitalize">
-            {sortField === "name" && "Nombre"}
-            {sortField === "id" && "ID / SKU"}
-            {sortField === "category" && "Categoría"}
-            {sortField === "price" && "Precio"}
-            {sortField === "stock" && "Stock"}
-            {sortField === "status" && "Estado"}
-          </span>
-          <span className="text-amber-500 font-bold">
-            ({sortDirection === "asc" ? "Ascendente ▲" : "Descendente ▼"})
-          </span>
+        {/* Indicador de orden actual y acciones en lote */}
+        <div className="flex items-center gap-3">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-bold shadow-sm hover:bg-red-600 transition-colors flex items-center gap-2 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Eliminar seleccionados ({selectedIds.size})
+            </button>
+          )}
+          <div className="text-[11px] text-zinc-500 flex items-center gap-1.5">
+            <span>Orden actual:</span>
+            <span className="font-semibold text-zinc-800 dark:text-zinc-200 capitalize">
+              {sortField === "name" && "Nombre"}
+              {sortField === "id" && "ID / SKU"}
+              {sortField === "category" && "Categoría"}
+              {sortField === "price" && "Precio"}
+              {sortField === "stock" && "Stock"}
+              {sortField === "status" && "Estado"}
+            </span>
+            <span className="text-amber-500 font-bold">
+              ({sortDirection === "asc" ? "Ascendente ▲" : "Descendente ▼"})
+            </span>
+          </div>
         </div>
       </div>
 
@@ -190,6 +228,14 @@ export default function ProductsTable({
           <table className="w-full text-left text-xs">
             <thead className="bg-zinc-50 dark:bg-zinc-800/60 text-zinc-500 uppercase text-[10px] tracking-wider border-b border-zinc-200 dark:border-zinc-800 select-none">
               <tr>
+                <th className="py-3.5 px-4 w-10">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded border-zinc-300 text-amber-500 focus:ring-amber-500/50 cursor-pointer"
+                  />
+                </th>
                 {/* 1. ID / SKU Ordenable */}
                 <th
                   onClick={() => handleSort("id")}
@@ -285,6 +331,8 @@ export default function ProductsTable({
                   <ProductTableRow
                     key={p.id}
                     product={p}
+                    isSelected={selectedIds.has(p.id)}
+                    onSelect={() => handleSelect(p.id)}
                     onEdit={onEdit}
                     onAddVariant={onAddVariant}
                     onDelete={onDelete}

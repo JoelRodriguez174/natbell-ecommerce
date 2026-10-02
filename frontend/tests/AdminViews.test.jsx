@@ -73,7 +73,7 @@ describe("Admin Views", () => {
     ];
 
     global.fetch = vi.fn().mockImplementation((url) => {
-      if (url.includes("/api/products?")) {
+      if (url.includes("/api/products?") || url.includes("/api/admin/products?")) {
         return Promise.resolve({
           ok: true,
           json: async () => ({ items: mockProducts }),
