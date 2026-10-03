@@ -19,7 +19,7 @@ export default function AdminProductosPage() {
 
   // TanStack Query Hooks
   const { products, categories, brands, isLoading, refetchProducts } = useCatalogData(search);
-  const { createProduct, updateProduct, deleteProduct, createVariant } = useProductMutations();
+  const { createProduct, updateProduct, deleteProduct, bulkDeleteProducts, createVariant } = useProductMutations();
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -177,11 +177,10 @@ export default function AdminProductosPage() {
     if (!confirm) return;
 
     try {
-      const promises = Array.from(selectedIds).map(id => deleteProduct.mutateAsync(id));
-      await Promise.all(promises);
+      await bulkDeleteProducts.mutateAsync(Array.from(selectedIds));
       setFeedback({ type: "success", message: `Se han eliminado ${selectedIds.size} productos exitosamente.` });
     } catch (err) {
-      setFeedback({ type: "error", message: "Hubo un error al eliminar algunos productos." });
+      setFeedback({ type: "error", message: err.message || "Hubo un error al eliminar los productos seleccionados." });
     }
   };
 

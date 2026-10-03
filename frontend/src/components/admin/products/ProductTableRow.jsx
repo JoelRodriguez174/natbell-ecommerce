@@ -1,9 +1,12 @@
 "use client";
 
-import { Pencil, Trash2, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { Pencil, Trash2, AlertCircle, Package } from "lucide-react";
 import { formatCurrency } from "../../../lib/utils";
 
 export default function ProductTableRow({ product: p, isSelected, onSelect, onEdit, onAddVariant, onDelete }) {
+  const [imageError, setImageError] = useState(false);
+
   const totalStock =
     p.stock ??
     p.total_stock ??
@@ -11,8 +14,9 @@ export default function ProductTableRow({ product: p, isSelected, onSelect, onEd
     0;
   
   const isLowStock = totalStock <= 5;
-  const firstImg =
-    p.image_urls?.[0] || p.images?.[0] || "/placeholder-cosmetics.png";
+  const firstImg = !imageError
+    ? (p.image_urls?.[0] || p.images?.[0] || (p.slug ? `/products/${p.slug}.webp` : null) || "/placeholder-cosmetics.png")
+    : null;
   const sku = p.variants?.[0]?.sku || p.sku || "N/A";
 
   return (
@@ -36,13 +40,18 @@ export default function ProductTableRow({ product: p, isSelected, onSelect, onEd
       {/* Producto: Imagen + Nombre */}
       <td className="py-3.5 px-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={firstImg}
-              alt={p.name}
-              className="w-full h-full object-cover"
-            />
+          <div className="w-10 h-10 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shrink-0 flex items-center justify-center">
+            {firstImg ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={firstImg}
+                alt={p.name}
+                onError={() => setImageError(true)}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Package className="w-5 h-5 text-zinc-400 stroke-1" />
+            )}
           </div>
           <div>
             <p className="font-bold text-zinc-900 dark:text-zinc-100 line-clamp-1">

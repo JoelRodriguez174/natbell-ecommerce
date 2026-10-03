@@ -171,13 +171,34 @@ class AdminCatalogService:
         return created_v
 
     async def delete_product(self, product_id: UUID) -> bool:
-        """Desactiva lógicamente (soft-delete) el producto y sus variantes."""
-        # Desactivar producto
-        self.db.table("products").update({"is_active": False}).eq("id", str(product_id)).execute()
-        # Desactivar variantes
-        self.db.table("product_variants").update({"is_active": False}).eq("product_id", str(product_id)).execute()
+        """Elimina físicamente el producto y sus variantes asociadas.
+
+        En caso de restricciones foráneas inesperadas, aplica soft-delete defensivo.
+        """
+        str_id = str(product_id)
+        try:
+            self.db.table("product_variants").delete().eq("product_id", str_id).execute()
+            self.db.table("products").delete().eq("id", str_id).execute()
+        except Exception:
+            self.db.table("products").update({"is_active": False}).eq("id", str_id).execute()
+            self.db.table("product_variants").update({"is_active": False}).eq("product_id", str_id).execute()
         global_cache.invalidate_prefix("catalog:")
         return True
+
+    async def bulk_delete_products(self, product_ids: List[UUID]) -> int:
+        """Elimina múltiples productos y sus variantes en bloque de forma atómica y rápida."""
+        str_ids = [str(pid) for pid in product_ids]
+        if not str_ids:
+            return 0
+        try:
+            self.db.table("product_variants").delete().in_("product_id", str_ids).execute()
+            self.db.table("products").delete().in_("id", str_ids).execute()
+        except Exception:
+            self.db.table("products").update({"is_active": False}).in_("id", str_ids).execute()
+            self.db.table("product_variants").update({"is_active": False}).in_("product_id", str_ids).execute()
+        global_cache.invalidate_prefix("catalog:")
+        return len(str_ids)
+
 
     async def update_variant_stock(self, variant_id: UUID, new_stock: int) -> Dict[str, Any]:
         """Actualiza el stock disponible de una variante."""

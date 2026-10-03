@@ -131,6 +131,22 @@ export function useProductMutations() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin_products"] }),
   });
 
+  const bulkDeleteProducts = useMutation({
+    mutationFn: async (productIds) => {
+      const res = await fetch(`${API_URL}/api/admin/products/bulk-delete`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ product_ids: productIds }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Error al eliminar productos seleccionados");
+      }
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin_products"] }),
+  });
+
   const createVariant = useMutation({
     mutationFn: async ({ productId, payload }) => {
       const res = await fetch(`${API_URL}/api/admin/products/${productId}/variants`, {
@@ -151,6 +167,8 @@ export function useProductMutations() {
     createProduct,
     updateProduct,
     deleteProduct,
+    bulkDeleteProducts,
     createVariant,
   };
 }
+

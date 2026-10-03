@@ -169,11 +169,19 @@ def test_update_product_and_soft_delete():
         elif name == "products":
             m.update.return_value = prod_update
             prod_update.eq.return_value = prod_update
+            prod_del = MagicMock()
+            m.delete.return_value = prod_del
+            prod_del.eq.return_value = prod_del
+            prod_del.in_.return_value = prod_del
             return m
         elif name == "product_variants":
             var_up = MagicMock()
             m.update.return_value = var_up
             var_up.eq.return_value = var_up
+            var_del = MagicMock()
+            m.delete.return_value = var_del
+            var_del.eq.return_value = var_del
+            var_del.in_.return_value = var_del
             return m
         return m
 
@@ -195,9 +203,19 @@ def test_update_product_and_soft_delete():
             headers={"Authorization": f"Bearer {token}"},
         )
         assert res_del.status_code == 200
-        assert "desactivado exitosamente" in res_del.json()["message"]
+        assert "eliminado exitosamente" in res_del.json()["message"]
+
+        # Bulk Delete
+        res_bulk = client.post(
+            "/api/admin/products/bulk-delete",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"product_ids": [prod_id]},
+        )
+        assert res_bulk.status_code == 200
+        assert "eliminados exitosamente" in res_bulk.json()["message"]
     finally:
         app.dependency_overrides.clear()
+
 
 
 def test_update_variant_stock():

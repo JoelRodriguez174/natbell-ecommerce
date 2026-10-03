@@ -9,6 +9,7 @@ from app.database import get_supabase_client
 from app.dependencies.admin_auth import get_current_admin
 from app.models.admin import AdminUserResponse
 from app.models.admin_catalog import (
+    AdminBulkDeleteRequest,
     AdminImportSummary,
     AdminProductCreate,
     AdminProductUpdate,
@@ -114,7 +115,7 @@ async def update_product(
 
 @router.delete(
     "/products/{product_id}",
-    summary="Desactivar producto (Soft Delete)",
+    summary="Eliminar producto físicamente",
 )
 async def delete_product(
     product_id: UUID,
@@ -123,7 +124,21 @@ async def delete_product(
 ) -> Dict[str, str]:
     service = AdminCatalogService(db)
     await service.delete_product(product_id)
-    return {"message": f"Producto {product_id} desactivado exitosamente"}
+    return {"message": f"Producto {product_id} eliminado exitosamente"}
+
+
+@router.post(
+    "/products/bulk-delete",
+    summary="Eliminar múltiples productos en lote",
+)
+async def bulk_delete_products(
+    payload: AdminBulkDeleteRequest,
+    _current_admin: AdminUserResponse = Depends(get_current_admin),
+    db: Client = Depends(get_supabase_client),
+) -> Dict[str, Any]:
+    service = AdminCatalogService(db)
+    count = await service.bulk_delete_products(payload.product_ids)
+    return {"message": f"{count} productos eliminados exitosamente", "count": count}
 
 
 @router.patch(

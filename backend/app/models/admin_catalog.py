@@ -72,3 +72,8 @@ class AdminImportSummary(BaseModel):
     total_rows_processed: int = 0
     warnings: List[str] = Field(default_factory=list)
     errors: List[str] = Field(default_factory=list)
+
+
+class AdminBulkDeleteRequest(BaseModel):
+    product_ids: List[UUID] = Field(..., min_length=1, description="Lista de IDs de productos a eliminar")
+
