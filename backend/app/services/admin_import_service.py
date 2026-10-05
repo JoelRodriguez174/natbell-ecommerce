@@ -23,64 +23,22 @@ from app.utils.slug import slugify
 
 logger = logging.getLogger(__name__)
 
-# Mapeo de cabeceras reconocidas hacia claves canónicas
-HEADER_ALIASES: Dict[str, str] = {
-    # Producto
-    "nombre": "nombre",
-    "producto": "nombre",
-    "nombre_producto": "nombre",
-    "titulo": "nombre",
-    "title": "nombre",
-    "name": "nombre",
-    "descripcion": "descripcion",
-    "detalle": "descripcion",
-    "description": "descripcion",
-    "categoria": "categoria",
-    "categoria_principal": "categoria",
-    "category": "categoria",
-    "subcategoria": "subcategoria",
-    "subcategory": "subcategoria",
-    "rubro": "subcategoria",
-    "marca": "marca",
-    "brand": "marca",
-    "precio_base": "precio_base",
-    "precio": "precio_base",
-    "precio_lista": "precio_base",
-    "price": "precio_base",
-    "base_price": "precio_base",
-    "precio_oferta": "precio_oferta",
-    "precio_promocional": "precio_oferta",
-    "oferta": "precio_oferta",
-    "sale_price": "precio_oferta",
-    "en_oferta": "en_oferta",
-    "is_on_sale": "en_oferta",
-    "destacado": "destacado",
-    "is_featured": "destacado",
-    "activo": "activo",
-    "is_active": "activo",
-    "imagenes": "imagenes",
-    "imagen": "imagenes",
-    "fotos": "imagenes",
-    "foto": "imagenes",
-    "image_urls": "imagenes",
-    "images": "imagenes",
-    # Variante
-    "sku": "sku_variante",
-    "sku_variante": "sku_variante",
-    "codigo": "sku_variante",
-    "codigo_sku": "sku_variante",
-    "nombre_variante": "nombre_variante",
-    "variante": "nombre_variante",
-    "variant_name": "nombre_variante",
-    "presentacion": "nombre_variante",
-    "talle": "nombre_variante",
-    "color": "nombre_variante",
-    "precio_variante": "precio_variante",
-    "price_override": "precio_variante",
-    "stock": "stock_variante",
-    "stock_variante": "stock_variante",
-    "stock_inicial": "stock_variante",
-    "cantidad": "stock_variante",
+CANONICAL_KEYS = {
+    "nombre",
+    "descripcion",
+    "categoria",
+    "subcategoria",
+    "marca",
+    "precio_base",
+    "precio_oferta",
+    "en_oferta",
+    "destacado",
+    "activo",
+    "sku_variante",
+    "nombre_variante",
+    "precio_variante",
+    "stock_variante",
+    "imagenes",
 }
 
 TEMPLATE_HEADERS = [
@@ -184,6 +142,128 @@ def _fuzzy_match(query: str, target: str, min_ratio: float = 0.85) -> bool:
     return ratio >= min_ratio
 
 
+# Mapeo exhaustivo de cabeceras reconocidas hacia claves canónicas
+HEADER_ALIASES: Dict[str, str] = {
+    # Producto
+    "nombre": "nombre",
+    "nombre_del_producto": "nombre",
+    "nombre_de_producto": "nombre",
+    "producto": "nombre",
+    "articulo": "nombre",
+    "item": "nombre",
+    "nombre_producto": "nombre",
+    "titulo": "nombre",
+    "title": "nombre",
+    "name": "nombre",
+    "product_name": "nombre",
+    "product": "nombre",
+    # Descripción
+    "descripcion": "descripcion",
+    "detalle": "descripcion",
+    "detalles": "descripcion",
+    "description": "descripcion",
+    "desc": "descripcion",
+    # Categoría
+    "categoria": "categoria",
+    "categoria_principal": "categoria",
+    "category": "categoria",
+    "departamento": "categoria",
+    # Subcategoría
+    "subcategoria": "subcategoria",
+    "subcategory": "subcategoria",
+    "sub_categoria": "subcategoria",
+    "rubro": "subcategoria",
+    "tipo": "subcategoria",
+    # Marca
+    "marca": "marca",
+    "brand": "marca",
+    "fabricante": "marca",
+    "laboratorio": "marca",
+    # Precios
+    "precio_base": "precio_base",
+    "precio": "precio_base",
+    "precio_lista": "precio_base",
+    "precio_de_lista": "precio_base",
+    "precio_regular": "precio_base",
+    "precio_unitario": "precio_base",
+    "price": "precio_base",
+    "base_price": "precio_base",
+    # Ofertas
+    "precio_oferta": "precio_oferta",
+    "precio_promocional": "precio_oferta",
+    "precio_descuento": "precio_oferta",
+    "oferta": "precio_oferta",
+    "sale_price": "precio_oferta",
+    "promo_price": "precio_oferta",
+    "en_oferta": "en_oferta",
+    "en_oferta_si_no": "en_oferta",
+    "is_on_sale": "en_oferta",
+    "oferta_activa": "en_oferta",
+    # Flags
+    "destacado": "destacado",
+    "destacado_si_no": "destacado",
+    "destacados": "destacado",
+    "is_featured": "destacado",
+    "activo": "activo",
+    "activo_si_no": "activo",
+    "is_active": "activo",
+    "publicado": "activo",
+    "visible": "activo",
+    "habilitado": "activo",
+    "estado": "activo",
+    # Imágenes
+    "imagenes": "imagenes",
+    "imagenes_urls_separadas_por_comas": "imagenes",
+    "imagen": "imagenes",
+    "fotos": "imagenes",
+    "foto": "imagenes",
+    "image_urls": "imagenes",
+    "images": "imagenes",
+    "url_imagen": "imagenes",
+    "urls_imagenes": "imagenes",
+    "links_imagenes": "imagenes",
+    # Variante - SKU
+    "sku": "sku_variante",
+    "sku_variante": "sku_variante",
+    "codigo": "sku_variante",
+    "codigo_sku": "sku_variante",
+    "codigo_de_barras": "sku_variante",
+    "barcode": "sku_variante",
+    # Variante - Nombre
+    "nombre_variante": "nombre_variante",
+    "variante": "nombre_variante",
+    "variant_name": "nombre_variante",
+    "presentacion": "nombre_variante",
+    "talle": "nombre_variante",
+    "color": "nombre_variante",
+    "medida": "nombre_variante",
+    "tamano": "nombre_variante",
+    "volumen": "nombre_variante",
+    # Variante - Precio
+    "precio_variante": "precio_variante",
+    "precio_de_variante": "precio_variante",
+    "precio_diferencial": "precio_variante",
+    "price_override": "precio_variante",
+    "variant_price": "precio_variante",
+    # Variante - Stock
+    "stock": "stock_variante",
+    "stock_variante": "stock_variante",
+    "stock_inicial": "stock_variante",
+    "cantidad": "stock_variante",
+    "unidades": "stock_variante",
+    "cant": "stock_variante",
+    "inventory": "stock_variante",
+    "quantity": "stock_variante",
+    "stock_disponible": "stock_variante",
+}
+
+# Auto-registrar cabeceras de la plantilla oficial para asegurar 100% de coincidencia
+for _canonical_key, _header_label, _ in TEMPLATE_HEADERS:
+    _clean_label = _strip_accents(_header_label.strip().lower())
+    _clean_label = re.sub(r"[^a-z0-9_]+", "_", _clean_label).strip("_")
+    HEADER_ALIASES[_clean_label] = _canonical_key
+
+
 def _normalize_key(header: Any) -> str:
     """Normaliza un encabezado de columna eliminando acentos, caracteres raros y espacios."""
     if not header:
@@ -197,6 +277,8 @@ def _to_bool(val: Any, default: bool = False) -> bool:
     """Interpreta booleanos en español/inglés (SI, NO, 1, 0, TRUE, FALSE)."""
     if val is None or val == "":
         return default
+    if isinstance(val, bool):
+        return val
     s = str(val).strip().lower()
     if s in {"si", "s", "yes", "y", "true", "1", "verdadero"}:
         return True
@@ -206,12 +288,39 @@ def _to_bool(val: Any, default: bool = False) -> bool:
 
 
 def _to_decimal(val: Any) -> Optional[Decimal]:
-    """Convierte un valor numérico/cadena a Decimal seguro."""
+    """Convierte un valor numérico/cadena a Decimal seguro, soportando formatos latino ($ 18.500,00) e internacional (18,500.00)."""
     if val is None or str(val).strip() == "":
         return None
+    if isinstance(val, (int, Decimal)):
+        return Decimal(val)
+    if isinstance(val, float):
+        return Decimal(str(val))
+
+    s = str(val).strip().replace("$", "").replace("\xa0", "").replace(" ", "")
+    if not s:
+        return None
+
+    # Normalizar separadores de miles y decimales
+    if "." in s and "," in s:
+        if s.rfind(",") > s.rfind("."):
+            # Formato latino: 18.500,50 -> 18500.50
+            s = s.replace(".", "").replace(",", ".")
+        else:
+            # Formato internacional: 18,500.50 -> 18500.50
+            s = s.replace(",", "")
+    elif "," in s:
+        # Solo coma: 18500,50 -> 18500.50
+        s = s.replace(",", ".")
+    elif "." in s:
+        # Solo punto: verificar si es separador de miles (ej. 18.500 o 1.500.000)
+        parts = s.split(".")
+        if len(parts) > 2:
+            s = s.replace(".", "")
+        elif len(parts) == 2 and len(parts[1]) == 3 and parts[0].isdigit() and int(parts[0]) > 0:
+            s = s.replace(".", "")
+
     try:
-        cleaned = str(val).strip().replace("$", "").replace(" ", "").replace(",", ".")
-        return Decimal(cleaned)
+        return Decimal(s)
     except Exception:
         return None
 
@@ -314,6 +423,10 @@ class AdminImportService:
             return self._parse_xlsx(file_bytes)
         elif ext in {"csv", "txt"}:
             return self._parse_csv(file_bytes)
+        elif ext == "xls":
+            raise ValueError(
+                "El formato .xls antiguo (Excel 97-2003) no es compatible. Por favor guardá tu archivo como .xlsx (Libro de Excel) o .csv para importarlo."
+            )
         else:
             raise ValueError(f"Extensión .{ext} no soportada. Solo se admiten archivos .xlsx y .csv")
 
@@ -326,10 +439,29 @@ class AdminImportService:
         if not rows:
             return []
 
-        # Encabezados en primera fila no vacía
+        # Identificar la fila de encabezados más probable buscando coincidencias con claves canónicas
+        # (evita que filas iniciales de títulos o notas rompan la importación)
         header_row_idx = 0
-        while header_row_idx < len(rows) and not any(rows[header_row_idx]):
-            header_row_idx += 1
+        best_match_count = -1
+        max_scan = min(len(rows), 10)
+
+        for idx in range(max_scan):
+            r = rows[idx]
+            if not any(r):
+                continue
+            match_count = sum(
+                1 for cell_val in r
+                if cell_val is not None and _normalize_key(cell_val) in CANONICAL_KEYS
+            )
+            if match_count > best_match_count:
+                best_match_count = match_count
+                header_row_idx = idx
+
+        # Si ninguna fila tiene coincidencias conocidas, buscar la primera no vacía
+        if best_match_count <= 0:
+            header_row_idx = 0
+            while header_row_idx < len(rows) and not any(rows[header_row_idx]):
+                header_row_idx += 1
 
         if header_row_idx >= len(rows):
             return []
@@ -374,11 +506,36 @@ class AdminImportService:
         if not rows:
             return []
 
-        header_row = rows[0]
-        normalized_headers = [_normalize_key(h) for h in header_row]
+        # Identificar la fila de encabezados más probable
+        header_row_idx = 0
+        best_match_count = -1
+        max_scan = min(len(rows), 10)
+
+        for idx in range(max_scan):
+            r = rows[idx]
+            if not any(r):
+                continue
+            match_count = sum(
+                1 for cell_val in r
+                if cell_val and _normalize_key(cell_val) in CANONICAL_KEYS
+            )
+            if match_count > best_match_count:
+                best_match_count = match_count
+                header_row_idx = idx
+
+        if best_match_count <= 0:
+            header_row_idx = 0
+            while header_row_idx < len(rows) and not any(rows[header_row_idx]):
+                header_row_idx += 1
+
+        if header_row_idx >= len(rows):
+            return []
+
+        raw_headers = rows[header_row_idx]
+        normalized_headers = [_normalize_key(h) for h in raw_headers]
 
         data_rows: List[Dict[str, Any]] = []
-        for r in rows[1:]:
+        for r in rows[header_row_idx + 1:]:
             if not any(r):
                 continue
             row_dict: Dict[str, Any] = {}

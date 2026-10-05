@@ -170,12 +170,57 @@ class AdminCatalogService:
         global_cache.invalidate_prefix("catalog:")
         return created_v
 
+    def _cleanup_storage_images(self, image_urls: List[Any]) -> None:
+        """Elimina del bucket 'products' de Supabase Storage las imágenes asociadas a un producto."""
+        if not image_urls:
+            return
+        paths_to_delete: List[str] = []
+        for url in image_urls:
+            if not isinstance(url, str):
+                continue
+            # Detectar si la URL pertenece a nuestro bucket 'products' de Supabase Storage
+            if "/storage/v1/object/public/products/" in url:
+                file_name = url.split("/storage/v1/object/public/products/")[-1]
+            elif url.startswith("/products/"):
+                file_name = url[len("/products/"):]
+            elif "/products/" in url and "supabase.co" in url:
+                file_name = url.split("/products/")[-1]
+            else:
+                continue
+
+            file_name = file_name.split("?")[0].split("#")[0].strip()
+            if file_name and file_name not in paths_to_delete:
+                paths_to_delete.append(file_name)
+
+        if paths_to_delete:
+            try:
+                self.db.storage.from_("products").remove(paths_to_delete)
+            except Exception:
+                # No bloquear el flujo de base de datos si falla la eliminación física del archivo
+                pass
+
     async def delete_product(self, product_id: UUID) -> bool:
-        """Elimina físicamente el producto y sus variantes asociadas.
+        """Elimina físicamente el producto, sus variantes y sus imágenes en Supabase Storage.
 
         En caso de restricciones foráneas inesperadas, aplica soft-delete defensivo.
         """
         str_id = str(product_id)
+        # Limpieza de imágenes en Supabase Storage antes de eliminar registro
+        try:
+            prod_res = (
+                self.db.table("products")
+                .select("image_urls")
+                .eq("id", str_id)
+                .limit(1)
+                .execute()
+            )
+            prod_data = _as_first_dict(prod_res.data) if prod_res else {}
+            images = prod_data.get("image_urls") or []
+            if isinstance(images, list):
+                self._cleanup_storage_images(images)
+        except Exception:
+            pass
+
         try:
             self.db.table("product_variants").delete().eq("product_id", str_id).execute()
             self.db.table("products").delete().eq("id", str_id).execute()
@@ -186,10 +231,30 @@ class AdminCatalogService:
         return True
 
     async def bulk_delete_products(self, product_ids: List[UUID]) -> int:
-        """Elimina múltiples productos y sus variantes en bloque de forma atómica y rápida."""
+        """Elimina múltiples productos, sus variantes e imágenes asociadas en bloque."""
         str_ids = [str(pid) for pid in product_ids]
         if not str_ids:
             return 0
+
+        # Limpieza de imágenes en Supabase Storage
+        try:
+            prods_res = (
+                self.db.table("products")
+                .select("image_urls")
+                .in_("id", str_ids)
+                .execute()
+            )
+            prods_data = _as_dict_list(prods_res.data) if prods_res else []
+            all_images: List[str] = []
+            for p in prods_data:
+                imgs = p.get("image_urls") or []
+                if isinstance(imgs, list):
+                    all_images.extend(imgs)
+            if all_images:
+                self._cleanup_storage_images(all_images)
+        except Exception:
+            pass
+
         try:
             self.db.table("product_variants").delete().in_("product_id", str_ids).execute()
             self.db.table("products").delete().in_("id", str_ids).execute()

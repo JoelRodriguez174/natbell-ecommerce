@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Filter, X, ChevronRight, ChevronDown } from "lucide-react";
+import { Filter, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -26,8 +26,6 @@ export default function ProductFilters({
   const [localMin, setLocalMin] = useState("");
   const [localMax, setLocalMax] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [showAllCategories, setShowAllCategories] = useState(false);
-  const [showAllBrands, setShowAllBrands] = useState(false);
 
   const handleApplyPrice = (e) => {
     e.preventDefault();
@@ -45,9 +43,6 @@ export default function ProductFilters({
     setLocalMax("");
     onResetFilters();
   };
-
-  const visibleCategories = showAllCategories ? categories : categories.slice(0, 6);
-  const visibleBrands = showAllBrands ? brands : brands.slice(0, 6);
 
   return (
     <>
@@ -123,7 +118,7 @@ export default function ProductFilters({
             <h3 className="text-xs sm:text-sm font-bold text-gray-900 tracking-tight mb-2">
               Categorías
             </h3>
-            <ul className="space-y-1 sm:space-y-1.5 text-[11px] sm:text-xs">
+            <ul className="max-h-48 sm:max-h-56 overflow-y-auto pr-1.5 space-y-1 sm:space-y-1.5 text-[11px] sm:text-xs">
               <li>
                 <button
                   onClick={() => onFilterChange({ category: undefined, page: 1 })}
@@ -139,7 +134,7 @@ export default function ProductFilters({
                 </button>
               </li>
 
-              {visibleCategories.map((cat) => (
+              {categories.map((cat) => (
                 <li key={cat.id}>
                   <button
                     onClick={() => onFilterChange({ category: cat.slug, page: 1 })}
@@ -156,15 +151,6 @@ export default function ProductFilters({
                 </li>
               ))}
             </ul>
-
-            {categories.length > 6 && (
-              <button
-                onClick={() => setShowAllCategories(!showAllCategories)}
-                className="mt-1.5 text-[11px] sm:text-xs font-medium text-[#DE1B76] hover:text-[#c21464] hover:underline cursor-pointer flex items-center gap-0.5"
-              >
-                <span>{showAllCategories ? "Menos" : `+${categories.length - 6} más`}</span>
-              </button>
-            )}
           </div>
 
           {/* Marcas */}
@@ -172,7 +158,7 @@ export default function ProductFilters({
             <h3 className="text-xs sm:text-sm font-bold text-gray-900 tracking-tight mb-2">
               Marcas
             </h3>
-            <ul className="space-y-1 sm:space-y-1.5 text-[11px] sm:text-xs">
+            <ul className="max-h-48 sm:max-h-56 overflow-y-auto pr-1.5 space-y-1 sm:space-y-1.5 text-[11px] sm:text-xs">
               <li>
                 <button
                   onClick={() => onFilterChange({ brand: undefined, page: 1 })}
@@ -188,7 +174,7 @@ export default function ProductFilters({
                 </button>
               </li>
 
-              {visibleBrands.map((b) => (
+              {brands.map((b) => (
                 <li key={b.id}>
                   <button
                     onClick={() => onFilterChange({ brand: b.slug, page: 1 })}
@@ -205,15 +191,6 @@ export default function ProductFilters({
                 </li>
               ))}
             </ul>
-
-            {brands.length > 6 && (
-              <button
-                onClick={() => setShowAllBrands(!showAllBrands)}
-                className="mt-1.5 text-[11px] sm:text-xs font-medium text-[#DE1B76] hover:text-[#c21464] hover:underline cursor-pointer flex items-center gap-0.5"
-              >
-                <span>{showAllBrands ? "Menos" : `+${brands.length - 6} más`}</span>
-              </button>
-            )}
           </div>
         </div>
 

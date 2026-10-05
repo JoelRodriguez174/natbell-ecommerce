@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, MessageCircle } from "lucide-react";
 import NatbellLogo from "@/components/ui/NatbellLogo";
 
 export default function Footer() {
@@ -30,8 +30,18 @@ export default function Footer() {
               </p>
               <p className="flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                <span>contacto@natbell.com.ar</span>
+                <span>pedidosnatbell@gmail.com</span>
               </p>
+              <a
+                href="https://wa.me/5492657637180?text=Hola%20Natbell,%20tengo%20una%20consulta"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-gray-600 hover:text-emerald-600 transition-colors"
+                title="Consultas al WhatsApp: 2657-63-7180"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>WhatsApp: 2657-63-7180</span>
+              </a>
             </div>
           </div>
 

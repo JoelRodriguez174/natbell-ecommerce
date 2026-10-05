@@ -3,14 +3,14 @@
 import { Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Pagination } from "@heroui/react";
+import Pagination from "@/components/ui/Pagination";
 import ProductGrid from "@/components/product/ProductGrid";
 import ProductFilters from "@/components/product/ProductFilters";
 import CatalogBreadcrumbs from "@/components/product/CatalogBreadcrumbs";
 import CatalogSortDropdown from "@/components/product/CatalogSortDropdown";
 import CatalogEmptyState from "@/components/product/CatalogEmptyState";
 import { getProducts, getCategories, getBrands } from "@/lib/api";
-import { sanitizeQuery } from "@/lib/utils";
+import { sanitizeQuery, cn } from "@/lib/utils";
 
 function CatalogoContent() {
   const router = useRouter();
@@ -24,6 +24,7 @@ function CatalogoContent() {
   const maxPrice = searchParams.get("max_price") || "";
   const sort = searchParams.get("sort") || "featured";
   const page = parseInt(searchParams.get("page") || "1", 10);
+  const perPage = parseInt(searchParams.get("per_page") || "24", 10);
   const onSale = searchParams.get("on_sale") === "true";
 
   // Queries reactivas: categorías y marcas disponibles según filtros
@@ -47,7 +48,7 @@ function CatalogoContent() {
   } = useQuery({
     queryKey: [
       "products",
-      { q, category, brand, minPrice, maxPrice, sort, page, onSale },
+      { q, category, brand, minPrice, maxPrice, sort, page, perPage, onSale },
     ],
     queryFn: () =>
       getProducts({
@@ -59,7 +60,7 @@ function CatalogoContent() {
         max_price: maxPrice ? Number(maxPrice) : undefined,
         sort: sort || undefined,
         page,
-        per_page: 12,
+        per_page: perPage,
         on_sale: onSale ? true : undefined,
       }),
   });
@@ -172,17 +173,14 @@ function CatalogoContent() {
 
               {/* Paginación interactiva */}
               {totalPages > 1 && (
-                <div className="flex justify-center pt-8 pb-4">
+                <div className="flex justify-center pt-8 pb-4 border-t border-rose-100/70">
                   <Pagination
-                    total={totalPages}
-                    page={page}
-                    onChange={(newPage) => {
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={(newPage) => {
                       handleFilterChange({ page: newPage });
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
-                    color="danger"
-                    showControls
-                    className="gap-2"
                   />
                 </div>
               )}

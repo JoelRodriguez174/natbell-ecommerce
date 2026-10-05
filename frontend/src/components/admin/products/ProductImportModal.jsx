@@ -50,33 +50,49 @@ function ImportResultSummary({ result }) {
             <p className="text-lg font-black text-zinc-900 dark:text-zinc-100">
               {result.products_created || 0}
             </p>
-            <p className="text-[10px] text-zinc-500 font-medium">Productos Nuevos</p>
-          </div>
-          <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800">
-            <p className="text-lg font-black text-zinc-900 dark:text-zinc-100">
-              {result.products_updated || 0}
-            </p>
-            <p className="text-[10px] text-zinc-500 font-medium">Actualizados</p>
+            <p className="text-[10px] text-zinc-500 font-medium">Productos Creados</p>
           </div>
           <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800">
             <p className="text-lg font-black text-zinc-900 dark:text-zinc-100">
               {result.variants_created || 0}
             </p>
-            <p className="text-[10px] text-zinc-500 font-medium">Variantes Creadas</p>
+            <p className="text-[10px] text-zinc-500 font-medium">Variantes</p>
+          </div>
+          <div className="bg-white/80 dark:bg-zinc-900/80 p-2.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800">
+            <p className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+              {result.total_rows_processed || 0}
+            </p>
+            <p className="text-[10px] text-zinc-500 font-medium">Filas Procesadas</p>
           </div>
         </div>
       </div>
 
       {result.errors && result.errors.length > 0 && (
-        <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-          <div className="flex items-center gap-1.5 mb-2 text-amber-800 dark:text-amber-400">
-            <AlertTriangle className="w-4 h-4" />
-            <span className="text-xs font-bold">Advertencias o Filas Omitidas:</span>
+        <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
+          <div className="flex items-center gap-1.5 mb-2 text-red-800 dark:text-red-400">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-bold">Errores encontrados:</span>
           </div>
-          <ul className="text-[11px] text-amber-700 dark:text-amber-500 space-y-1 list-disc list-inside max-h-24 overflow-y-auto pl-1">
+          <ul className="text-[11px] text-red-700 dark:text-red-400 space-y-1 list-disc list-inside max-h-28 overflow-y-auto pl-1">
             {result.errors.map((err, idx) => (
               <li key={idx} className="line-clamp-2" title={err}>
                 {err}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {result.warnings && result.warnings.length > 0 && (
+        <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+          <div className="flex items-center gap-1.5 mb-2 text-amber-800 dark:text-amber-400">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-bold">Advertencias o Filas Omitidas:</span>
+          </div>
+          <ul className="text-[11px] text-amber-700 dark:text-amber-500 space-y-1 list-disc list-inside max-h-28 overflow-y-auto pl-1">
+            {result.warnings.map((warn, idx) => (
+              <li key={idx} className="line-clamp-2" title={warn}>
+                {warn}
               </li>
             ))}
           </ul>
@@ -118,8 +134,14 @@ export default function ProductImportModal({
     if (!file) return;
 
     const ext = file.name.split(".").pop().toLowerCase();
-    if (!["xlsx", "csv", "xls"].includes(ext)) {
-      setErrorMessage("Por favor seleccioná un archivo de Excel (.xlsx) o CSV (.csv).");
+    if (!["xlsx", "csv"].includes(ext)) {
+      if (ext === "xls") {
+        setErrorMessage(
+          "El formato .xls antiguo (Excel 97-2003) no es compatible. Por favor guardá tu archivo como .xlsx (Libro de Excel) o .csv para importarlo."
+        );
+      } else {
+        setErrorMessage("Por favor seleccioná un archivo de Excel (.xlsx) o CSV (.csv).");
+      }
       setSelectedFile(null);
       return;
     }
@@ -237,7 +259,7 @@ export default function ProductImportModal({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".xlsx, .csv, .xls"
+                accept=".xlsx, .csv"
                 onChange={handleFileChange}
                 className="hidden"
               />

@@ -30,7 +30,7 @@ export default function HomeWholesaleBanner() {
 
         <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 w-full sm:w-auto relative z-10">
           <a
-            href="https://wa.me/5491100000000?text=Hola%20Natbell,%20quisiera%20consultar%20por%20compras%20mayoristas"
+            href="https://wa.me/5492657637180?text=Hola%20Natbell,%20quisiera%20consultar%20por%20compras%20mayoristas"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto"

@@ -3,6 +3,7 @@ import "./globals.css";
 import Providers from "@/components/layout/Providers";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import WhatsAppButton from "@/components/ui/WhatsAppButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,7 @@ export default function RootLayout({ children }) {
           <Navbar />
           <main className="flex-1 flex flex-col">{children}</main>
           <Footer />
+          <WhatsAppButton />
         </Providers>
       </body>
     </html>

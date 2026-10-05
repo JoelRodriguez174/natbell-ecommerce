@@ -441,3 +441,142 @@ def test_admin_catalog_mutations_invalidate_cache():
         app.dependency_overrides.clear()
 
 
+def test_delete_product_removes_supabase_storage_images():
+    mock_db = _setup_admin_override()
+    token = create_access_token(subject=TEST_ADMIN_ID)
+    prod_id = str(uuid4())
+
+    mock_storage = MagicMock()
+    mock_db.storage.from_.return_value = mock_storage
+
+    def table_side_effect(name):
+        m = MagicMock()
+        if name == "admin_users":
+            admin_sel = MagicMock()
+            admin_eq = MagicMock()
+            admin_eq.execute.return_value = MagicMock(
+                data=[{"id": TEST_ADMIN_ID, "email": TEST_EMAIL, "name": "Admin"}]
+            )
+            m.select.return_value = admin_sel
+            admin_sel.eq.return_value = admin_eq
+            return m
+        elif name == "products":
+            # select image_urls before delete
+            sel_mock = MagicMock()
+            eq_mock = MagicMock()
+            eq_mock.limit.return_value.execute.return_value = MagicMock(
+                data=[
+                    {
+                        "id": prod_id,
+                        "image_urls": [
+                            "https://abc.supabase.co/storage/v1/object/public/products/img_test_123.webp",
+                            "https://images.unsplash.com/photo-12345678",  # external URL, must NOT be sent to storage
+                            "/products/img_local_456.png",
+                        ],
+                    }
+                ]
+            )
+            sel_mock.eq.return_value = eq_mock
+            m.select.return_value = sel_mock
+            # delete
+            del_mock = MagicMock()
+            del_mock.eq.return_value.execute.return_value = MagicMock(data=[])
+            m.delete.return_value = del_mock
+            return m
+        elif name == "product_variants":
+            del_mock = MagicMock()
+            del_mock.eq.return_value.execute.return_value = MagicMock(data=[])
+            m.delete.return_value = del_mock
+            return m
+        return m
+
+    mock_db.table.side_effect = table_side_effect
+    app.dependency_overrides[get_supabase_client] = lambda: mock_db
+
+    try:
+        res = client.delete(
+            f"/api/admin/products/{prod_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert res.status_code == 200
+        # Verify storage remove was called with only internal images
+        mock_db.storage.from_.assert_called_with("products")
+        mock_storage.remove.assert_called_once()
+        removed_paths = mock_storage.remove.call_args[0][0]
+        assert "img_test_123.webp" in removed_paths
+        assert "img_local_456.png" in removed_paths
+        assert not any("unsplash" in p for p in removed_paths)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_bulk_delete_products_removes_supabase_storage_images():
+    mock_db = _setup_admin_override()
+    token = create_access_token(subject=TEST_ADMIN_ID)
+    prod_id_1 = str(uuid4())
+    prod_id_2 = str(uuid4())
+
+    mock_storage = MagicMock()
+    mock_db.storage.from_.return_value = mock_storage
+
+    def table_side_effect(name):
+        m = MagicMock()
+        if name == "admin_users":
+            admin_sel = MagicMock()
+            admin_eq = MagicMock()
+            admin_eq.execute.return_value = MagicMock(
+                data=[{"id": TEST_ADMIN_ID, "email": TEST_EMAIL, "name": "Admin"}]
+            )
+            m.select.return_value = admin_sel
+            admin_sel.eq.return_value = admin_eq
+            return m
+        elif name == "products":
+            # select image_urls before delete
+            sel_mock = MagicMock()
+            in_mock = MagicMock()
+            in_mock.execute.return_value = MagicMock(
+                data=[
+                    {
+                        "id": prod_id_1,
+                        "image_urls": ["https://xyz.supabase.co/storage/v1/object/public/products/prod1_img.webp"],
+                    },
+                    {
+                        "id": prod_id_2,
+                        "image_urls": ["/products/prod2_img.jpg"],
+                    },
+                ]
+            )
+            sel_mock.in_.return_value = in_mock
+            m.select.return_value = sel_mock
+            # delete
+            del_mock = MagicMock()
+            del_mock.in_.return_value.execute.return_value = MagicMock(data=[])
+            m.delete.return_value = del_mock
+            return m
+        elif name == "product_variants":
+            del_mock = MagicMock()
+            del_mock.in_.return_value.execute.return_value = MagicMock(data=[])
+            m.delete.return_value = del_mock
+            return m
+        return m
+
+    mock_db.table.side_effect = table_side_effect
+    app.dependency_overrides[get_supabase_client] = lambda: mock_db
+
+    try:
+        res = client.post(
+            "/api/admin/products/bulk-delete",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"product_ids": [prod_id_1, prod_id_2]},
+        )
+        assert res.status_code == 200
+        assert res.json()["count"] == 2
+        mock_storage.remove.assert_called_once()
+        removed_paths = mock_storage.remove.call_args[0][0]
+        assert "prod1_img.webp" in removed_paths
+        assert "prod2_img.jpg" in removed_paths
+    finally:
+        app.dependency_overrides.clear()
+
+
+

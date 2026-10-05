@@ -17,18 +17,6 @@ export default function HomeBenefitsRibbon() {
       title: "Envío Gratis desde $60.000",
       subtitle: "A todo el país sin cargo",
     },
-    {
-      icon: ShieldCheck,
-      iconColor: "text-[#DE1B76]",
-      title: "100% Originales",
-      subtitle: "Garantía de distribuidora oficial",
-    },
-    {
-      icon: PhoneCall,
-      iconColor: "text-[#5EB82D]",
-      title: "Atención a Salones",
-      subtitle: "Asesoramiento por WhatsApp",
-    },
   ];
 
   return (

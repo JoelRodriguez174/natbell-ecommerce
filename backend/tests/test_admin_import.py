@@ -297,3 +297,163 @@ def test_fuzzy_matching_taxonomies():
     # Category match without subcat: "cuidado capilar" matches
     resolved_subcat2 = service._resolve_subcategory_id("cuidado capilar", "", taxonomies)
     assert resolved_subcat2 == subcat_id
+
+
+def test_import_official_template_xlsx_failing_case():
+    mock_db = MagicMock()
+    token = create_access_token(subject=TEST_ADMIN_ID)
+
+    admin_select = MagicMock()
+    admin_eq = MagicMock()
+    admin_eq.execute.return_value = MagicMock(
+        data=[{"id": TEST_ADMIN_ID, "email": TEST_EMAIL, "name": "Admin Principal"}]
+    )
+
+    cat_id = str(uuid4())
+    subcat_id = str(uuid4())
+    brand_id = str(uuid4())
+
+    def table_router(name):
+        m = MagicMock()
+        if name == "admin_users":
+            m.select.return_value = admin_select
+            admin_select.eq.return_value = admin_eq
+        elif name == "categories":
+            m.select.return_value.execute.return_value = MagicMock(
+                data=[{"id": cat_id, "name": "Cuidado Capilar", "slug": "cuidado-capilar"}]
+            )
+        elif name == "subcategories":
+            m.select.return_value.execute.return_value = MagicMock(
+                data=[{"id": subcat_id, "category_id": cat_id, "name": "Shampoos", "slug": "shampoos"}]
+            )
+        elif name == "brands":
+            m.select.return_value.execute.return_value = MagicMock(
+                data=[{"id": brand_id, "name": "L'Oréal Professionnel", "slug": "loreal-professionnel"}]
+            )
+        elif name == "products":
+            m.select.return_value.ilike.return_value.limit.return_value.execute.return_value = MagicMock(data=[])
+            m.select.return_value.eq.return_value.execute.return_value = MagicMock(data=[])
+            m.insert.return_value.execute.return_value = MagicMock(data=[{"id": str(uuid4())}])
+        elif name == "product_variants":
+            m.select.return_value.eq.return_value.limit.return_value.execute.return_value = MagicMock(data=[])
+            m.insert.return_value.execute.return_value = MagicMock(data=[{"id": str(uuid4())}])
+        return m
+
+    mock_db.table.side_effect = table_router
+    app.dependency_overrides[get_supabase_client] = lambda: mock_db
+
+    official_xlsx = AdminImportService.generate_template("xlsx")
+
+    try:
+        res = client.post(
+            "/api/admin/import",
+            files={
+                "file": (
+                    "plantilla_productos_natbell.xlsx",
+                    official_xlsx,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["success"] is True
+        assert data["products_created"] == 3
+        assert data["variants_created"] == 3
+        assert data["total_rows_processed"] == 3
+    finally:
+        app.dependency_overrides.pop(get_supabase_client, None)
+
+
+def test_import_with_argentine_currency_formatting():
+    mock_db = _setup_admin_override()
+    token = create_access_token(subject=TEST_ADMIN_ID)
+
+    cat_id = str(uuid4())
+    subcat_id = str(uuid4())
+    brand_id = str(uuid4())
+
+    def table_router(name):
+        m = MagicMock()
+        if name == "admin_users":
+            admin_select = MagicMock()
+            admin_eq = MagicMock()
+            admin_eq.execute.return_value = MagicMock(
+                data=[{"id": TEST_ADMIN_ID, "email": TEST_EMAIL, "name": "Admin Principal"}]
+            )
+            m.select.return_value = admin_select
+            admin_select.eq.return_value = admin_eq
+        elif name == "categories":
+            m.select.return_value.execute.return_value = MagicMock(
+                data=[{"id": cat_id, "name": "Cuidado Capilar", "slug": "cuidado-capilar"}]
+            )
+        elif name == "subcategories":
+            m.select.return_value.execute.return_value = MagicMock(
+                data=[{"id": subcat_id, "category_id": cat_id, "name": "Shampoos", "slug": "shampoos"}]
+            )
+        elif name == "brands":
+            m.select.return_value.execute.return_value = MagicMock(
+                data=[{"id": brand_id, "name": "Nov", "slug": "nov"}]
+            )
+        elif name == "products":
+            m.select.return_value.ilike.return_value.limit.return_value.execute.return_value = MagicMock(data=[])
+            m.select.return_value.eq.return_value.execute.return_value = MagicMock(data=[])
+            m.insert.return_value.execute.return_value = MagicMock(data=[{"id": str(uuid4())}])
+        elif name == "product_variants":
+            m.select.return_value.eq.return_value.limit.return_value.execute.return_value = MagicMock(data=[])
+            m.insert.return_value.execute.return_value = MagicMock(data=[{"id": str(uuid4())}])
+        return m
+
+    mock_db.table.side_effect = table_router
+    app.dependency_overrides[get_supabase_client] = lambda: mock_db
+
+    wb = Workbook()
+    ws = wb.active
+    assert ws is not None
+    # Title on row 1, headers on row 2 (very common user pattern!)
+    ws.append(["PLANILLA DE PRECIOS NATBELL 2026 - IMPORTACION"])
+    ws.append(["Nombre de Producto", "Categoría", "Marca", "Precio Base", "Precio Oferta", "SKU", "Stock"])
+    ws.append(["Acondicionador Argan 500ml", "Cuidado Capilar", "Nov", "$ 18.500,50", "16.200,00", "NOV-AC-01", "25"])
+    output = io.BytesIO()
+    wb.save(output)
+
+    try:
+        res = client.post(
+            "/api/admin/import",
+            files={
+                "file": (
+                    "precios_arg.xlsx",
+                    output.getvalue(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["success"] is True
+        assert data["products_created"] == 1
+        assert data["variants_created"] == 1
+    finally:
+        app.dependency_overrides.pop(get_supabase_client, None)
+
+
+def test_import_xls_returns_friendly_error():
+    mock_db = _setup_admin_override()
+    token = create_access_token(subject=TEST_ADMIN_ID)
+    app.dependency_overrides[get_supabase_client] = lambda: mock_db
+
+    try:
+        res = client.post(
+            "/api/admin/import",
+            files={"file": ("legacy.xls", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1", "application/vnd.ms-excel")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert res.status_code == 400
+        assert "no es compatible" in res.json()["detail"]
+        assert ".xlsx" in res.json()["detail"]
+    finally:
+        app.dependency_overrides.pop(get_supabase_client, None)
+
+

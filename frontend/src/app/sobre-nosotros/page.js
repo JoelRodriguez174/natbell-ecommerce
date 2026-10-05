@@ -51,62 +51,27 @@ export default function SobreNosotrosPage() {
           </p>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-3 shadow-2xs">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-            <PhoneCall className="w-6 h-6" />
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 space-y-4 shadow-2xs flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+              <PhoneCall className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-950">Asesoramiento Técnico</h3>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              Acompañamos a nuestros clientes con listas de precios mayoristas, fichas de aplicación técnica y atención directa por WhatsApp al <strong className="text-gray-900 font-bold">2657-63-7180</strong>.
+            </p>
           </div>
-          <h3 className="text-lg font-bold text-gray-950">Asesoramiento Técnico a Salones</h3>
-          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-            Acompañamos a coloristas y profesionales con listas de precios mayoristas, fichas de aplicación técnica y atención directa por WhatsApp.
-          </p>
-        </div>
-      </div>
-
-      {/* Banner Mayorista */}
-      <div className="bg-zinc-950 text-white rounded-2xl p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8">
-        <div className="space-y-4 max-w-2xl text-center lg:text-left">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#DE1B76]">
-            Atención Mayorista
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black">
-            ¿Tenés un salón, peluquería o academia?
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-            Ofrecemos condiciones comerciales especiales por bulto cerrado, reposición programada y facturación A o B para empresas y profesionales independientes.
-          </p>
-          <ul className="flex flex-wrap gap-4 text-xs text-zinc-300 justify-center lg:justify-start pt-2">
-            <li className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#5EB82D]" />
-              <span>Listas de precios diferenciales</span>
-            </li>
-            <li className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#5EB82D]" />
-              <span>Factura A y B</span>
-            </li>
-            <li className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#5EB82D]" />
-              <span>Garantía oficial en máquinas</span>
-            </li>
-          </ul>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-          <a
-            href="https://wa.me/5491100000000?text=Hola%20Natbell,%20quisiera%20asesoramiento%20mayorista"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-          </a>
-          <Link href="/productos">
-            <Button
-              variant="secondary"
-              size="md"
-              className="bg-white hover:bg-zinc-100 text-zinc-950 font-bold px-6 py-3.5 rounded-xl text-sm w-full sm:w-auto"
+          <div>
+            <a
+              href="https://wa.me/5492657637180?text=Hola%20Natbell,%20quisiera%20asesoramiento%20t%C3%A9cnico"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
             >
-              <span>Ver Catálogo</span>
-              <ArrowRight className="w-4 h-4 ml-1 inline" />
-            </Button>
-          </Link>
+              <span>Consultar por WhatsApp</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
       </div>
     </div>
