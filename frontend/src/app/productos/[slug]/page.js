@@ -138,8 +138,8 @@ export default function ProductDetailPage({ params }) {
   const productImages = (product.image_urls && product.image_urls.length > 0)
     ? product.image_urls
     : (product.images && product.images.length > 0)
-    ? product.images
-    : (product.slug ? [`/products/${product.slug}.webp`] : []);
+      ? product.images
+      : (product.slug ? [`/products/${product.slug}.webp`] : []);
 
   // Precio reactivo
   const currentPrice =
@@ -184,7 +184,7 @@ export default function ProductDetailPage({ params }) {
 
       {/* UN SOLO CONTENEDOR UNIFICADO ESTILO MERCADOLIBRE CON SEPARADORES */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-6 sm:p-10 divide-y divide-gray-200">
-        
+
         {/* BLOQUE SUPERIOR: Galería y Módulo de Compra */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start pb-10">
           {/* Columna Izquierda: Galería Integrada */}
@@ -375,7 +375,7 @@ export default function ProductDetailPage({ params }) {
           <h2 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">
             Descripción
           </h2>
-          <div className="text-gray-700 leading-relaxed whitespace-pre-line text-sm max-w-4xl">
+          <div className="text-gray-700 leading-relaxed whitespace-pre-line text-base max-w-4xl">
             {product.description || "Sin descripción adicional proporcionada por el fabricante."}
           </div>
         </div>
