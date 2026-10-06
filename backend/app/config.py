@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     andreani_credential_id: str = ""
     andreani_origin_postal_code: str = "1752"
     andreani_api_base_url: str = "https://woocommerce-api-acom.andreani.com"
+    andreani_contract_id: str = "400035538"
 
     # Shipping Configuration
     free_shipping_threshold: float = 60000.00

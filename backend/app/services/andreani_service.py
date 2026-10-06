@@ -125,7 +125,7 @@ class AndreaniService:
                 "email": str(order.get("customer_email") or "info@natbell.com.ar").strip(),
             },
             "contract": {
-                "id_contract": "400035538",
+                "id_contract": settings.andreani_contract_id,
             },
             "email_merchant": "mgrodriguez77@hotmail.com",
             "remito": str(order.get("order_number") or ""),

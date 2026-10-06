@@ -5,7 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // --- FETCHERS ---
 const fetchProducts = async (search = "", token) => {
-  const params = new URLSearchParams({ per_page: 50 });
+  const params = new URLSearchParams({ per_page: 1000 });
   if (search) params.append("search", search);
 
   const headers = token ? { Authorization: `Bearer ${token}` } : {};

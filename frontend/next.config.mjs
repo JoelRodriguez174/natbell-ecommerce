@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    qualities: [50, 75, 90, 100],
     remotePatterns: [
       {
         protocol: "https",
@@ -17,6 +18,10 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "http2.mlstatic.com",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
       },
     ],
   },

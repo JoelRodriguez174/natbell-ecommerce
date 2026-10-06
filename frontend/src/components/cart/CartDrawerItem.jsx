@@ -15,6 +15,7 @@ export default function CartDrawerItem({
   onCloseCart,
 }) {
   const [pendingQty, setPendingQty] = useState(undefined);
+  const [imageError, setImageError] = useState(false);
 
   const hasPending = pendingQty !== undefined && pendingQty !== item.quantity;
   const displayQty = hasPending ? pendingQty : item.quantity;
@@ -88,13 +89,14 @@ export default function CartDrawerItem({
 
       {/* Imagen Thumbnail */}
       <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-xl bg-gray-50 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
-        {item.image ? (
+        {!imageError && item.image ? (
           <Image
             src={item.image}
             alt={item.name}
             width={72}
             height={72}
             className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-400">

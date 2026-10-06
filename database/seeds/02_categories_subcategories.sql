@@ -3,7 +3,7 @@
 -- Carga de categorías y subcategorías oficiales de Los Arrayanes
 -- ============================================================================
 
--- Categorías principales (11 categorías)
+-- Categorías principales (12 categorías)
 INSERT INTO categories (name, slug, description, display_order) VALUES
     ('Coloración', 'coloracion', 'Tinturas, decolorantes, oxidantes y accesorios profesionales para coloristas', 1),
     ('Tratamientos Capilares', 'tratamientos-capilares', 'Máscaras, ampollas, alisados, cauterizados, protectores y serums', 2),
@@ -15,7 +15,8 @@ INSERT INTO categories (name, slug, description, display_order) VALUES
     ('Pestañas y Cejas', 'pestanas-y-cejas', 'Pestañas postizas en racimo o individuales, lifting, laminado y tintura', 8),
     ('Descartables e Higiene', 'descartables-e-higiene', 'Guantes de nitrilo y látex, gorros térmicos, capas, toallas y cubrecamillas', 9),
     ('Uñas y Manicuría', 'unas-y-manicuria', 'Limas profesionales, alicates, moldes, fresas y accesorios para manicuría', 10),
-    ('Ondulación', 'ondulacion', 'Lociones para permanente, neutralizantes y ondulación con fórmulas nutritivas', 11)
+    ('Ondulación', 'ondulacion', 'Lociones para permanente, neutralizantes y ondulación con fórmulas nutritivas', 11),
+    ('Polvos Decolorantes', 'polvos-decolorantes', 'Polvos decolorantes para trabajos de decoloración y balayage', 12)
 ON CONFLICT (slug) DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,

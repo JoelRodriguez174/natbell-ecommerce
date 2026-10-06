@@ -10,7 +10,7 @@ from app.models.product import ProductVariant
 class PaginationMetadata(BaseModel):
     """Metadatos de paginación calculados por el backend."""
     page: int = Field(..., ge=1)
-    per_page: int = Field(..., ge=1, le=50)
+    per_page: int = Field(..., ge=1, le=1000)
     total_items: int = Field(..., ge=0)
     total_pages: int = Field(..., ge=0)
     has_next: bool
@@ -20,7 +20,7 @@ class PaginationMetadata(BaseModel):
 class ProductFilters(BaseModel):
     """Filtros y opciones de paginación para el catálogo con defensas anti-DoS."""
     page: int = Field(default=1, ge=1)
-    per_page: int = Field(default=20, ge=1, le=50)
+    per_page: int = Field(default=20, ge=1, le=1000)
     category: Optional[str] = Field(default=None, max_length=120)
     subcategory: Optional[str] = Field(default=None, max_length=120)
     brand: Optional[str] = Field(default=None, max_length=120)

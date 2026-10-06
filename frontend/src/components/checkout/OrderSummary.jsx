@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Image from "next/image";
 import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { formatPrice } from "../../lib/utils";
@@ -20,41 +21,7 @@ export default function OrderSummary({
       {/* Lista de productos en la orden */}
       <div className="max-h-60 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800 pr-1 mb-6 space-y-3">
         {items.map((item) => (
-          <div key={item.itemKey} className="flex items-center gap-3 pt-3 first:pt-0">
-            <div className="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 overflow-hidden relative">
-              {item.image ? (
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  width={48}
-                  height={48}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-xs font-semibold text-zinc-400">
-                  {item.name?.slice(0, 2).toUpperCase()}
-                </span>
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                {item.name}
-              </h4>
-              {item.variantName && (
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {item.variantName}
-                </p>
-              )}
-              <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-semibold mt-0.5">
-                {item.quantity} x {formatPrice(item.price)}
-              </p>
-            </div>
-
-            <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 shrink-0">
-              {formatPrice(item.price * item.quantity)}
-            </span>
-          </div>
+          <OrderSummaryItem key={item.itemKey} item={item} />
         ))}
       </div>
 
@@ -117,6 +84,49 @@ export default function OrderSummary({
         <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
         <span>Pagos encriptados y procesados de forma segura por Mercado Pago.</span>
       </div>
+    </div>
+  );
+}
+
+function OrderSummaryItem({ item }) {
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <div className="flex items-center gap-3 pt-3 first:pt-0">
+      <div className="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 overflow-hidden relative">
+        {!imageError && item.image ? (
+          <Image
+            src={item.image}
+            alt={item.name}
+            width={48}
+            height={48}
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <span className="text-xs font-semibold text-zinc-400">
+            {item.name?.slice(0, 2).toUpperCase()}
+          </span>
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <h4 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">
+          {item.name}
+        </h4>
+        {item.variantName && (
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            {item.variantName}
+          </p>
+        )}
+        <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-semibold mt-0.5">
+          {item.quantity} x {formatPrice(item.price)}
+        </p>
+      </div>
+
+      <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 shrink-0">
+        {formatPrice(item.price * item.quantity)}
+      </span>
     </div>
   );
 }

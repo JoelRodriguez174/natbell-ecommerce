@@ -30,13 +30,13 @@ def test_product_filters_validation():
     assert filters.page == 1
     assert filters.per_page == 20
 
-    # Límite superior defensivo (max 50)
-    filters_custom = ProductFilters(page=2, per_page=50, sort="price_asc")
-    assert filters_custom.per_page == 50
+    # Límite superior defensivo (max 1000)
+    filters_custom = ProductFilters(page=2, per_page=1000, sort="price_asc")
+    assert filters_custom.per_page == 1000
 
     # Rechazo si per_page excede el máximo permitido (defensa contra DoS por memoria)
     with pytest.raises(ValidationError):
-        ProductFilters(per_page=100)
+        ProductFilters(per_page=1001)
 
     # Rechazo si precios son negativos
     with pytest.raises(ValidationError):

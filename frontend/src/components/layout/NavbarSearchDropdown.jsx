@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@heroui/react";
@@ -27,39 +28,12 @@ export default function NavbarSearchDropdown({
         ) : results.length > 0 ? (
           <div className="divide-y divide-gray-100 max-h-72 sm:max-h-80 overflow-y-auto">
             {results.map((item) => {
-              const img = item.image_urls?.[0] || item.images?.[0] || `/products/${item.slug}.webp`;
               return (
-                <Link
+                <SearchResultItem
                   key={item.id}
-                  href={`/productos/${item.slug}`}
-                  onClick={onSelectResult}
-                  className="flex items-center gap-3 p-3 hover:bg-rose-50/40 transition-colors group"
-                >
-                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-gray-50 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center p-1 relative">
-                    {img ? (
-                      <Image
-                        src={img}
-                        alt={item.name}
-                        width={40}
-                        height={40}
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <Package className="w-4 h-4 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-xs font-medium text-gray-800 group-hover:text-[#DE1B76] truncate transition-colors">
-                      {item.name}
-                    </p>
-                    <span className="text-[10px] text-[#5EB82D] uppercase font-bold">
-                      {item.brand_name || "NATBELL"}
-                    </span>
-                  </div>
-                  <div className="text-xs font-bold text-gray-900 shrink-0">
-                    {formatCurrency(item.base_price)}
-                  </div>
-                </Link>
+                  item={item}
+                  onSelectResult={onSelectResult}
+                />
               );
             })}
             <button
@@ -78,5 +52,44 @@ export default function NavbarSearchDropdown({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function SearchResultItem({ item, onSelectResult }) {
+  const [imageError, setImageError] = useState(false);
+  const img = item.image_urls?.[0] || item.images?.[0] || `/products/${item.slug}.webp`;
+
+  return (
+    <Link
+      href={`/productos/${item.slug}`}
+      onClick={onSelectResult}
+      className="flex items-center gap-3 p-3 hover:bg-rose-50/40 transition-colors group"
+    >
+      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-gray-50 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center p-1 relative">
+        {!imageError && img ? (
+          <Image
+            src={img}
+            alt={item.name}
+            width={40}
+            height={40}
+            className="w-full h-full object-contain"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <Package className="w-4 h-4 text-gray-400" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0 text-left">
+        <p className="text-xs font-medium text-gray-800 group-hover:text-[#DE1B76] truncate transition-colors">
+          {item.name}
+        </p>
+        <span className="text-[10px] text-[#5EB82D] uppercase font-bold">
+          {item.brand_name || "NATBELL"}
+        </span>
+      </div>
+      <div className="text-xs font-bold text-gray-900 shrink-0">
+        {formatCurrency(item.base_price)}
+      </div>
+    </Link>
   );
 }
