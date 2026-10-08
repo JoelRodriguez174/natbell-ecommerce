@@ -42,7 +42,10 @@ export function useOrderMutations() {
         },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Error al actualizar el estado del pedido");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Error al actualizar el estado del pedido");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -58,7 +61,10 @@ export function useOrderMutations() {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (!res.ok) throw new Error("Error al generar envío de Andreani");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Error al generar envío de Andreani");
+      }
       return res.json();
     },
     onSuccess: () => {
