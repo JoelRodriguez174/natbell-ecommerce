@@ -104,24 +104,30 @@ export default function OrderStatusModal({
             </p>
 
             <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={onGenerateAndreaniShipment}
-                disabled={isPending || isGeneratingAndreani || isUpdating}
-                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs inline-flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGeneratingAndreani ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Generando en Andreani...</span>
-                  </>
-                ) : (
-                  <>
-                    <Truck className="w-3.5 h-3.5" />
-                    <span>Generar número de seguimiento</span>
-                  </>
-                )}
-              </button>
+              {!trackingNumber ? (
+                <button
+                  type="button"
+                  onClick={onGenerateAndreaniShipment}
+                  disabled={isPending || isGeneratingAndreani || isUpdating}
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs inline-flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingAndreani ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Generando en Andreani...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Truck className="w-3.5 h-3.5" />
+                      <span>Generar número de seguimiento</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-semibold text-xs">
+                  <span>✓ Envío registrado en Andreani</span>
+                </div>
+              )}
 
               {trackingNumber && (
                 <a
