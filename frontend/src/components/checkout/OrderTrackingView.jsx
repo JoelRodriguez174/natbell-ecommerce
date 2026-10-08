@@ -163,8 +163,11 @@ export default function OrderTrackingView({ order }) {
 
             <a
               href={
-                order.tracking_url ||
-                `https://www.andreani.com/#!/informacionEnvio/${order.tracking_number}`
+                order.tracking_url && !order.tracking_url.includes("/#ORD-")
+                  ? order.tracking_url
+                  : order.tracking_number && !order.tracking_number.startsWith("#")
+                  ? `https://www.andreani.com/#!/informacionEnvio/${encodeURIComponent(order.tracking_number)}`
+                  : "https://www.andreani.com"
               }
               target="_blank"
               rel="noopener noreferrer"

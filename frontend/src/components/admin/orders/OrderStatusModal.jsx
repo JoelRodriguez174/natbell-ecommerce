@@ -131,13 +131,21 @@ export default function OrderStatusModal({
 
               {trackingNumber && (
                 <a
-                  href={`https://www.andreani.com/#!/informacionEnvio/${trackingNumber}`}
+                  href={
+                    trackingNumber.startsWith("#")
+                      ? "https://pymes.andreani.com/ver-envios?tab=integraciones"
+                      : `https://www.andreani.com/#!/informacionEnvio/${encodeURIComponent(trackingNumber)}`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-2 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-zinc-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Ver en Andreani</span>
+                  <span>
+                    {trackingNumber.startsWith("#")
+                      ? "Gestionar en Andreani PyME"
+                      : "Ver en Andreani"}
+                  </span>
                 </a>
               )}
             </div>

@@ -192,9 +192,15 @@ class AndreaniService:
                         )
                         tracking_number = str(order.get("order_number") or "ANDR000000")
 
+                    tracking_url = (
+                        "https://pymes.andreani.com/ver-envios?tab=integraciones"
+                        if tracking_number.startswith("#")
+                        else f"https://www.andreani.com/#!/informacionEnvio/{tracking_number}"
+                    )
+
                     return {
                         "tracking_number": tracking_number,
-                        "tracking_url": f"https://www.andreani.com/#!/informacionEnvio/{tracking_number}",
+                        "tracking_url": tracking_url,
                     }
                 else:
                     logger.error(
