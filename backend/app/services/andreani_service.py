@@ -30,12 +30,13 @@ class AndreaniService:
             base_url or settings.andreani_api_base_url or "https://woocommerce-api-acom.andreani.com"
         ).rstrip("/")
         self.origin_postal_code = (
-            origin_postal_code or settings.andreani_origin_postal_code or "1752"
+            origin_postal_code or settings.andreani_origin_postal_code or "5730"
         )
         self.timeout_seconds = timeout_seconds
 
         self._access_token: Optional[str] = None
         self._token_expiry_timestamp: float = 0.0
+        self._contratos: list[dict] = []
 
     def get_access_token(self) -> Optional[str]:
         """Obtiene o reutiliza el token de acceso JWT de la API de Andreani."""
@@ -57,10 +58,12 @@ class AndreaniService:
                 )
                 if res.status_code == 200:
                     data = res.json()
-                    token = data.get("response", {}).get("accessToken")
+                    resp_data = data.get("response", {})
+                    token = resp_data.get("accessToken")
                     if token:
                         self._access_token = token
                         self._token_expiry_timestamp = now + 82800  # 23 horas de vigencia
+                        self._contratos = resp_data.get("contratos", [])
                         return token
                 logger.warning(
                     "Error al autenticar en Andreani API (%s): %s",
@@ -105,28 +108,53 @@ class AndreaniService:
         name = name_parts[0]
         last_name = name_parts[1] if len(name_parts) > 1 else "Cliente"
 
-        # Contrato: estándar por defecto (400035538)
+        # Resolver el GUID de contrato asignado en Andreani PyME
+        target_mode = "sucursal" if is_branch else "estándar"
+        contract_guid = None
+        for c in getattr(self, "_contratos", []):
+            if c.get("modoDeEntregaNombre") == target_mode:
+                contract_guid = c.get("id")
+                break
+        if not contract_guid:
+            contract_guid = (
+                "939F8750-17B4-494B-825E-325F32DFB0B7"
+                if is_branch
+                else "C6C1DBF6-68D8-406A-96DF-35F6BB98D3FC"
+            )
+
         payload = {
             "price_shipment": float(order.get("shipping_cost") or 0.0),
             "origin": {
                 "postal_code": self.origin_postal_code,
             },
             "destination": {
-                "postal_code": str(order.get("shipping_postal_code") or "1000").strip(),
-                "locality": str(order.get("shipping_city") or "Buenos Aires").strip(),
                 "street": street,
                 "number": number,
-                "province": str(order.get("shipping_province") or "Buenos Aires").strip(),
+                "floor": "",
+                "postal_code": str(order.get("shipping_postal_code") or "1000").strip(),
+                "locality": str(order.get("shipping_city") or "Buenos Aires").strip(),
+                "code_branch": "",
             },
             "recipient": {
                 "name": name,
                 "last_name": last_name,
                 "phone_number": str(order.get("customer_phone") or "1144556677").strip(),
+                "dni": str(order.get("customer_dni") or "20246728918").strip(),
                 "email": str(order.get("customer_email") or "info@natbell.com.ar").strip(),
             },
             "contract": {
-                "id_contract": settings.andreani_contract_id,
+                "id_contract": contract_guid,
             },
+            "products": [
+                {
+                    "price": float(order.get("total") or 10000.0),
+                    "quantity": 1,
+                    "kgrams": 0.5,
+                    "width": 10.0,
+                    "depth": 10.0,
+                    "height": 10.0,
+                }
+            ],
             "email_merchant": "mgrodriguez77@hotmail.com",
             "remito": str(order.get("order_number") or ""),
         }
@@ -149,8 +177,12 @@ class AndreaniService:
                         resp_obj.get("numeroDeEnvio")
                         or resp_obj.get("trackingNumber")
                         or resp_obj.get("tracking_number")
+                        or resp_obj.get("numeroInterno")
+                        or resp_obj.get("pedidoId")
                         or data.get("numeroDeEnvio")
                         or data.get("trackingNumber")
+                        or data.get("numeroInterno")
+                        or data.get("pedidoId")
                     )
 
                     if not tracking_number:

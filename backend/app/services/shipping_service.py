@@ -170,7 +170,7 @@ class AndreaniShippingProvider(ShippingProvider):
         self.origin_postal_code = (
             origin_postal_code
             if origin_postal_code is not None
-            else (settings.andreani_origin_postal_code or "1752")
+            else (settings.andreani_origin_postal_code or "5730")
         )
         self.base_url = (
             base_url or settings.andreani_api_base_url or "https://woocommerce-api-acom.andreani.com"

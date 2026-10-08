@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     # Andreani Logistics Configuration
     andreani_credential_id: str = ""
-    andreani_origin_postal_code: str = "1752"
+    andreani_origin_postal_code: str = "5730"
     andreani_api_base_url: str = "https://woocommerce-api-acom.andreani.com"
     andreani_contract_id: str = "400035538"
 
