@@ -33,7 +33,7 @@ export default function HomeHeroBanner() {
         {/* Badge promocional de Envío Gratis */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-semibold tracking-wide backdrop-blur-xs shadow-xs animate-in fade-in">
           <Truck className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>¡Envío Sin Cargo en compras superiores a $60.000!</span>
+          <span>¡Envío Sin Cargo en compras superiores a $30.000!</span>
         </div>
 
         <div className="space-y-3 sm:space-y-4">
@@ -53,7 +53,7 @@ export default function HomeHeroBanner() {
 
         <p className="text-sm sm:text-base text-zinc-200 max-w-2xl mx-auto font-normal leading-relaxed drop-shadow-xs">
           Comprá directo tinturas, decolorantes, máquinas de corte y tratamientos de marcas líderes.
-          Stock real inmediato con envíos sin cargo desde $60.000 a todo el país y cuotas con MercadoPago.
+          Stock real inmediato con envíos sin cargo desde $30.000 a todo el país y cuotas con MercadoPago.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4 pt-3">

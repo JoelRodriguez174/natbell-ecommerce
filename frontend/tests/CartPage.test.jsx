@@ -72,7 +72,7 @@ describe("CartPage Component", () => {
     expect(useCartStore.getState().items[0].quantity).toBe(1);
   });
 
-  it("muestra la barra de progreso cuando el subtotal no alcanza $60.000", () => {
+  it("muestra la barra de progreso cuando el subtotal no alcanza $30.000", () => {
     const mockItem = {
       itemKey: "prod-1_default",
       productId: "prod-1",
@@ -89,7 +89,7 @@ describe("CartPage Component", () => {
     expect(screen.getByTestId("free-shipping-progress")).toBeInTheDocument();
   });
 
-  it("bonifica el envío a gratis cuando el subtotal supera los $60.000", () => {
+  it("bonifica el envío a gratis cuando el subtotal supera los $30.000", () => {
     const mockItem = {
       itemKey: "prod-combo_default",
       productId: "prod-combo",
@@ -97,7 +97,7 @@ describe("CartPage Component", () => {
       name: "Combo Nutrición Total",
       brandName: "Nov",
       price: 35000,
-      quantity: 2, // Total: $70.000 (> $60.000)
+      quantity: 2, // Total: $70.000 (> $30.000)
       maxStock: 10,
     };
     useCartStore.setState({ items: [mockItem] });

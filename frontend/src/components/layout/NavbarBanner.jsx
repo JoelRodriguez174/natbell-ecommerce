@@ -10,7 +10,7 @@ export default function NavbarBanner() {
         <Truck className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-[#5EB82D] shrink-0" />
         <span className="tracking-wide">
           <strong className="text-white font-extrabold uppercase">Envíos Sin Cargo</strong> en compras desde{" "}
-          <strong className="text-[#5EB82D] font-extrabold">$60.000</strong> a todo el país
+          <strong className="text-[#5EB82D] font-extrabold">$30.000</strong> a todo el país
         </span>
       </span>
       <span className="text-zinc-700 shrink-0 hidden sm:inline">•</span>
