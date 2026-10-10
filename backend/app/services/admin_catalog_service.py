@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
@@ -13,6 +14,8 @@ from app.utils.cache import global_cache
 from app.utils.postgrest import as_dict_list as _as_dict_list
 from app.utils.postgrest import as_first_dict as _as_first_dict
 from app.utils.slug import slugify
+
+logger = logging.getLogger(__name__)
 
 
 class AdminCatalogService:
@@ -221,17 +224,14 @@ class AdminCatalogService:
         except Exception:
             pass
 
-        try:
-            self.db.table("product_variants").delete().eq("product_id", str_id).execute()
-            self.db.table("products").delete().eq("id", str_id).execute()
-        except Exception:
-            self.db.table("products").update({"is_active": False}).eq("id", str_id).execute()
-            self.db.table("product_variants").update({"is_active": False}).eq("product_id", str_id).execute()
+        # Eliminación física en Supabase (variantes y producto)
+        self.db.table("product_variants").delete().eq("product_id", str_id).execute()
+        self.db.table("products").delete().eq("id", str_id).execute()
         global_cache.invalidate_prefix("catalog:")
         return True
 
     async def bulk_delete_products(self, product_ids: List[UUID]) -> int:
-        """Elimina múltiples productos, sus variantes e imágenes asociadas en bloque."""
+        """Elimina físicamente múltiples productos, sus variantes e imágenes asociadas en bloque."""
         str_ids = [str(pid) for pid in product_ids]
         if not str_ids:
             return 0
@@ -252,15 +252,16 @@ class AdminCatalogService:
                     all_images.extend(imgs)
             if all_images:
                 self._cleanup_storage_images(all_images)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Error limpiando imágenes en storage para bulk delete: {e}")
 
-        try:
-            self.db.table("product_variants").delete().in_("product_id", str_ids).execute()
-            self.db.table("products").delete().in_("id", str_ids).execute()
-        except Exception:
-            self.db.table("products").update({"is_active": False}).in_("id", str_ids).execute()
-            self.db.table("product_variants").update({"is_active": False}).in_("product_id", str_ids).execute()
+        # Ejecución por lotes seguros (chunks de 50) para no sobrepasar los límites de URL en PostgREST
+        chunk_size = 50
+        for i in range(0, len(str_ids), chunk_size):
+            chunk = str_ids[i : i + chunk_size]
+            self.db.table("product_variants").delete().in_("product_id", chunk).execute()
+            self.db.table("products").delete().in_("id", chunk).execute()
+
         global_cache.invalidate_prefix("catalog:")
         return len(str_ids)
 
