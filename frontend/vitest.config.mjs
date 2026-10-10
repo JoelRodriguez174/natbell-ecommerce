@@ -8,10 +8,6 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.mjs"],
-    pool: "forks",
-    forks: {
-      singleFork: true,
-    },
   },
   resolve: {
     alias: {

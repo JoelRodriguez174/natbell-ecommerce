@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run",
+    "test": "node --max-old-space-size=4096 ./node_modules/vitest/vitest.mjs run",
     "test:watch": "vitest"
   },
   "dependencies": {
