@@ -579,4 +579,46 @@ def test_bulk_delete_products_removes_supabase_storage_images():
         app.dependency_overrides.clear()
 
 
+def test_resolve_subcategory_creates_when_empty():
+    import anyio
+
+    from app.services.admin_catalog_service import AdminCatalogService
+
+    cat_id = uuid4()
+    sub_id = str(uuid4())
+    mock_db = MagicMock()
+
+    def table_router(name):
+        m = MagicMock()
+        if name == "subcategories":
+            sel = MagicMock()
+            eq_mock = MagicMock()
+            eq_mock.limit.return_value.execute.return_value = MagicMock(data=[])
+            sel.eq.return_value = eq_mock
+            m.select.return_value = sel
+
+            ins = MagicMock()
+            ins.execute.return_value = MagicMock(data=[{"id": sub_id}])
+            m.insert.return_value = ins
+        elif name == "categories":
+            sel = MagicMock()
+            eq_mock = MagicMock()
+            eq_mock.limit.return_value.execute.return_value = MagicMock(
+                data=[{"name": "Polvos Decolorantes", "slug": "polvos-decolorantes"}]
+            )
+            sel.eq.return_value = eq_mock
+            m.select.return_value = sel
+        return m
+
+    mock_db.table.side_effect = table_router
+    service = AdminCatalogService(mock_db)
+
+    async def _run():
+        return await service._resolve_subcategory_id(subcategory_id=None, category_id=cat_id)
+
+    resolved = anyio.run(_run)
+    assert resolved == sub_id
+
+
+
 

@@ -83,7 +83,9 @@ FROM (
         ('unas-y-manicuria', 'Accesorios de Uñas', 'accesorios-de-unas', 4),
         ('unas-y-manicuria', 'Quitaesmalte', 'quitaesmalte', 5),
         -- Ondulación
-        ('ondulacion', 'Lociones de Ondulación', 'lociones-ondulacion', 1)
+        ('ondulacion', 'Lociones de Ondulación', 'lociones-ondulacion', 1),
+        -- Polvos Decolorantes
+        ('polvos-decolorantes', 'Polvos Decolorantes', 'polvos-decolorantes-general', 1)
 ) AS s(cat_slug, name, slug, display_order)
 JOIN categories c ON c.slug = s.cat_slug
 ON CONFLICT (slug) DO UPDATE SET

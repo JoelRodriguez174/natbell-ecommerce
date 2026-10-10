@@ -14,7 +14,7 @@ export default function HomeBenefitsRibbon() {
     {
       icon: Truck,
       iconColor: "text-[#5EB82D]",
-      title: "Envío Gratis desde $60.000",
+      title: "Envío Gratis desde $30.000",
       subtitle: "A todo el país sin cargo",
     },
   ];

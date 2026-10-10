@@ -55,6 +55,35 @@ class AdminCatalogService:
                     return str(rows[0]["id"])
             except Exception:
                 pass
+
+            # Si la categoría no tiene subcategorías asociadas, intentar crear una automáticamente
+            try:
+                cat_res = (
+                    self.db.table("categories")
+                    .select("name, slug")
+                    .eq("id", str(category_id))
+                    .limit(1)
+                    .execute()
+                )
+                cat_rows = _as_dict_list(cat_res.data) if cat_res else []
+                if cat_rows:
+                    cat_name = cat_rows[0].get("name", "General") or "General"
+                    cat_slug = cat_rows[0].get("slug", "general") or "general"
+
+                    new_sub_data = {
+                        "category_id": str(category_id),
+                        "name": cat_name,
+                        "slug": f"{cat_slug}-general",
+                        "display_order": 1,
+                    }
+                    insert_res = self.db.table("subcategories").insert(new_sub_data).execute()
+                    new_rows = _as_dict_list(insert_res.data) if insert_res else []
+                    if new_rows and new_rows[0].get("id"):
+                        return str(new_rows[0]["id"])
+            except Exception:
+                pass
+
+            # Fallback (incluyendo entornos mockeados de tests)
             return str(category_id)
         raise ValueError("Debe proporcionarse subcategory_id o category_id")
 

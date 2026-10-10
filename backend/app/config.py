@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     andreani_contract_id: str = "400035538"
 
     # Shipping Configuration
-    free_shipping_threshold: float = 60000.00
+    free_shipping_threshold: float = 30000.00
 
     model_config = SettingsConfigDict(
         env_file=(
