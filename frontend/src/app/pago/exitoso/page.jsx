@@ -30,7 +30,7 @@ function PagoExitosoContent() {
     if (orderNumber && paymentId) {
       let isMounted = true;
       setSyncStatus("syncing");
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
 
       fetch(`${API_URL}/api/orders/${orderNumber}/confirm-payment?payment_id=${paymentId}`, {
         method: "POST",

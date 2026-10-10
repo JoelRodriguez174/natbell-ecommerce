@@ -9,7 +9,7 @@ import ProductFormModal from "../../../components/admin/products/ProductFormModa
 import ProductImportModal from "../../../components/admin/products/ProductImportModal";
 import VariantFormModal from "../../../components/admin/products/VariantFormModal";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
 
 export default function AdminProductosPage() {
   const { token } = useAdminAuthStore();

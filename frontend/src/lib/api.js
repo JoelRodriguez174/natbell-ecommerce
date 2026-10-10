@@ -1,6 +1,6 @@
 import { buildQueryString } from "./utils";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
 
 /**
  * Cliente HTTP base para llamadas a FastAPI

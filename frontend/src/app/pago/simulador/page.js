@@ -21,7 +21,7 @@ function PagoSimuladorContent() {
 
     if (status === "approved") {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
         const res = await fetch(`${apiUrl}/api/webhooks/mock-payment/${encodeURIComponent(orderNumber)}`, {
           method: "POST",
         });

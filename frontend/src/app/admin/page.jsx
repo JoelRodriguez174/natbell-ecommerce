@@ -7,7 +7,7 @@ import DashboardKpiGrid from "../../components/admin/dashboard/DashboardKpiGrid"
 import RecentOrdersCard from "../../components/admin/dashboard/RecentOrdersCard";
 import LowStockAlertsCard from "../../components/admin/dashboard/LowStockAlertsCard";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
 
 export default function AdminDashboardPage() {
   const { token, adminUser } = useAdminAuthStore();
