@@ -51,11 +51,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # Middleware de seguridad HTTP
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Habilitar CORS con orígenes configurables (soporte para Render/Vercel y desarrollo local)
+# Habilitar CORS con orígenes configurables (soporte para Render/Vercel, dominio oficial natbell y desarrollo local)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_origin_regex=r"^https://.*\.vercel\.app$",
+    allow_origin_regex=r"^https://([a-zA-Z0-9-]+\.)*(vercel\.app|natbell\.com\.ar)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

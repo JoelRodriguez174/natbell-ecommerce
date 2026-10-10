@@ -1,0 +1,11 @@
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+backend/venv/
+backend/.venv/
+.pytest_cache/
+.ruff_cache/
+img/
+__pycache__/
+*.pyc

@@ -1,10 +1,16 @@
 {
   "include": [
-    "backend"
+    "backend/app"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "backend/venv",
+    ".pytest_cache",
+    ".ruff_cache"
   ],
   "extraPaths": [
-    "backend",
-    "C:/Users/Enekon/AppData/Local/Programs/Python/Python313/Lib/site-packages"
+    "backend"
   ],
   "venvPath": "backend",
   "venv": "venv"

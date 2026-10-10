@@ -15,7 +15,10 @@ from app.models.order import (
     OrderStatusResponse,
 )
 from app.services.payment_service import PaymentProvider, get_payment_provider
-from app.utils.order_number import generate_order_number, parse_order_sequence
+from app.utils.order_number import (
+    ORDER_NUMBER_REGEX,
+    generate_order_number,
+)
 from app.utils.postgrest import (
     as_dict_list as _as_dict_list,
 )
@@ -103,6 +106,25 @@ class OrderService:
         # 2. Generar el número de orden correlativo ORD-YYYY-NNNNN
         next_seq = await self._get_next_order_sequence()
         order_number = generate_order_number(next_seq)
+
+        # Salvaguarda activa: si por concurrencia el número ya existiera, avanzar al siguiente disponible
+        try:
+            for _ in range(20):
+                existing = (
+                    self.db.table("orders")
+                    .select("id")
+                    .eq("order_number", order_number)
+                    .limit(1)
+                    .execute()
+                )
+                existing_rows = _as_dict_list(getattr(existing, "data", None))
+                if existing_rows:
+                    next_seq += 1
+                    order_number = generate_order_number(next_seq)
+                else:
+                    break
+        except Exception as e:
+            logger.warning(f"Chequeo de colisión omitido por advertencia en BD: {e}")
 
         # 3. Guardar orden en estado 'pending'
         order_insert_payload = {
@@ -347,13 +369,26 @@ class OrderService:
     async def _get_next_order_sequence(self) -> int:
         """Calcula el siguiente número correlativo para la secuencia anual de pedidos."""
         try:
-            res = self.db.table("orders").select("order_number").order("created_at", desc=True).limit(1).execute()
-            first_row = _as_first_dict(res.data) if res else {}
-            if first_row and first_row.get("order_number"):
-                last_number = str(first_row["order_number"])
-                seq = parse_order_sequence(last_number)
-                if seq is not None:
-                    return seq + 1
+            current_year = datetime.now().year
+            res = (
+                self.db.table("orders")
+                .select("order_number")
+                .order("created_at", desc=True)
+                .limit(100)
+                .execute()
+            )
+            rows = _as_dict_list(res.data) if res else []
+            max_seq = 0
+            for row in rows:
+                onum = str(row.get("order_number") or "")
+                match = ORDER_NUMBER_REGEX.match(onum)
+                if match and int(match.group(1)) == current_year:
+                    seq = int(match.group(2))
+                    if seq > max_seq:
+                        max_seq = seq
+
+            if max_seq > 0:
+                return max_seq + 1
         except Exception as e:
             logger.warning(f"No se pudo consultar última secuencia de orden: {e}")
 

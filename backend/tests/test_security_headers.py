@@ -27,7 +27,7 @@ def test_security_headers_present():
 
 
 def test_cors_headers_with_origin():
-    # Origen permitido
+    # Origen permitido local
     response = client.options(
         "/api/products",
         headers={
@@ -38,6 +38,19 @@ def test_cors_headers_with_origin():
     assert response.status_code == 200
     assert response.headers.get("access-control-allow-origin") == "http://localhost:3000"
 
+    # Origen permitido producción oficial
+    response_prod = client.options(
+        "/api/products",
+        headers={
+            "Origin": "https://www.natbell.com.ar",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response_prod.status_code == 200
+    assert response_prod.headers.get("access-control-allow-origin") == "https://www.natbell.com.ar"
+
 
 def test_cors_origins_property():
     assert "http://localhost:3000" in settings.cors_origins
+    assert "https://www.natbell.com.ar" in settings.cors_origins
+    assert "https://natbell.com.ar" in settings.cors_origins
