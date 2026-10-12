@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Package,
   ShoppingBag,
+  Ticket,
   Truck,
   LogOut,
   ExternalLink,
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Productos", href: "/admin/productos", icon: Package },
   { label: "Pedidos", href: "/admin/pedidos", icon: ShoppingBag },
+  { label: "Cupones", href: "/admin/cupones", icon: Ticket },
   { label: "Tarifas de Envío", href: "/admin/envios", icon: Truck },
 ];
 
