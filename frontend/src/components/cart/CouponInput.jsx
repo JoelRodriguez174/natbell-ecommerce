@@ -86,7 +86,7 @@ export default function CouponInput({ className = "" }) {
 
   return (
     <div className={`space-y-1.5 ${className}`}>
-      <form onSubmit={handleApply} className="flex gap-2">
+      <div className="flex gap-2">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
             <Tag className="w-4 h-4" />
@@ -98,6 +98,12 @@ export default function CouponInput({ className = "" }) {
               setCode(e.target.value.toUpperCase());
               if (errorMsg) setErrorMsg("");
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleApply(e);
+              }
+            }}
             placeholder="CÓDIGO DE CUPÓN"
             disabled={isLoading}
             className="w-full pl-8 pr-3 py-2 text-xs sm:text-sm font-mono tracking-wider uppercase rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#de1b76] focus:ring-2 focus:ring-[#de1b76]/20 bg-white placeholder:text-gray-400 transition-colors disabled:opacity-60"
@@ -105,7 +111,8 @@ export default function CouponInput({ className = "" }) {
         </div>
 
         <button
-          type="submit"
+          type="button"
+          onClick={handleApply}
           disabled={isLoading || !code.trim()}
           className="px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-gray-900 hover:bg-[#de1b76] text-white disabled:opacity-40 disabled:hover:bg-gray-900 transition-all flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer disabled:cursor-not-allowed"
         >
@@ -118,7 +125,7 @@ export default function CouponInput({ className = "" }) {
             <span>Aplicar</span>
           )}
         </button>
-      </form>
+      </div>
 
       {errorMsg && (
         <p className="text-[11px] sm:text-xs text-red-600 font-medium pl-1 flex items-center gap-1 animate-fadeIn">
