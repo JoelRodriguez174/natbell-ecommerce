@@ -19,6 +19,11 @@ export const metadata = {
   title: "Natbell — Tienda de Belleza y Peluquería Profesional",
   description:
     "E-commerce oficial de cosmética capilar profesional, coloración, tratamientos, barbería y estética.",
+  icons: {
+    icon: "/img/logo-natbell.jpeg",
+    shortcut: "/img/logo-natbell.jpeg",
+    apple: "/img/logo-natbell.jpeg",
+  },
 };
 
 export default function RootLayout({ children }) {
