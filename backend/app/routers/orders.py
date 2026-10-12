@@ -120,36 +120,3 @@ async def delete_draft_order(order_number: str):
         )
 
 
-@router.get(
-    "/{order_number}/invoice",
-    status_code=status.HTTP_200_OK,
-    summary="Descargar Factura C oficial en PDF",
-    description="Genera y retorna el archivo binario PDF de la Factura C reglamentaria para el pedido.",
-)
-async def download_order_invoice(order_number: str):
-    from fastapi.responses import Response
-
-    service = OrderService()
-    try:
-        pdf_bytes = await service.get_order_invoice_pdf(order_number)
-        return Response(
-            content=pdf_bytes,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": f'inline; filename="Factura_{order_number}.pdf"',
-                "Cache-Control": "no-cache",
-            },
-        )
-    except KeyError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Pedido {order_number} no encontrado.",
-        )
-    except Exception as exc:
-        logger.error(f"Error generando factura para pedido {order_number}: {exc}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al generar la factura en PDF.",
-        )
-
-

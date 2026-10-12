@@ -145,28 +145,6 @@ export async function deleteDraftOrder(orderNumber) {
 }
 
 /**
- * Descarga el archivo PDF de la Factura C reglamentaria para un pedido
- */
-export async function downloadOrderInvoice(orderNumber) {
-  if (!orderNumber) throw new Error("Número de orden requerido");
-  const url = `${API_URL}/api/orders/${encodeURIComponent(orderNumber)}/invoice`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.detail || "No se pudo descargar la factura en PDF");
-  }
-  const blob = await res.blob();
-  const downloadUrl = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = downloadUrl;
-  a.download = `Factura_${orderNumber}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(downloadUrl);
-}
-
-/**
  * Descarga la plantilla oficial para importación masiva (XLSX o CSV)
  */
 export async function downloadImportTemplate(format = "xlsx", token) {

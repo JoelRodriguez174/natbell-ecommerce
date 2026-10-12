@@ -10,12 +10,8 @@ import {
   ExternalLink,
   Copy,
   Check,
-  Download,
-  FileText,
-  Loader2,
 } from "lucide-react";
 import { formatCurrency } from "../../lib/utils";
-import { downloadOrderInvoice } from "../../lib/api";
 
 const STEPS = [
   { id: "pending", label: "Pendiente", icon: Clock },
@@ -42,8 +38,6 @@ function getStepIndex(status) {
 
 export default function OrderTrackingView({ order }) {
   const [copied, setCopied] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const [downloadError, setDownloadError] = useState(null);
 
   if (!order) return null;
 
@@ -55,20 +49,6 @@ export default function OrderTrackingView({ order }) {
       navigator.clipboard.writeText(order.tracking_number);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleDownloadInvoice = async () => {
-    if (!order?.order_number) return;
-    try {
-      setDownloading(true);
-      setDownloadError(null);
-      await downloadOrderInvoice(order.order_number);
-    } catch (err) {
-      console.error("Error al descargar factura:", err);
-      setDownloadError(err.message || "No se pudo descargar la factura en este momento");
-    } finally {
-      setDownloading(false);
     }
   };
 
@@ -85,32 +65,12 @@ export default function OrderTrackingView({ order }) {
               Pedido {order.order_number}
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              Comprador: <span className="font-medium text-zinc-700 dark:text-zinc-300">{order.customer_name}</span>{" "}
-              {order.customer_dni && <span className="font-mono text-[11px] text-zinc-600 dark:text-zinc-400">(DNI/CUIT: {order.customer_dni})</span>}{" "}
-              ({order.customer_email})
+              Comprador: <span className="font-medium text-zinc-700 dark:text-zinc-300">{order.customer_name}</span> ({order.customer_email})
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-50 text-[#DE1B76] border border-rose-200">
-              <span>Estado: {isCancelled ? "Cancelado" : STEPS[currentIndex]?.label}</span>
-            </div>
-            {!isCancelled && (
-              <button
-                type="button"
-                onClick={handleDownloadInvoice}
-                disabled={downloading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-white dark:text-zinc-900 shadow-sm transition-all active:scale-95 disabled:opacity-50"
-                title="Descargar Factura C oficial en PDF"
-              >
-                {downloading ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Download className="w-3.5 h-3.5 text-[#DE1B76]" />
-                )}
-                <span>Factura C (PDF)</span>
-              </button>
-            )}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold self-start sm:self-auto bg-rose-50 text-[#DE1B76] border border-rose-200">
+            <span>Estado: {isCancelled ? "Cancelado" : STEPS[currentIndex]?.label}</span>
           </div>
         </div>
 
@@ -269,30 +229,6 @@ export default function OrderTrackingView({ order }) {
               </span>
             </div>
           </div>
-
-          {!isCancelled && (
-            <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                Factura C reglamentaria AFIP / ARCA
-              </span>
-              <button
-                type="button"
-                onClick={handleDownloadInvoice}
-                disabled={downloading}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#DE1B76] hover:text-[#c21464] transition-colors self-start sm:self-auto disabled:opacity-50"
-              >
-                {downloading ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <FileText className="w-3.5 h-3.5" />
-                )}
-                <span>Descargar Factura Oficial en PDF</span>
-              </button>
-            </div>
-          )}
-          {downloadError && (
-            <p className="text-[11px] text-red-500 mt-2 text-right">{downloadError}</p>
-          )}
         </div>
 
         {/* Datos de envío */}

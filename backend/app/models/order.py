@@ -55,7 +55,6 @@ class OrderBase(BaseModel):
     customer_name: str = Field(..., min_length=1, max_length=150)
     customer_email: EmailStr
     customer_phone: str = Field(..., min_length=1, max_length=30)
-    customer_dni: Optional[str] = Field(default=None, max_length=30)
     shipping_address: str = Field(..., min_length=1, max_length=300)
     shipping_city: str = Field(..., min_length=1, max_length=100)
     shipping_province: str = Field(..., min_length=1, max_length=100)
@@ -78,7 +77,6 @@ class OrderCheckoutRequest(BaseModel):
     customer_name: str = Field(..., min_length=1, max_length=150)
     customer_email: EmailStr
     customer_phone: str = Field(..., min_length=1, max_length=30)
-    customer_dni: Optional[str] = Field(default=None, max_length=30)
     shipping_address: str = Field(..., min_length=1, max_length=300)
     shipping_city: str = Field(..., min_length=1, max_length=100)
     shipping_province: str = Field(..., min_length=1, max_length=100)
@@ -118,7 +116,6 @@ class OrderStatusResponse(BaseModel):
     status: OrderStatus
     customer_name: str
     customer_email: EmailStr
-    customer_dni: Optional[str] = None
     shipping_address: str
     shipping_city: str
     shipping_province: str
