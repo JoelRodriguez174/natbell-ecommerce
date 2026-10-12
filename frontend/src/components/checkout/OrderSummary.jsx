@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
+import CouponInput from "@/components/cart/CouponInput";
+import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "../../lib/utils";
 
 export default function OrderSummary({
@@ -12,6 +14,10 @@ export default function OrderSummary({
   isLoading = false,
   onSubmit = () => {},
 }) {
+  const { appliedCoupon, getDiscountAmount } = useCartStore();
+  const discountAmount = appliedCoupon ? getDiscountAmount() : 0;
+  const effectiveTotal = Math.max(0, total - discountAmount);
+
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm sticky top-24">
       <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4 pb-3 border-b border-zinc-100 dark:border-zinc-800">
@@ -19,10 +25,15 @@ export default function OrderSummary({
       </h3>
 
       {/* Lista de productos en la orden */}
-      <div className="max-h-60 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800 pr-1 mb-6 space-y-3">
+      <div className="max-h-60 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800 pr-1 mb-4 space-y-3">
         {items.map((item) => (
           <OrderSummaryItem key={item.itemKey} item={item} />
         ))}
+      </div>
+
+      {/* Canje de Cupón de Descuento */}
+      <div className="py-2 border-t border-zinc-100 dark:border-zinc-800">
+        <CouponInput />
       </div>
 
       {/* Desglose de totales */}
@@ -33,6 +44,13 @@ export default function OrderSummary({
             {formatPrice(subtotal)}
           </span>
         </div>
+
+        {appliedCoupon && (
+          <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
+            <span>Descuento cupón ({appliedCoupon.discount_percent}%)</span>
+            <span>-{formatPrice(discountAmount)}</span>
+          </div>
+        )}
 
         <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
           <span>Costo de envío</span>
@@ -52,7 +70,7 @@ export default function OrderSummary({
         <div className="flex justify-between text-sm font-bold text-zinc-900 dark:text-zinc-50 pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800">
           <span>Total final</span>
           <span className="text-base font-black text-[#DE1B76]">
-            {formatPrice(total)}
+            {formatPrice(effectiveTotal)}
           </span>
         </div>
       </div>

@@ -14,11 +14,16 @@ export const useCartStore = create(
     (set, get) => ({
       items: [],
       isOpen: false,
+      appliedCoupon: null,
 
       // Control de visibilidad del CartDrawer
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
+
+      // Gestión de cupones de descuento
+      applyCoupon: (coupon) => set({ appliedCoupon: coupon }),
+      removeCoupon: () => set({ appliedCoupon: null }),
 
       /**
        * Agrega un producto (y su variante opcional) al carrito.
@@ -152,11 +157,32 @@ export const useCartStore = create(
           0
         );
       },
+
+      /**
+       * Importe bonificado en pesos según el cupón aplicado sobre el subtotal.
+       */
+      getDiscountAmount: () => {
+        const subtotal = get().getSubtotal();
+        const coupon = get().appliedCoupon;
+        if (!coupon || !coupon.discount_percent) return 0;
+        const percent = Number(coupon.discount_percent) || 0;
+        return Math.round(subtotal * (percent / 100));
+      },
+
+      /**
+       * Total final con descuento aplicado (sin incluir costo de envío).
+       */
+      getTotalWithDiscount: () => {
+        return Math.max(0, get().getSubtotal() - get().getDiscountAmount());
+      },
     }),
     {
       name: "natbell_cart_storage",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ items: state.items }),
+      partialize: (state) => ({
+        items: state.items,
+        appliedCoupon: state.appliedCoupon,
+      }),
     }
   )
 );

@@ -15,7 +15,7 @@ import { FREE_SHIPPING_THRESHOLD } from "../../lib/constants";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getSubtotal } = useCartStore();
+  const { items, getSubtotal, appliedCoupon } = useCartStore();
   const [hasMounted, setHasMounted] = useState(false);
   const [shippingQuote, setShippingQuote] = useState(null);
   const [isQuoting, setIsQuoting] = useState(false);
@@ -157,6 +157,7 @@ export default function CheckoutPage() {
         shipping_postal_code: data.shipping_postal_code.trim(),
         shipping_cost: isFree ? 0 : (shippingQuote?.cost ? Number(shippingQuote.cost) : 0),
         notes: data.notes?.trim() || null,
+        coupon_code: appliedCoupon?.code || null,
         items: orderItems,
       };
 

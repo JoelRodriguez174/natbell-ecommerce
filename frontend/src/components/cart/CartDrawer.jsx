@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { X, ShoppingBag, ArrowRight } from "lucide-react";
 import CartDrawerItem from "@/components/cart/CartDrawerItem";
+import CouponInput from "@/components/cart/CouponInput";
 import { useCartStore } from "@/store/useCartStore";
 import { formatCurrency } from "@/lib/utils";
 
@@ -21,10 +22,15 @@ export default function CartDrawer() {
     clearCart,
     getTotalItems,
     getSubtotal,
+    appliedCoupon,
+    getDiscountAmount,
+    getTotalWithDiscount,
   } = useCartStore();
 
   const totalItemsCount = getTotalItems();
   const subtotalAmount = getSubtotal();
+  const discountAmount = getDiscountAmount();
+  const totalAmount = getTotalWithDiscount();
 
   // Cerrar drawer al presionar Escape
   useEffect(() => {
@@ -143,13 +149,34 @@ export default function CartDrawer() {
                 ))}
               </div>
 
-              {/* Footer con Subtotal y Botones CTA */}
+              {/* Footer con Subtotal, Cupón y Botones CTA */}
               <div className="p-4 sm:p-5 border-t border-rose-100 bg-white space-y-3 shadow-lg">
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="font-medium text-gray-600">Subtotal</span>
-                  <span className="font-black text-base sm:text-lg text-[#DE1B76]">
-                    {formatCurrency(subtotalAmount)}
-                  </span>
+                {/* Selector de cupón de descuento */}
+                <CouponInput />
+
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between text-xs sm:text-sm">
+                    <span className="font-medium text-gray-600">Subtotal</span>
+                    <span className={`font-semibold ${appliedCoupon ? "text-gray-500 line-through text-xs" : "font-black text-base sm:text-lg text-[#DE1B76]"}`}>
+                      {formatCurrency(subtotalAmount)}
+                    </span>
+                  </div>
+
+                  {appliedCoupon && (
+                    <div className="flex items-center justify-between text-xs sm:text-sm text-emerald-600 font-semibold">
+                      <span>Descuento ({appliedCoupon.discount_percent}%)</span>
+                      <span>-{formatCurrency(discountAmount)}</span>
+                    </div>
+                  )}
+
+                  {appliedCoupon && (
+                    <div className="flex items-center justify-between text-xs sm:text-sm border-t border-gray-100 pt-1.5">
+                      <span className="font-bold text-gray-800">Total con cupón</span>
+                      <span className="font-black text-base sm:text-lg text-[#DE1B76]">
+                        {formatCurrency(totalAmount)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <p className="text-[11px] text-gray-500 leading-tight">

@@ -1,6 +1,8 @@
 "use client";
 
 import { Truck, Lock, ArrowRight, ShieldCheck, CreditCard } from "lucide-react";
+import CouponInput from "@/components/cart/CouponInput";
+import { useCartStore } from "@/store/useCartStore";
 import { formatCurrency } from "../../lib/utils";
 
 export default function CartOrderSummary({
@@ -12,6 +14,10 @@ export default function CartOrderSummary({
   cuotaTotal,
   onProceedToCheckout,
 }) {
+  const { appliedCoupon, getDiscountAmount } = useCartStore();
+  const discountAmount = appliedCoupon ? getDiscountAmount() : 0;
+  const effectiveGrandTotal = Math.max(0, grandTotal - discountAmount);
+  const effectiveCuota = Math.round(effectiveGrandTotal / 3);
   return (
     <div className="space-y-6">
       {/* Tarjeta de Resumen de Compra */}
@@ -20,6 +26,11 @@ export default function CartOrderSummary({
           Resumen de la orden
         </h3>
 
+        {/* Canje de Cupón */}
+        <div>
+          <CouponInput />
+        </div>
+
         <div className="space-y-3 text-xs sm:text-sm">
           <div className="flex items-center justify-between text-gray-600">
             <span>Subtotal productos ({totalItemsCount})</span>
@@ -27,6 +38,13 @@ export default function CartOrderSummary({
               {formatCurrency(subtotalAmount)}
             </span>
           </div>
+
+          {appliedCoupon && (
+            <div className="flex items-center justify-between text-emerald-600 font-semibold">
+              <span>Descuento cupón ({appliedCoupon.discount_percent}%)</span>
+              <span>-{formatCurrency(discountAmount)}</span>
+            </div>
+          )}
 
           <div className="flex items-center justify-between text-gray-600">
             <span className="flex items-center gap-1.5">
@@ -66,10 +84,10 @@ export default function CartOrderSummary({
             <span className="text-base font-bold text-gray-950">Total</span>
             <div className="text-right">
               <span className="text-2xl font-black text-gray-950 block tracking-tight">
-                {formatCurrency(grandTotal)}
+                {formatCurrency(effectiveGrandTotal)}
               </span>
               <span className="text-[11px] text-gray-500">
-                O en 3 cuotas de {formatCurrency(cuotaTotal)}
+                O en 3 cuotas de {formatCurrency(effectiveCuota)}
               </span>
             </div>
           </div>
