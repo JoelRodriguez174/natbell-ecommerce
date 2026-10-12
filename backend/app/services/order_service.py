@@ -97,9 +97,9 @@ class OrderService:
         applied_coupon_code = None
         discount_amount = Decimal("0.00")
         coupon_id_to_increment = None
+        coupon_service = CouponService(db_client=self.db)
 
         if request.coupon_code:
-            coupon_service = CouponService(db_client=self.db)
             coupon = coupon_service.validate_coupon(request.coupon_code)
             applied_coupon_code = coupon["code"]
             coupon_id_to_increment = coupon.get("id")

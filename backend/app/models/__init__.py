@@ -27,6 +27,12 @@ from app.models.catalog import (
     ProductFilters,
     ProductListItem,
 )
+from app.models.category import (
+    Category,
+    CategoryCreate,
+    Subcategory,
+    SubcategoryCreate,
+)
 from app.models.coupon import (
     CouponCreate,
     CouponResponse,

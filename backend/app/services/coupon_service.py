@@ -105,7 +105,7 @@ class CouponService:
         """Actualiza un cupón existente."""
         str_id = str(coupon_id)
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-        if "expires_at" in update_data and update_data["expires_at"]:
+        if data.expires_at is not None:
             update_data["expires_at"] = data.expires_at.isoformat()
 
         res = self.db.table("coupons").update(update_data).eq("id", str_id).execute()
