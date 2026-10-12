@@ -46,6 +46,7 @@ export default function CheckoutPage() {
   });
 
   const postalCode = useWatch({ control, name: "shipping_postal_code" });
+  const customerEmail = useWatch({ control, name: "customer_email" });
   const formValues = useWatch({ control });
 
   // Al montar en cliente, restaurar borrador guardado en localStorage
@@ -260,6 +261,7 @@ export default function CheckoutPage() {
                 total={total}
                 isLoading={isSubmitting}
                 onSubmit={handleSubmit(onSubmit)}
+                customerEmail={customerEmail}
               />
 
               <div className="mt-4 text-center">

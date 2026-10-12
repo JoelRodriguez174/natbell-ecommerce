@@ -23,8 +23,9 @@ class CouponService:
             self._db = get_supabase_client()
         return self._db
 
-    def validate_coupon(self, code: str) -> Dict[str, Any]:
-        """Valida que un cupón exista, esté activo, no haya expirado y no haya superado su cupo de usos."""
+    def validate_coupon(self, code: str, customer_email: Optional[str] = None) -> Dict[str, Any]:
+        """Valida que un cupón exista, esté activo, no haya expirado, no haya superado su cupo de usos,
+        y que el cliente (si se proporciona email) no lo haya utilizado previamente en una orden activa."""
         normalized_code = (code or "").strip().upper()
         if not normalized_code:
             raise HTTPException(status_code=400, detail="El código de cupón no puede estar vacío.")
@@ -56,6 +57,25 @@ class CouponService:
             raise HTTPException(
                 status_code=400, detail="Este cupón alcanzó su límite máximo de usos."
             )
+
+        # Regla estricta: Cada cupón puede ser utilizado una única vez por usuario (email)
+        if customer_email:
+            normalized_email = customer_email.strip().lower()
+            if normalized_email:
+                orders_res = (
+                    self.db.table("orders")
+                    .select("id")
+                    .eq("coupon_code", normalized_code)
+                    .ilike("customer_email", normalized_email)
+                    .neq("status", "cancelled")
+                    .execute()
+                )
+                used_orders = as_dict_list(orders_res.data) if hasattr(orders_res, "data") else []
+                if used_orders:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Ya has utilizado este cupón en una compra anterior con este correo electrónico.",
+                    )
 
         return coupon
 

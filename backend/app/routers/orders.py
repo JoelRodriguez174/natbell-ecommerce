@@ -26,6 +26,8 @@ async def create_order(request: OrderCheckoutRequest):
     try:
         response = await service.create_order(request)
         return response
+    except HTTPException:
+        raise
     except ValueError as e:
         logger.warning(f"Error de validación al crear orden: {e}")
         raise HTTPException(

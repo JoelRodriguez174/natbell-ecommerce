@@ -100,7 +100,10 @@ class OrderService:
         coupon_service = CouponService(db_client=self.db)
 
         if request.coupon_code:
-            coupon = coupon_service.validate_coupon(request.coupon_code)
+            coupon = coupon_service.validate_coupon(
+                request.coupon_code,
+                customer_email=request.customer_email,
+            )
             applied_coupon_code = coupon["code"]
             coupon_id_to_increment = coupon.get("id")
             discount_percent = Decimal(str(coupon.get("discount_percent") or 0))

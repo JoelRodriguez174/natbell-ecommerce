@@ -42,6 +42,7 @@ class CouponResponse(CouponBase):
 
 class CouponValidateRequest(BaseModel):
     code: str = Field(..., min_length=1, max_length=50)
+    customer_email: Optional[str] = Field(default=None)
 
     @field_validator("code")
     @classmethod
@@ -50,6 +51,14 @@ class CouponValidateRequest(BaseModel):
         if not clean:
             raise ValueError("El código no puede estar vacío.")
         return clean
+
+    @field_validator("customer_email")
+    @classmethod
+    def normalize_email(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        clean = v.strip().lower()
+        return clean or None
 
 
 class CouponValidateResponse(BaseModel):

@@ -169,3 +169,61 @@ def test_delete_coupon(coupon_service, mock_supabase):
         data=[{"id": coupon_id}]
     )
     assert coupon_service.delete_coupon(coupon_id) is True
+
+
+def test_validate_coupon_already_used_by_email(coupon_service, mock_supabase):
+    coupon_id = str(uuid4())
+    coupon_data = {
+        "id": coupon_id,
+        "code": "SOLOUNA",
+        "discount_percent": 15,
+        "is_active": True,
+        "max_uses": 100,
+        "times_used": 1,
+        "expires_at": None,
+    }
+
+    def table_router(table_name):
+        m = MagicMock()
+        if table_name == "coupons":
+            m.select().eq().execute.return_value = MagicMock(data=[coupon_data])
+            return m
+        elif table_name == "orders":
+            m.select().eq().ilike().neq().execute.return_value = MagicMock(data=[{"id": "order-123"}])
+            return m
+        return m
+
+    mock_supabase.table.side_effect = table_router
+
+    with pytest.raises(HTTPException) as exc_info:
+        coupon_service.validate_coupon("SOLOUNA", customer_email="cliente@ejemplo.com")
+    assert exc_info.value.status_code == 400
+    assert "ya has utilizado este cupón" in exc_info.value.detail.lower()
+
+
+def test_validate_coupon_with_new_email_success(coupon_service, mock_supabase):
+    coupon_id = str(uuid4())
+    coupon_data = {
+        "id": coupon_id,
+        "code": "BIENVENIDA",
+        "discount_percent": 10,
+        "is_active": True,
+        "max_uses": 100,
+        "times_used": 0,
+        "expires_at": None,
+    }
+
+    def table_router(table_name):
+        m = MagicMock()
+        if table_name == "coupons":
+            m.select().eq().execute.return_value = MagicMock(data=[coupon_data])
+            return m
+        elif table_name == "orders":
+            m.select().eq().ilike().neq().execute.return_value = MagicMock(data=[])
+            return m
+        return m
+
+    mock_supabase.table.side_effect = table_router
+
+    result = coupon_service.validate_coupon("BIENVENIDA", customer_email="nuevo@ejemplo.com")
+    assert result["code"] == "BIENVENIDA"

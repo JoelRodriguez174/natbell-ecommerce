@@ -13,6 +13,7 @@ export default function OrderSummary({
   total = 0,
   isLoading = false,
   onSubmit = () => {},
+  customerEmail = "",
 }) {
   const { appliedCoupon, getDiscountAmount } = useCartStore();
   const discountAmount = appliedCoupon ? getDiscountAmount() : 0;
@@ -33,7 +34,7 @@ export default function OrderSummary({
 
       {/* Canje de Cupón de Descuento */}
       <div className="py-2 border-t border-zinc-100 dark:border-zinc-800">
-        <CouponInput />
+        <CouponInput customerEmail={customerEmail} />
       </div>
 
       {/* Desglose de totales */}

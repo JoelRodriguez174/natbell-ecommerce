@@ -5,7 +5,7 @@ import { Tag, CheckCircle2, X, Loader2 } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { apiFetch } from "@/lib/api";
 
-export default function CouponInput({ className = "" }) {
+export default function CouponInput({ className = "", customerEmail = "" }) {
   const { appliedCoupon, applyCoupon, removeCoupon } = useCartStore();
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -20,9 +20,14 @@ export default function CouponInput({ className = "" }) {
     setIsLoading(true);
 
     try {
+      const payload = { code: cleanCode };
+      if (customerEmail && typeof customerEmail === "string" && customerEmail.trim()) {
+        payload.customer_email = customerEmail.trim();
+      }
+
       const data = await apiFetch("/api/coupons/validate", {
         method: "POST",
-        body: JSON.stringify({ code: cleanCode }),
+        body: JSON.stringify(payload),
       });
 
       if (data && data.valid) {

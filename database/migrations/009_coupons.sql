@@ -31,3 +31,8 @@ CREATE INDEX IF NOT EXISTS idx_coupons_active ON coupons(is_active);
 ALTER TABLE orders 
     ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(50) DEFAULT NULL,
     ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(12, 2) NOT NULL DEFAULT 0.00;
+
+-- Índice para búsquedas rápidas de cupones por usuario (email)
+CREATE INDEX IF NOT EXISTS idx_orders_coupon_email 
+    ON orders(coupon_code, lower(customer_email)) 
+    WHERE coupon_code IS NOT NULL;

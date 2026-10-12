@@ -24,7 +24,7 @@ def validate_coupon(
 ) -> Dict[str, Any]:
     """Valida un código de cupón para el carrito o checkout y retorna el porcentaje de descuento si es válido."""
     service = CouponService(db_client=db)
-    coupon = service.validate_coupon(payload.code)
+    coupon = service.validate_coupon(payload.code, customer_email=payload.customer_email)
     return {
         "valid": True,
         "code": coupon["code"],
