@@ -73,13 +73,22 @@ class MercadoPagoProvider(PaymentProvider):
 
     async def create_checkout_preference(self, order: Order) -> PaymentPreferenceResult:
         items = []
+        discount_factor = 1.0
+        if order.discount_amount > 0 and order.subtotal > 0:
+            discount_factor = float((order.subtotal - order.discount_amount) / order.subtotal)
+
         for item in order.items:
+            unit_price = round(float(item.unit_price) * discount_factor, 2)
+            title = f"{item.product_name} - {item.variant_name}"
+            if order.coupon_code:
+                title += f" ({order.coupon_code})"
+
             items.append(
                 {
                     "id": str(item.product_variant_id or item.sku),
-                    "title": f"{item.product_name} - {item.variant_name}",
+                    "title": title,
                     "quantity": item.quantity,
-                    "unit_price": float(item.unit_price),
+                    "unit_price": unit_price,
                     "currency_id": "ARS",
                 }
             )

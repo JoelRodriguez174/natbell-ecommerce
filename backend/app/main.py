@@ -8,9 +8,11 @@ from app.config import settings
 from app.routers import (
     admin_auth,
     admin_catalog,
+    admin_coupons,
     admin_dashboard,
     admin_orders,
     admin_shipping,
+    coupons,
     orders,
     products,
     shipping,
@@ -66,11 +68,13 @@ app.include_router(taxonomies.router)
 app.include_router(products.router)
 app.include_router(shipping.router)
 app.include_router(orders.router)
+app.include_router(coupons.router)
 app.include_router(webhooks.router)
 app.include_router(admin_auth.router)
 app.include_router(admin_dashboard.router)
 app.include_router(admin_catalog.router)
 app.include_router(admin_orders.router)
+app.include_router(admin_coupons.router)
 app.include_router(admin_shipping.router)
 
 

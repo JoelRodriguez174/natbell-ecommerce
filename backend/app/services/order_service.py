@@ -14,6 +14,7 @@ from app.models.order import (
     OrderStatus,
     OrderStatusResponse,
 )
+from app.services.coupon_service import CouponService
 from app.services.payment_service import PaymentProvider, get_payment_provider
 from app.utils.order_number import (
     ORDER_NUMBER_REGEX,
@@ -92,6 +93,21 @@ class OrderService:
                 }
             )
 
+        # Descuento por cupón
+        applied_coupon_code = None
+        discount_amount = Decimal("0.00")
+        coupon_id_to_increment = None
+
+        if request.coupon_code:
+            coupon_service = CouponService(db_client=self.db)
+            coupon = coupon_service.validate_coupon(request.coupon_code)
+            applied_coupon_code = coupon["code"]
+            coupon_id_to_increment = coupon.get("id")
+            discount_percent = Decimal(str(coupon.get("discount_percent") or 0))
+            discount_amount = (calculated_subtotal * (discount_percent / Decimal("100"))).quantize(Decimal("0.01"))
+            if discount_amount > calculated_subtotal:
+                discount_amount = calculated_subtotal
+
         free_shipping_threshold = Decimal(str(settings.free_shipping_threshold))
         if free_shipping_threshold > Decimal("0.00") and calculated_subtotal >= free_shipping_threshold:
             shipping_cost = Decimal("0.00")
@@ -101,7 +117,7 @@ class OrderService:
         if shipping_cost < Decimal("0.00"):
             raise ValueError("El costo de envío no puede ser negativo.")
 
-        calculated_total = calculated_subtotal + shipping_cost
+        calculated_total = calculated_subtotal - discount_amount + shipping_cost
 
         # 2. Generar el número de orden correlativo ORD-YYYY-NNNNN
         next_seq = await self._get_next_order_sequence()
@@ -140,6 +156,8 @@ class OrderService:
             "shipping_cost": float(shipping_cost),
             "subtotal": float(calculated_subtotal),
             "total": float(calculated_total),
+            "coupon_code": applied_coupon_code,
+            "discount_amount": float(discount_amount),
             "notes": request.notes,
         }
 
@@ -149,6 +167,12 @@ class OrderService:
             raise RuntimeError("Error al persistir la orden en la base de datos.")
 
         order_id = str(created_order_data["id"])
+
+        if coupon_id_to_increment:
+            try:
+                coupon_service.increment_coupon_usage(coupon_id_to_increment)
+            except Exception as e:
+                logger.warning(f"No se pudo incrementar el uso del cupón {applied_coupon_code}: {e}")
 
         # 4. Insertar snapshots inmutables en order_items
         created_order_items = []
@@ -187,6 +211,8 @@ class OrderService:
             shipping_cost=shipping_cost,
             subtotal=calculated_subtotal,
             total=calculated_total,
+            coupon_code=applied_coupon_code,
+            discount_amount=discount_amount,
             notes=request.notes,
             created_at=_parse_datetime(created_order_data.get("created_at")),
             updated_at=_parse_datetime(created_order_data.get("updated_at")),
