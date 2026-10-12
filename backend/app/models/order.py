@@ -63,6 +63,8 @@ class OrderBase(BaseModel):
     subtotal: Decimal = Field(..., gt=Decimal("0.00"))
     total: Decimal = Field(..., gt=Decimal("0.00"))
     notes: Optional[str] = None
+    coupon_code: Optional[str] = None
+    discount_amount: Decimal = Field(default=Decimal("0.00"), ge=Decimal("0.00"))
 
 
 class OrderCreate(OrderBase):
@@ -81,6 +83,7 @@ class OrderCheckoutRequest(BaseModel):
     shipping_postal_code: str = Field(..., min_length=1, max_length=10)
     shipping_cost: Decimal = Field(default=Decimal("0.00"), ge=Decimal("0.00"))
     notes: Optional[str] = None
+    coupon_code: Optional[str] = None
     items: List[OrderCheckoutItem] = Field(..., min_length=1)
 
 

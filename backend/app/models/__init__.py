@@ -27,7 +27,13 @@ from app.models.catalog import (
     ProductFilters,
     ProductListItem,
 )
-from app.models.category import Category, CategoryCreate, Subcategory, SubcategoryCreate
+from app.models.coupon import (
+    CouponCreate,
+    CouponResponse,
+    CouponUpdate,
+    CouponValidateRequest,
+    CouponValidateResponse,
+)
 from app.models.order import Order, OrderCreate, OrderItem, OrderItemCreate, OrderStatus
 from app.models.product import (
     Product,
@@ -38,6 +44,11 @@ from app.models.product import (
 from app.models.shipping import PostalCodeRange, ShippingZone, ShippingZoneCreate
 
 __all__ = [
+    "CouponCreate",
+    "CouponUpdate",
+    "CouponResponse",
+    "CouponValidateRequest",
+    "CouponValidateResponse",
     "Category",
     "CategoryCreate",
     "Subcategory",
