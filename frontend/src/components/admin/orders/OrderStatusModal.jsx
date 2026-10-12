@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   X,
   Truck,
@@ -17,8 +17,10 @@ import {
   Tag,
   Receipt,
   User,
+  FileText,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "../../../lib/utils";
+import { downloadOrderInvoice } from "../../../lib/api";
 
 export default function OrderStatusModal({
   selectedOrder,
@@ -30,7 +32,7 @@ export default function OrderStatusModal({
 }) {
   const [copied, setCopied] = useState(false);
 
-  const { register, handleSubmit, watch, reset } = useForm({
+  const { register, handleSubmit, control, reset } = useForm({
     defaultValues: {
       status: "shipped",
       tracking_number: "",
@@ -46,8 +48,8 @@ export default function OrderStatusModal({
     }
   }, [selectedOrder, reset]);
 
-  const newStatus = watch("status");
-  const formTracking = watch("tracking_number");
+  const newStatus = useWatch({ control, name: "status" });
+  const formTracking = useWatch({ control, name: "tracking_number" });
   const effectiveTracking = formTracking || selectedOrder?.tracking_number;
 
   if (!selectedOrder) return null;
@@ -166,6 +168,12 @@ export default function OrderStatusModal({
                   <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
                     <Phone className="w-3 h-3 shrink-0" />
                     <span>{selectedOrder.customer_phone}</span>
+                  </div>
+                )}
+                {selectedOrder.customer_dni && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-300">DNI/CUIT:</span>
+                    <span>{selectedOrder.customer_dni}</span>
                   </div>
                 )}
               </div>
@@ -429,13 +437,24 @@ export default function OrderStatusModal({
 
         {/* Modal Actions Footer */}
         <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-          >
-            {isPending ? "Cerrar" : "Cancelar"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer text-xs"
+            >
+              {isPending ? "Cerrar" : "Cancelar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadOrderInvoice(selectedOrder.order_number)}
+              className="px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer text-xs"
+              title="Descargar Factura C oficial en PDF"
+            >
+              <FileText className="w-3.5 h-3.5 text-amber-500" />
+              <span>Factura C (PDF)</span>
+            </button>
+          </div>
 
           {!isPending && (
             <button

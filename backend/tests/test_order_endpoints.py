@@ -215,3 +215,30 @@ async def test_confirm_order_payment_endpoint_invalid():
             assert "no está aprobado" in res.json()["detail"]
 
 
+@pytest.mark.anyio
+async def test_download_order_invoice_success():
+    fake_pdf = b"%PDF-1.4 mock invoice binary content"
+    with patch("app.routers.orders.OrderService.get_order_invoice_pdf", new_callable=AsyncMock) as mock_pdf:
+        mock_pdf.return_value = fake_pdf
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            res = await client.get("/api/orders/ORD-2026-00001/invoice")
+            assert res.status_code == 200
+            assert res.headers["content-type"] == "application/pdf"
+            assert 'filename="Factura_ORD-2026-00001.pdf"' in res.headers["content-disposition"]
+            assert res.content == fake_pdf
+
+
+@pytest.mark.anyio
+async def test_download_order_invoice_not_found():
+    with patch("app.routers.orders.OrderService.get_order_invoice_pdf", new_callable=AsyncMock) as mock_pdf:
+        mock_pdf.side_effect = KeyError("No se encontró el pedido")
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            res = await client.get("/api/orders/ORD-NONEXISTENT/invoice")
+            assert res.status_code == 404
+            assert "no encontrado" in res.json()["detail"]
+
+

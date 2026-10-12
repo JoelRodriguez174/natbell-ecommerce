@@ -1,0 +1,13 @@
+# Configuración de Pyrefly para el entorno virtual del Backend
+python-interpreter-path = "backend/venv/Scripts/python.exe"
+search-path = [
+    "backend",
+    "backend/venv/Lib/site-packages"
+]
+project-includes = ["backend/**/*.py"]
+
+[errors]
+missing-source-for-stubs = "ignore"
+untyped-import = "ignore"
+missing-module-attribute = "ignore"
+missing-import = "ignore"

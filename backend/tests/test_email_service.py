@@ -111,3 +111,33 @@ async def test_email_service_shipping_notification():
         assert "ANDR999888777" in call_kwargs["json"]["html"]
         assert "https://www.andreani.com/#!/informacionEnvio/ANDR999888777" in call_kwargs["json"]["html"]
 
+
+@pytest.mark.anyio
+async def test_email_service_order_invoice_notification():
+    """Order invoice email sends with PDF attachment to customer."""
+    mock_response = httpx.Response(200, json={"id": "msg_invoice_123"})
+
+    with patch("app.services.email_service.settings.resend_api_key", "re_test_key_123"), \
+         patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_post.return_value = mock_response
+
+        service = EmailService()
+        fake_pdf = b"%PDF-1.4 sample invoice content"
+        sent = await service.send_order_invoice_email(
+            to_email="comprador@gmail.com",
+            customer_name="Juan Perez",
+            order_number="ORD-2026-00045",
+            pdf_bytes=fake_pdf,
+            total_amount=15400.0,
+        )
+
+        assert sent is True
+        mock_post.assert_called_once()
+        call_kwargs = mock_post.call_args.kwargs
+        assert call_kwargs["json"]["to"] == ["comprador@gmail.com"]
+        assert "attachments" in call_kwargs["json"]
+        assert len(call_kwargs["json"]["attachments"]) == 1
+        attachment = call_kwargs["json"]["attachments"][0]
+        assert attachment["filename"] == "Factura_ORD-2026-00045.pdf"
+        assert len(attachment["content"]) > 10
+

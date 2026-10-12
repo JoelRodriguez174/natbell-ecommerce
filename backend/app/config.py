@@ -52,6 +52,16 @@ class Settings(BaseSettings):
     # Shipping Configuration
     free_shipping_threshold: float = 30000.00
 
+    # Fiscal & Invoice Configuration (Factura C - Monotributo)
+    fiscal_business_name: str = "RODRIGUEZ MAURO GABRIEL"
+    fiscal_cuit: str = "20246728918"
+    fiscal_commercial_address: str = "Cl Colectora Darsena Este 1365 - Villa Mercedes, San Luis"
+    fiscal_vat_condition: str = "Responsable Monotributo"
+    fiscal_iibb: str = "20246728918"
+    fiscal_activity_start_date: str = "01/03/2017"
+    fiscal_point_of_sale: int = 3
+    fiscal_cae_mock: str = "74389218392182"
+
     model_config = SettingsConfigDict(
         env_file=(
             str(_BACKEND_DIR / ".env"),

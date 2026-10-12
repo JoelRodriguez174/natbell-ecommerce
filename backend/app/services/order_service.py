@@ -152,6 +152,7 @@ class OrderService:
             "customer_name": request.customer_name,
             "customer_email": request.customer_email,
             "customer_phone": request.customer_phone,
+            "customer_dni": request.customer_dni,
             "shipping_address": request.shipping_address,
             "shipping_city": request.shipping_city,
             "shipping_province": request.shipping_province,
@@ -164,7 +165,21 @@ class OrderService:
             "notes": request.notes,
         }
 
-        order_res = self.db.table("orders").insert(order_insert_payload).execute()
+        try:
+            order_res = self.db.table("orders").insert(order_insert_payload).execute()
+        except Exception as e:
+            # Fallback si customer_dni aún no existe en BD remota
+            if "customer_dni" in str(e) or "PGRST204" in str(e):
+                logger.warning("Columna customer_dni no presente en BD remota, reintentando...")
+                fallback_payload = dict(order_insert_payload)
+                fallback_payload.pop("customer_dni", None)
+                if request.customer_dni:
+                    dni_note = f"DNI: {request.customer_dni}"
+                    fallback_payload["notes"] = f"{fallback_payload.get('notes') or ''} | {dni_note}".strip(" |")
+                order_res = self.db.table("orders").insert(fallback_payload).execute()
+            else:
+                raise
+
         created_order_data = _as_first_dict(order_res.data) if order_res else {}
         if not created_order_data or not created_order_data.get("id"):
             raise RuntimeError("Error al persistir la orden en la base de datos.")
@@ -281,6 +296,7 @@ class OrderService:
             status=OrderStatus(str(order_data["status"])),
             customer_name=str(order_data["customer_name"]),
             customer_email=str(order_data["customer_email"]),
+            customer_dni=str(order_data.get("customer_dni")) if order_data.get("customer_dni") else None,
             shipping_address=str(order_data["shipping_address"]),
             shipping_city=str(order_data["shipping_city"]),
             shipping_province=str(order_data["shipping_province"]),
@@ -376,8 +392,49 @@ class OrderService:
             if variant_id and quantity > 0:
                 self._decrement_stock(variant_id, quantity)
 
-        logger.info(f"Orden {order_number} marcada exitosamente como 'paid' con stock actualizado.")
+        # 4. Generar Factura C en PDF y despachar email de compra automáticamente
+        try:
+            from app.services.email_service import get_email_service
+            from app.services.pdf_service import get_pdf_service
+
+            pdf_service = get_pdf_service()
+            email_service = get_email_service()
+
+            pdf_bytes = pdf_service.generate_invoice_pdf(order_data)
+            customer_email = str(order_data.get("customer_email") or "")
+            customer_name = str(order_data.get("customer_name") or "Cliente")
+            total_val = float(order_data.get("total") or 0.0)
+
+            if customer_email:
+                await email_service.send_order_invoice_email(
+                    to_email=customer_email,
+                    customer_name=customer_name,
+                    order_number=order_number,
+                    pdf_bytes=pdf_bytes,
+                    total_amount=total_val,
+                )
+        except Exception as err:
+            logger.error(f"Error generando factura o enviando email para {order_number}: {err}", exc_info=True)
+
+        logger.info(f"Orden {order_number} marcada exitosamente como 'paid' con stock actualizado y factura emitida.")
         return True
+
+    async def get_order_invoice_pdf(self, order_number: str) -> bytes:
+        """Obtiene o genera la Factura C oficial en PDF para un pedido existente."""
+        from app.services.pdf_service import get_pdf_service
+
+        order_res = (
+            self.db.table("orders")
+            .select("*, order_items(*)")
+            .eq("order_number", order_number)
+            .execute()
+        )
+        order_data = _as_first_dict(order_res.data) if order_res else {}
+        if not order_data or not order_data.get("order_number"):
+            raise KeyError(f"No se encontró el pedido {order_number}")
+
+        pdf_service = get_pdf_service()
+        return pdf_service.generate_invoice_pdf(order_data)
 
     def _decrement_stock(self, variant_id: str, quantity: int):
         """Resta stock de la variante de forma segura."""

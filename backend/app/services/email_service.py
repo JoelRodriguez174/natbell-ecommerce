@@ -178,6 +178,92 @@ class EmailService:
         """
         return await self._dispatch_email(to_email, subject, html, None, "notificación de despacho y seguimiento")
 
+    async def send_order_invoice_email(
+        self,
+        to_email: str,
+        customer_name: str,
+        order_number: str,
+        pdf_bytes: bytes,
+        total_amount: float,
+    ) -> bool:
+        """Envía el email de confirmación de compra y pago acreditado con la Factura C oficial en PDF adjunta."""
+        import base64
+        subject = f"¡Tu Factura de Compra! — Pedido {order_number} | Natbell"
+        b64_content = base64.b64encode(pdf_bytes).decode("utf-8")
+        filename = f"Factura_{order_number}.pdf"
+
+        formatted_total = f"${total_amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        order_tracking_url = f"{settings.frontend_url}/pedido/{order_number}"
+
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 24px; }}
+            .container {{ max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }}
+            .header {{ background: #0f172a; padding: 32px 24px; text-align: center; color: #ffffff; }}
+            .header h1 {{ margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #ffffff; }}
+            .header p {{ margin: 6px 0 0; font-size: 13px; color: #ec4899; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }}
+            .content {{ padding: 32px 28px; }}
+            .greeting {{ font-size: 18px; font-weight: 700; margin-bottom: 12px; color: #0f172a; }}
+            .text {{ font-size: 14px; color: #475569; line-height: 1.6; margin-bottom: 24px; }}
+            .invoice-card {{ background: #fdf2f8; border: 1px solid #fbcfe8; border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center; }}
+            .order-badge {{ display: inline-block; background: #DE1B76; color: #ffffff; font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 20px; margin-bottom: 8px; }}
+            .amount {{ font-size: 28px; font-weight: 800; color: #9d174d; margin: 6px 0; }}
+            .btn-track {{ display: inline-block; background: #DE1B76; color: #ffffff !important; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; box-shadow: 0 2px 4px rgba(222, 27, 118, 0.25); }}
+            .note-box {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 12px; color: #64748b; line-height: 1.5; margin-top: 24px; }}
+            .footer {{ background: #f8fafc; padding: 20px 28px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }}
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Natbell Cosmética Profesional</h1>
+              <p>Comprobante Oficial de Compra</p>
+            </div>
+            <div class="content">
+              <div class="greeting">¡Gracias por tu compra, {customer_name}!</div>
+              <p class="text">
+                Tu pago fue acreditado correctamente. Ya nos encontramos procesando tu pedido para coordinar su empaque y despacho.
+              </p>
+              <div class="invoice-card">
+                <span class="order-badge">Pedido {order_number}</span>
+                <div class="amount">{formatted_total}</div>
+                <p style="font-size: 12px; color: #831843; margin: 0 0 16px 0;">Pago acreditado vía MercadoPago</p>
+                <div>
+                  <a href="{order_tracking_url}" class="btn-track" target="_blank">Seguir mi Pedido en la Tienda</a>
+                </div>
+              </div>
+              <div class="note-box">
+                📄 <strong>Factura adjunta:</strong> Encontrarás adjunta a este correo tu <strong>Factura C Oficial</strong> en formato PDF ({filename}), emitida según las regulaciones vigentes de AFIP / ARCA con código CAE y validación QR.
+              </div>
+            </div>
+            <div class="footer">
+              &copy; 2026 Natbell Cosmética Profesional. Todos los derechos reservados.
+            </div>
+          </div>
+        </body>
+        </html>
+        """
+
+        attachments = [
+            {
+                "filename": filename,
+                "content": b64_content,
+            }
+        ]
+
+        return await self._dispatch_email(
+            to_email=to_email,
+            subject=subject,
+            html_content=html,
+            code=None,
+            flow_desc="envío de factura C de compra con PDF adjunto",
+            attachments=attachments,
+        )
+
     async def _dispatch_email(
         self,
         to_email: str,
@@ -185,6 +271,7 @@ class EmailService:
         html_content: str,
         code: str | None,
         flow_desc: str,
+        attachments: list[dict] | None = None,
     ) -> bool:
         """Dispatches email via Resend or logs simulated message in development mode."""
         api_key = settings.resend_api_key
@@ -196,16 +283,21 @@ class EmailService:
             print(f"[DEV SIMULATION EMAIL] Propósito: {flow_desc}")
             if code:
                 print(f"[DEV SIMULATION EMAIL] CÓDIGO OTP: {code}")
+            if attachments:
+                print(f"[DEV SIMULATION EMAIL] ADJUNTOS: {[a.get('filename') for a in attachments]}")
             print("=======================================================\n")
             logger.info("Email simulado localmente para %s (Propósito: %s)", to_email, flow_desc)
             return True
 
-        payload = {
+        payload: dict = {
             "from": settings.email_from,
             "to": [to_email],
             "subject": subject,
             "html": html_content,
         }
+        if attachments:
+            payload["attachments"] = attachments
+
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",

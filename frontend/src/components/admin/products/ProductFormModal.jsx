@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { X, Loader2 } from "lucide-react";
 import ProductImageManager from "./ProductImageManager";
 
@@ -24,7 +24,6 @@ export default function ProductFormModal({
     reset,
     control,
     setValue,
-    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -44,8 +43,8 @@ export default function ProductFormModal({
     },
   });
 
-  const formImages = watch("images");
-  const formIsOnSale = watch("is_on_sale");
+  const formImages = useWatch({ control, name: "images" }) || [];
+  const formIsOnSale = useWatch({ control, name: "is_on_sale" });
 
   useEffect(() => {
     if (isOpen) {
