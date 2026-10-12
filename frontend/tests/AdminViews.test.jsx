@@ -296,5 +296,95 @@ describe("Admin Views", () => {
       );
     });
   });
+
+  it("muestra detalle completo de productos, montos, cupones y datos de envío para despacho por Andreani", async () => {
+    const mockOrderFull = {
+      id: "ord-uuid-3",
+      order_number: "ORD-2026-00300",
+      customer_name: "Camila Gomez",
+      customer_email: "camila@example.com",
+      customer_phone: "1155667788",
+      status: "paid",
+      subtotal: 35000,
+      discount_amount: 3500,
+      coupon_code: "BIENVENIDA10",
+      shipping_cost: 3200,
+      total: 34700,
+      shipping_address: "San Martín 1234 Piso 2",
+      shipping_city: "Quilmes",
+      shipping_province: "Buenos Aires",
+      shipping_postal_code: "1878",
+      created_at: "2026-10-10T12:00:00Z",
+      order_items: [
+        {
+          id: "item-1",
+          product_name: "Serum Vitamina C",
+          variant_name: "30ml",
+          sku: "NAT-VITC-30",
+          quantity: 2,
+          unit_price: 10000,
+          subtotal: 20000,
+        },
+        {
+          id: "item-2",
+          product_name: "Crema Hidratante Facial",
+          variant_name: "50g",
+          sku: "NAT-CREM-50",
+          quantity: 1,
+          unit_price: 15000,
+          subtotal: 15000,
+        },
+      ],
+    };
+
+    global.fetch = vi.fn().mockImplementation((url) => {
+      if (url.includes("/api/admin/orders?")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ items: [mockOrderFull], total: 1 }),
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <AdminPedidosPage />
+      </QueryClientProvider>
+    );
+
+    // Verificar que en la tabla figure la insignia con cantidad de ítems
+    expect(await screen.findByText("ORD-2026-00300")).toBeInTheDocument();
+    expect(screen.getByText(/2 ítems/i)).toBeInTheDocument();
+    expect(screen.getByText(/(3 un.)/i)).toBeInTheDocument();
+
+    // Abrir el modal de gestión
+    const gestionarBtn = screen.getByRole("button", { name: /gestionar/i });
+    fireEvent.click(gestionarBtn);
+
+    // Verificar encabezado y destinatario
+    expect(await screen.findByText("Actualizar Pedido ORD-2026-00300")).toBeInTheDocument();
+    expect(screen.getByText("Destinatario & Envío")).toBeInTheDocument();
+    expect(screen.getAllByText("Camila Gomez")).toHaveLength(2);
+    expect(screen.getAllByText("camila@example.com")).toHaveLength(2);
+    expect(screen.getAllByText("1155667788")).toHaveLength(2);
+    expect(screen.getAllByText("San Martín 1234 Piso 2")).toHaveLength(2);
+    expect(screen.getByText("CP: 1878")).toBeInTheDocument();
+
+    // Verificar botón de copia rápida de datos de despacho
+    expect(screen.getByRole("button", { name: /copiar para rotulado/i })).toBeInTheDocument();
+
+    // Verificar lista de productos para embalaje / picking
+    expect(screen.getByText(/Productos a Embalar \(2 ítems · 3 unidades\)/i)).toBeInTheDocument();
+    expect(screen.getByText("Serum Vitamina C")).toBeInTheDocument();
+    expect(screen.getByText("NAT-VITC-30")).toBeInTheDocument();
+    expect(screen.getByText("Crema Hidratante Facial")).toBeInTheDocument();
+    expect(screen.getByText("NAT-CREM-50")).toBeInTheDocument();
+
+    // Verificar desglose financiero y cupón
+    expect(screen.getByText("Resumen Financiero del Pedido")).toBeInTheDocument();
+    expect(screen.getByText(/Cupón aplicado \(BIENVENIDA10\)/i)).toBeInTheDocument();
+    expect(screen.getByText("Total Abonado:")).toBeInTheDocument();
+  });
 });
 

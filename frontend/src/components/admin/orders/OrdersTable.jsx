@@ -54,9 +54,26 @@ export default function OrdersTable({ orders, isLoading, onManageOrder }) {
                     <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100 block">
                       {ord.order_number}
                     </span>
-                    <span className="text-[10px] text-zinc-400">
+                    <span className="text-[10px] text-zinc-400 block">
                       {formatDate(ord.created_at)}
                     </span>
+                    {Array.isArray(ord.order_items) && ord.order_items.length > 0 && (
+                      <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                        <Package className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                        <span>
+                          {ord.order_items.length} {ord.order_items.length === 1 ? "ítem" : "ítems"}
+                          {(() => {
+                            const totalUnits = ord.order_items.reduce(
+                              (acc, it) => acc + (Number(it.quantity) || 1),
+                              0
+                            );
+                            return totalUnits > ord.order_items.length
+                              ? ` (${totalUnits} un.)`
+                              : "";
+                          })()}
+                        </span>
+                      </span>
+                    )}
                   </td>
                   <td className="py-3.5 px-4">
                     <p className="font-semibold text-zinc-800 dark:text-zinc-200">
