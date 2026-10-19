@@ -22,7 +22,6 @@ import Skeleton from "@/components/ui/Skeleton";
 import ProductGallery from "@/components/product/ProductGallery";
 import VariantSelector from "@/components/product/VariantSelector";
 import ProductGrid from "@/components/product/ProductGrid";
-import ShippingCalculator from "@/components/cart/ShippingCalculator";
 import { useCartStore } from "@/store/useCartStore";
 import { getProductBySlug, getProducts } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
@@ -361,11 +360,6 @@ export default function ProductDetailPage({ params }) {
                 <ShieldCheck className="w-4 h-4 text-zinc-700 shrink-0" />
                 <span>Garantía oficial y productos 100% originales</span>
               </div>
-            </div>
-
-            {/* Cotizador de envíos integrado */}
-            <div className="pt-2">
-              <ShippingCalculator />
             </div>
           </div>
         </div>
