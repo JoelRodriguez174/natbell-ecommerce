@@ -1,6 +1,6 @@
 "use client";
 
-import { Truck, Lock, ArrowRight, ShieldCheck, CreditCard } from "lucide-react";
+import { Truck, Lock, ArrowRight, ShieldCheck, CreditCard, X } from "lucide-react";
 import CouponInput from "@/components/cart/CouponInput";
 import { useCartStore } from "@/store/useCartStore";
 import { formatCurrency } from "../../lib/utils";
@@ -14,7 +14,7 @@ export default function CartOrderSummary({
   cuotaTotal,
   onProceedToCheckout,
 }) {
-  const { appliedCoupon, getDiscountAmount } = useCartStore();
+  const { appliedCoupon, getDiscountAmount, removeCoupon } = useCartStore();
   const discountAmount = appliedCoupon ? getDiscountAmount() : 0;
   const effectiveGrandTotal = Math.max(0, grandTotal - discountAmount);
   const effectiveCuota = Math.round(effectiveGrandTotal / 3);
@@ -26,10 +26,12 @@ export default function CartOrderSummary({
           Resumen de la orden
         </h3>
 
-        {/* Canje de Cupón */}
-        <div>
-          <CouponInput />
-        </div>
+        {/* Canje de Cupón (solo si no hay cupón aplicado) */}
+        {!appliedCoupon && (
+          <div>
+            <CouponInput />
+          </div>
+        )}
 
         <div className="space-y-3 text-xs sm:text-sm">
           <div className="flex items-center justify-between text-gray-600">
@@ -41,7 +43,18 @@ export default function CartOrderSummary({
 
           {appliedCoupon && (
             <div className="flex items-center justify-between text-emerald-600 font-semibold">
-              <span>Descuento cupón ({appliedCoupon.discount_percent}%)</span>
+              <span className="flex items-center gap-1.5">
+                <span>Descuento cupón ({appliedCoupon.discount_percent}%)</span>
+                <button
+                  type="button"
+                  onClick={removeCoupon}
+                  className="inline-flex items-center gap-0.5 text-[11px] text-gray-400 hover:text-red-600 hover:bg-red-50 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                  title="Quitar cupón"
+                >
+                  <X className="w-3 h-3" />
+                  <span>Quitar</span>
+                </button>
+              </span>
               <span>-{formatCurrency(discountAmount)}</span>
             </div>
           )}

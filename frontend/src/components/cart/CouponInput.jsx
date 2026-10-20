@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Tag, CheckCircle2, X, Loader2 } from "lucide-react";
+import { Tag, Loader2 } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { apiFetch } from "@/lib/api";
 
 export default function CouponInput({ className = "", customerEmail = "" }) {
-  const { appliedCoupon, applyCoupon, removeCoupon } = useCartStore();
+  const { appliedCoupon, applyCoupon } = useCartStore();
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -47,46 +47,8 @@ export default function CouponInput({ className = "", customerEmail = "" }) {
     }
   };
 
-  const handleRemove = () => {
-    removeCoupon();
-    setErrorMsg("");
-  };
-
   if (appliedCoupon) {
-    return (
-      <div
-        className={`flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 transition-all ${className}`}
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700">
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
-          <div className="truncate">
-            <p className="text-xs sm:text-sm font-semibold tracking-wide flex items-center gap-1.5 truncate">
-              <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-200 text-emerald-800">
-                {appliedCoupon.code}
-              </span>
-              <span className="text-emerald-700 font-bold">
-                -{appliedCoupon.discount_percent}% OFF
-              </span>
-            </p>
-            <p className="text-[11px] text-emerald-600 truncate">
-              Descuento aplicado sobre el subtotal
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleRemove}
-          className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 bg-white hover:bg-red-50 px-2 py-1 rounded-lg border border-gray-200 hover:border-red-200 transition-colors shrink-0"
-          title="Quitar cupón"
-        >
-          <X className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Quitar</span>
-        </button>
-      </div>
-    );
+    return null;
   }
 
   return (

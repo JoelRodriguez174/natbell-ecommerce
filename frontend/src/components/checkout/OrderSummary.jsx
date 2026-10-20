@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Image from "next/image";
-import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
+import { ShieldCheck, ArrowRight, Loader2, X } from "lucide-react";
 import CouponInput from "@/components/cart/CouponInput";
 import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "../../lib/utils";
@@ -15,7 +15,7 @@ export default function OrderSummary({
   onSubmit = () => {},
   customerEmail = "",
 }) {
-  const { appliedCoupon, getDiscountAmount } = useCartStore();
+  const { appliedCoupon, getDiscountAmount, removeCoupon } = useCartStore();
   const discountAmount = appliedCoupon ? getDiscountAmount() : 0;
   const effectiveTotal = Math.max(0, total - discountAmount);
 
@@ -32,10 +32,12 @@ export default function OrderSummary({
         ))}
       </div>
 
-      {/* Canje de Cupón de Descuento */}
-      <div className="py-2 border-t border-zinc-100 dark:border-zinc-800">
-        <CouponInput customerEmail={customerEmail} />
-      </div>
+      {/* Canje de Cupón de Descuento (solo si no hay cupón aplicado) */}
+      {!appliedCoupon && (
+        <div className="py-2 border-t border-zinc-100 dark:border-zinc-800">
+          <CouponInput customerEmail={customerEmail} />
+        </div>
+      )}
 
       {/* Desglose de totales */}
       <div className="space-y-2.5 pt-4 border-t border-zinc-100 dark:border-zinc-800 text-xs">
@@ -47,8 +49,19 @@ export default function OrderSummary({
         </div>
 
         {appliedCoupon && (
-          <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
-            <span>Descuento cupón ({appliedCoupon.discount_percent}%)</span>
+          <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-semibold">
+            <span className="flex items-center gap-1.5">
+              <span>Descuento cupón ({appliedCoupon.discount_percent}%)</span>
+              <button
+                type="button"
+                onClick={removeCoupon}
+                className="inline-flex items-center gap-0.5 text-[11px] text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                title="Quitar cupón"
+              >
+                <X className="w-3 h-3" />
+                <span>Quitar</span>
+              </button>
+            </span>
             <span>-{formatPrice(discountAmount)}</span>
           </div>
         )}

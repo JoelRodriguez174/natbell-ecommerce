@@ -23,6 +23,7 @@ export default function CartDrawer() {
     getTotalItems,
     getSubtotal,
     appliedCoupon,
+    removeCoupon,
     getDiscountAmount,
     getTotalWithDiscount,
   } = useCartStore();
@@ -152,7 +153,7 @@ export default function CartDrawer() {
               {/* Footer con Subtotal, Cupón y Botones CTA */}
               <div className="p-4 sm:p-5 border-t border-rose-100 bg-white space-y-3 shadow-lg">
                 {/* Selector de cupón de descuento */}
-                <CouponInput />
+                {!appliedCoupon && <CouponInput />}
 
                 <div className="space-y-1.5 pt-1">
                   <div className="flex items-center justify-between text-xs sm:text-sm">
@@ -164,7 +165,18 @@ export default function CartDrawer() {
 
                   {appliedCoupon && (
                     <div className="flex items-center justify-between text-xs sm:text-sm text-emerald-600 font-semibold">
-                      <span>Descuento ({appliedCoupon.discount_percent}%)</span>
+                      <span className="flex items-center gap-1.5">
+                        <span>Descuento ({appliedCoupon.discount_percent}%)</span>
+                        <button
+                          type="button"
+                          onClick={removeCoupon}
+                          className="inline-flex items-center gap-0.5 text-[10px] text-gray-400 hover:text-red-600 hover:bg-red-50 px-1 py-0.5 rounded transition-colors cursor-pointer"
+                          title="Quitar cupón"
+                        >
+                          <X className="w-3 h-3" />
+                          <span>Quitar</span>
+                        </button>
+                      </span>
                       <span>-{formatCurrency(discountAmount)}</span>
                     </div>
                   )}
