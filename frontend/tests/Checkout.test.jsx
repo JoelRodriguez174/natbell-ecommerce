@@ -77,6 +77,49 @@ describe("Checkout Components (Natbell)", () => {
     expect(screen.getByText("Serum Reparador de Puntas")).toBeInTheDocument();
     expect(screen.getByText(/pagar con mercado pago/i)).toBeInTheDocument();
     expect(screen.getByText(/\$ 10\.500/i)).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/código de cupón/i)).not.toBeInTheDocument();
+  });
+
+  it("muestra el cupón ya aplicado en OrderSummary sin mostrar el input para ingresar cupón", () => {
+    useCartStore.setState({
+      items: [
+        {
+          itemKey: "p1_v1",
+          name: "Serum Reparador de Puntas",
+          price: 4500,
+          quantity: 2,
+        },
+      ],
+      appliedCoupon: {
+        code: "NATBELL10",
+        discount_percent: 10,
+      },
+    });
+
+    render(
+      <OrderSummary
+        items={[
+          {
+            itemKey: "p1_v1",
+            name: "Serum Reparador de Puntas",
+            price: 4500,
+            quantity: 2,
+          },
+        ]}
+        subtotal={9000}
+        shippingCost={1500}
+        total={10500}
+        isLoading={false}
+        onSubmit={vi.fn()}
+      />
+    );
+
+    // No debe existir el campo de texto ni el botón de aplicar cupón en el checkout
+    expect(screen.queryByPlaceholderText(/código de cupón/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^aplicar$/i })).not.toBeInTheDocument();
+
+    // Debe mostrar la aplicación del cupón ya realizada
+    expect(screen.getByText(/NATBELL10 - 10%/i)).toBeInTheDocument();
   });
 
   it("muestra el error de cotización reactivamente en ShippingAddressStep cuando se recibe quoteError", () => {

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ShieldCheck, ArrowRight, Loader2, X } from "lucide-react";
-import CouponInput from "@/components/cart/CouponInput";
 import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "../../lib/utils";
 
@@ -13,7 +12,6 @@ export default function OrderSummary({
   total = 0,
   isLoading = false,
   onSubmit = () => {},
-  customerEmail = "",
 }) {
   const { appliedCoupon, getDiscountAmount, removeCoupon } = useCartStore();
   const discountAmount = appliedCoupon ? getDiscountAmount() : 0;
@@ -32,13 +30,6 @@ export default function OrderSummary({
         ))}
       </div>
 
-      {/* Canje de Cupón de Descuento (solo si no hay cupón aplicado) */}
-      {!appliedCoupon && (
-        <div className="py-2 border-t border-zinc-100 dark:border-zinc-800">
-          <CouponInput customerEmail={customerEmail} />
-        </div>
-      )}
-
       {/* Desglose de totales */}
       <div className="space-y-2.5 pt-4 border-t border-zinc-100 dark:border-zinc-800 text-xs">
         <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
@@ -51,7 +42,9 @@ export default function OrderSummary({
         {appliedCoupon && (
           <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-semibold">
             <span className="flex items-center gap-1.5">
-              <span>Descuento cupón ({appliedCoupon.discount_percent}%)</span>
+              <span>
+                Descuento cupón {appliedCoupon.code ? `(${appliedCoupon.code} - ${appliedCoupon.discount_percent}%)` : `(${appliedCoupon.discount_percent}%)`}
+              </span>
               <button
                 type="button"
                 onClick={removeCoupon}
