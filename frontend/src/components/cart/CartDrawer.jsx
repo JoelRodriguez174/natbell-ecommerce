@@ -183,7 +183,7 @@ export default function CartDrawer() {
 
                   {appliedCoupon && (
                     <div className="flex items-center justify-between text-xs sm:text-sm border-t border-gray-100 pt-1.5">
-                      <span className="font-bold text-gray-800">Total con cupón</span>
+                      <span className="font-bold text-gray-800">Total</span>
                       <span className="font-black text-base sm:text-lg text-[#DE1B76]">
                         {formatCurrency(totalAmount)}
                       </span>
