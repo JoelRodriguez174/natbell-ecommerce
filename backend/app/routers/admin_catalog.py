@@ -190,10 +190,12 @@ async def upload_product_image(
             detail="El archivo excede el tamaño máximo permitido de 5MB",
         )
 
-    # Tipo según la extensión validada, no el que manda el cliente (evita servir HTML/JS desde el bucket)
-    content_type = "image/jpeg" if ext in ("jpg", "jpeg") else f"image/{ext}"
     service = AdminCatalogService(db)
-    public_url = await service.upload_image(file_bytes, file.filename, content_type)
+    try:
+        # Se re-codifica a WebP en el servidor: el bucket nunca guarda lo que mandó el cliente tal cual
+        public_url = await service.upload_image(file_bytes, file.filename)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     return AdminUploadResponse(url=public_url, filename=file.filename)
 

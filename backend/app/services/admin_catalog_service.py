@@ -1,8 +1,10 @@
+import io
 import logging
 import re
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
+from PIL import Image, ImageOps, UnidentifiedImageError
 from supabase import Client
 
 from app.models.admin_catalog import (
@@ -16,6 +18,24 @@ from app.utils.postgrest import as_first_dict as _as_first_dict
 from app.utils.slug import slugify
 
 logger = logging.getLogger(__name__)
+
+MAX_IMAGE_SIDE_PX = 1600
+
+
+def _to_webp(file_bytes: bytes) -> bytes:
+    """Achica a MAX_IMAGE_SIDE_PX y convierte a WebP: una foto de celular de ~5MB queda en ~200KB."""
+    try:
+        with Image.open(io.BytesIO(file_bytes)) as img:
+            img = ImageOps.exif_transpose(img)  # respeta la rotación de las fotos de celular
+            img.thumbnail((MAX_IMAGE_SIDE_PX, MAX_IMAGE_SIDE_PX))
+            if img.mode not in ("RGB", "RGBA"):
+                has_alpha = "A" in img.getbands() or "transparency" in img.info
+                img = img.convert("RGBA" if has_alpha else "RGB")
+            out = io.BytesIO()
+            img.save(out, format="WEBP", quality=82, method=6)
+            return out.getvalue()
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
+        raise ValueError("El archivo no es una imagen válida.") from exc
 
 
 class AdminCatalogService:
@@ -309,17 +329,18 @@ class AdminCatalogService:
         global_cache.invalidate_prefix("catalog:")
         return updated
 
-    async def upload_image(self, file_bytes: bytes, filename: str, content_type: str) -> str:
-        """Sube un archivo de imagen al bucket 'products' de Supabase Storage y retorna su URL pública."""
-        clean_name = re.sub(r"[^\w\.-]", "_", filename).lower()
-        unique_path = f"{uuid4().hex[:10]}_{clean_name}"
+    async def upload_image(self, file_bytes: bytes, filename: str) -> str:
+        """Convierte la imagen a WebP (máx. 1600px), la sube al bucket 'products' y retorna su URL pública."""
+        webp_bytes = _to_webp(file_bytes)
+        clean_name = re.sub(r"[^\w\.-]", "_", filename.rsplit(".", 1)[0]).lower()
+        unique_path = f"{uuid4().hex[:10]}_{clean_name}.webp"
 
         try:
             self.db.storage.from_("products").upload(
                 path=unique_path,
-                file=file_bytes,
+                file=webp_bytes,
                 # Nombre único por subida: se puede cachear 1 año en navegador/CDN
-                file_options={"content-type": content_type, "upsert": "true", "cache-control": "31536000"},
+                file_options={"content-type": "image/webp", "upsert": "true", "cache-control": "31536000"},
             )
             public_url = self.db.storage.from_("products").get_public_url(unique_path)
             return public_url

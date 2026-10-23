@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+from PIL import Image
 
 from app.database import get_supabase_client
 from app.main import app
@@ -295,15 +296,32 @@ def test_upload_image_endpoints():
         assert res_bad.status_code == 400
         assert "Formatos aceptados" in res_bad.json()["detail"]
 
-        # 2. Archivo válido .webp -> 200
-        good_file = io.BytesIO(b"fake webp bytes")
+        # 2. Extensión válida pero contenido que no es imagen -> 400
+        res_fake = client.post(
+            "/api/admin/upload",
+            headers={"Authorization": f"Bearer {token}"},
+            files={"file": ("product.jpg", io.BytesIO(b"<html>no soy una foto</html>"), "text/html")},
+        )
+        assert res_fake.status_code == 400
+
+        # 3. JPG grande -> se sube convertido a WebP de máx. 1600px
+        jpg = io.BytesIO()
+        Image.new("RGB", (4000, 3000), (200, 120, 160)).save(jpg, format="JPEG")
+        jpg.seek(0)
         res_ok = client.post(
             "/api/admin/upload",
             headers={"Authorization": f"Bearer {token}"},
-            files={"file": ("product.webp", good_file, "image/webp")},
+            files={"file": ("Foto Producto.JPG", jpg, "image/jpeg")},
         )
         assert res_ok.status_code == 200
         assert "products" in res_ok.json()["url"]
+
+        upload_kwargs = mock_storage_bucket.upload.call_args.kwargs
+        assert upload_kwargs["path"].endswith("_foto_producto.webp")
+        assert upload_kwargs["file_options"]["content-type"] == "image/webp"
+        with Image.open(io.BytesIO(upload_kwargs["file"])) as stored:
+            assert stored.format == "WEBP"
+            assert max(stored.size) == 1600
     finally:
         app.dependency_overrides.clear()
 
