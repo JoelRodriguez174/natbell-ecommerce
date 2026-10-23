@@ -74,3 +74,11 @@ export function formatDate(dateString) {
 export function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
+
+/**
+ * Solo las imágenes de Supabase pasan por el optimizador de Next (resize + WebP + cache);
+ * otros dominios externos se sirven tal cual para no romper si no están en remotePatterns.
+ */
+export function skipImageOptimization(src) {
+  return Boolean(src?.startsWith("http") && !src.includes(".supabase.co/"));
+}

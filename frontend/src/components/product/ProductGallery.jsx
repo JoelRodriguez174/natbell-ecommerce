@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Package } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, skipImageOptimization } from "@/lib/utils";
 
 export default function ProductGallery({ images = [], productName = "Producto" }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -33,7 +33,8 @@ export default function ProductGallery({ images = [], productName = "Producto" }
             alt={`${productName} - Vista ${selectedIndex + 1}`}
             fill
             priority
-            unoptimized={Boolean(currentImage?.startsWith("http"))}
+            quality={90}
+            unoptimized={skipImageOptimization(currentImage)}
             sizes="(max-width: 768px) 100vw, 50vw"
             onError={() => handleImageError(selectedIndex)}
             className="object-contain p-4 transition-transform duration-300 hover:scale-105"
@@ -73,7 +74,7 @@ export default function ProductGallery({ images = [], productName = "Producto" }
                     alt={`${productName} miniatura ${idx + 1}`}
                     width={64}
                     height={64}
-                    unoptimized={Boolean(img?.startsWith("http"))}
+                    unoptimized={skipImageOptimization(img)}
                     onError={() => handleImageError(idx)}
                     className="w-full h-full object-contain"
                   />

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardFooter } from "@heroui/react";
 import { Package, Truck } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, skipImageOptimization } from "@/lib/utils";
 
 export default function ProductCard({ product }) {
   const router = useRouter();
@@ -52,16 +52,18 @@ export default function ProductCard({ product }) {
       className="group relative flex flex-col rounded-xl bg-white hover:border-gray-300 border border-gray-200 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer h-full"
     >
       {/* Contenedor de Imagen de Producto: proporción más ancha y menos alta con imagen más chica */}
-      <CardContent className="p-0 overflow-hidden relative aspect-[4/3] w-full bg-white flex items-center justify-center border-b border-gray-100">
+      <CardContent className="p-0 overflow-hidden relative aspect-square w-full bg-[#f5f5f5] flex items-center justify-center border-b border-gray-100">
         {primaryImage ? (
           <Image
             src={primaryImage}
             alt={name}
             fill
-            unoptimized={Boolean(primaryImage?.startsWith("http"))}
+            quality={90}
+            unoptimized={skipImageOptimization(primaryImage)}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             onError={() => setImageError(true)}
-            className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
+            // mix-blend-multiply: el fondo blanco de las fotos JPG toma el gris del contenedor
+            className="object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <div className="flex flex-col items-center justify-center text-gray-400 gap-1.5 p-4">

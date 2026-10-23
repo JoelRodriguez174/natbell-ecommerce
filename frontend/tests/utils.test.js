@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatCurrency, formatDate, sanitizeQuery, buildQueryString, cn } from "../src/lib/utils";
+import { formatCurrency, formatDate, sanitizeQuery, buildQueryString, cn, skipImageOptimization } from "../src/lib/utils";
 
 describe("Frontend Utils", () => {
   describe("formatDate", () => {
@@ -67,6 +67,15 @@ describe("Frontend Utils", () => {
   describe("cn", () => {
     it("combina clases condicionales", () => {
       expect(cn("base", true && "active", false && "disabled")).toBe("base active");
+    });
+  });
+
+  describe("skipImageOptimization", () => {
+    it("optimiza Supabase y rutas locales, salta otros dominios externos", () => {
+      expect(skipImageOptimization("https://abc.supabase.co/storage/v1/object/public/products/x.jpg")).toBe(false);
+      expect(skipImageOptimization("/products/shampoo.webp")).toBe(false);
+      expect(skipImageOptimization("https://http2.mlstatic.com/foto.jpg")).toBe(true);
+      expect(skipImageOptimization(undefined)).toBe(false);
     });
   });
 });

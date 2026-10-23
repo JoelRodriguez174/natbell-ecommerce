@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
-import { formatCurrency } from "../../lib/utils";
+import { formatCurrency, skipImageOptimization } from "../../lib/utils";
 
 export default function CartItemRow({ item, onUpdateQuantity, onRemoveItem }) {
   const handleQuantityInput = (e) => {
@@ -31,10 +32,12 @@ export default function CartItemRow({ item, onUpdateQuantity, onRemoveItem }) {
       <div className="flex items-center gap-4 min-w-0 flex-1">
         <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-xl bg-white border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center p-1">
           {item.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={item.image}
               alt={item.name}
+              width={80}
+              height={80}
+              unoptimized={skipImageOptimization(item.image)}
               className="w-full h-full object-contain"
               onError={(e) => {
                 e.currentTarget.style.display = "none";

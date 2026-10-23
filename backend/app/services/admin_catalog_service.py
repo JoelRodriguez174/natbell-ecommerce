@@ -318,7 +318,8 @@ class AdminCatalogService:
             self.db.storage.from_("products").upload(
                 path=unique_path,
                 file=file_bytes,
-                file_options={"content-type": content_type, "upsert": "true"},
+                # Nombre único por subida: se puede cachear 1 año en navegador/CDN
+                file_options={"content-type": content_type, "upsert": "true", "cache-control": "31536000"},
             )
             public_url = self.db.storage.from_("products").get_public_url(unique_path)
             return public_url
