@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatCurrency, formatDate, sanitizeQuery, buildQueryString, cn, skipImageOptimization } from "../src/lib/utils";
+import { formatCurrency, formatDate, sanitizeQuery, buildQueryString, cn, skipImageOptimization, productImageSrc } from "../src/lib/utils";
 
 describe("Frontend Utils", () => {
   describe("formatDate", () => {
@@ -76,6 +76,16 @@ describe("Frontend Utils", () => {
       expect(skipImageOptimization("/products/shampoo.webp")).toBe(false);
       expect(skipImageOptimization("https://http2.mlstatic.com/foto.jpg")).toBe(true);
       expect(skipImageOptimization(undefined)).toBe(false);
+    });
+  });
+
+  describe("productImageSrc", () => {
+    it("convierte las URLs públicas de Supabase al proxy /img y deja el resto igual", () => {
+      expect(productImageSrc("https://abc.supabase.co/storage/v1/object/public/products/a1_foto.jpg")).toBe("/img/a1_foto.jpg");
+      expect(productImageSrc("https://abc.supabase.co/storage/v1/object/public/products/a1_foto.jpg?")).toBe("/img/a1_foto.jpg");
+      expect(productImageSrc("https://http2.mlstatic.com/foto.jpg")).toBe("https://http2.mlstatic.com/foto.jpg");
+      expect(productImageSrc("/products/shampoo.webp")).toBe("/products/shampoo.webp");
+      expect(productImageSrc(undefined)).toBe(undefined);
     });
   });
 });

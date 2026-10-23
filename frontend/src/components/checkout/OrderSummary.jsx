@@ -2,7 +2,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { ShieldCheck, ArrowRight, Loader2, X } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
-import { formatPrice } from "../../lib/utils";
+import { formatPrice, productImageSrc } from "../../lib/utils";
 
 export default function OrderSummary({
   items = [],
@@ -121,7 +121,7 @@ function OrderSummaryItem({ item }) {
       <div className="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 overflow-hidden relative">
         {!imageError && item.image ? (
           <Image
-            src={item.image}
+            src={productImageSrc(item.image)}
             alt={item.name}
             width={48}
             height={48}

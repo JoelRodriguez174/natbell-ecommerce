@@ -82,3 +82,14 @@ export function cn(...classes) {
 export function skipImageOptimization(src) {
   return Boolean(src?.startsWith("http") && !src.includes(".supabase.co/"));
 }
+
+const SUPABASE_PRODUCTS_PATH = "/storage/v1/object/public/products/";
+
+/**
+ * El bucket de fotos es privado: las URLs de Supabase guardadas en la BD se sirven por el proxy /img
+ * (cacheado en Vercel). Cualquier otra URL se devuelve sin cambios.
+ */
+export function productImageSrc(src) {
+  const idx = typeof src === "string" ? src.indexOf(SUPABASE_PRODUCTS_PATH) : -1;
+  return idx >= 0 ? `/img/${src.slice(idx + SUPABASE_PRODUCTS_PATH.length).split("?")[0]}` : src;
+}

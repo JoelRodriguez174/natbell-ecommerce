@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Package } from "lucide-react";
-import { cn, skipImageOptimization } from "@/lib/utils";
+import { cn, skipImageOptimization, productImageSrc } from "@/lib/utils";
 
 export default function ProductGallery({ images = [], productName = "Producto" }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -29,7 +29,7 @@ export default function ProductGallery({ images = [], productName = "Producto" }
       <div className="relative w-full h-72 sm:h-84 md:h-96 flex items-center justify-center bg-white rounded-2xl overflow-hidden p-4 border border-gray-100 shadow-2xs">
         {currentImage && !hasCurrentError ? (
           <Image
-            src={currentImage}
+            src={productImageSrc(currentImage)}
             alt={`${productName} - Vista ${selectedIndex + 1}`}
             fill
             priority
@@ -70,7 +70,7 @@ export default function ProductGallery({ images = [], productName = "Producto" }
               >
                 {!isError ? (
                   <Image
-                    src={img}
+                    src={productImageSrc(img)}
                     alt={`${productName} miniatura ${idx + 1}`}
                     width={64}
                     height={64}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { X, Minus, Plus, Check, ShoppingBag } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, productImageSrc } from "@/lib/utils";
 
 /**
  * Fila atómica de producto dentro del carrito lateral (CartDrawer).
@@ -91,7 +91,7 @@ export default function CartDrawerItem({
       <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-xl bg-gray-50 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
         {!imageError && item.image ? (
           <Image
-            src={item.image}
+            src={productImageSrc(item.image)}
             alt={item.name}
             width={72}
             height={72}

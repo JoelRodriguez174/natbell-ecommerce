@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardFooter } from "@heroui/react";
 import { Package, Truck } from "lucide-react";
-import { formatCurrency, skipImageOptimization } from "@/lib/utils";
+import { formatCurrency, skipImageOptimization, productImageSrc } from "@/lib/utils";
 
 export default function ProductCard({ product }) {
   const router = useRouter();
@@ -55,7 +55,7 @@ export default function ProductCard({ product }) {
       <CardContent className="p-0 overflow-hidden relative aspect-square w-full bg-[#f5f5f5] flex items-center justify-center border-b border-gray-100">
         {primaryImage ? (
           <Image
-            src={primaryImage}
+            src={productImageSrc(primaryImage)}
             alt={name}
             fill
             quality={90}
