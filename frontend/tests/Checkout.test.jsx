@@ -181,6 +181,9 @@ describe("Checkout Components (Natbell)", () => {
       fireEvent.change(screen.getByLabelText(/teléfono/i), {
         target: { value: "1144556677" },
       });
+      fireEvent.change(screen.getByLabelText(/^dni/i), {
+        target: { value: "30123456" },
+      });
       fireEvent.change(screen.getByLabelText(/calle y número/i), {
         target: { value: "Av Corrientes 1234" },
       });

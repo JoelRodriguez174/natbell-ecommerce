@@ -84,6 +84,7 @@ def test_andreani_service_register_shipment_branch_pickup():
         "customer_name": "Martín Gomez",
         "customer_email": "martin@example.com",
         "customer_phone": "3512345678",
+        "customer_dni": "30123456",
         "shipping_address": "Retiro en Sucursal Andreani - Córdoba",
         "shipping_city": "Córdoba",
         "shipping_province": "Córdoba",
@@ -100,6 +101,8 @@ def test_andreani_service_register_shipment_branch_pickup():
         assert called_payload["destination"]["street"] == "Retiro en Sucursal Andreani - Córdoba"
         assert called_payload["destination"]["number"] == "S/N"
         assert called_payload["destination"]["postal_code"] == "5000"
+        # En sucursal Andreani verifica el DNI: tiene que ser el del cliente
+        assert called_payload["recipient"]["dni"] == "30123456"
 
 
 def test_andreani_service_register_shipment_without_credentials():

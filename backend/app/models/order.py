@@ -1,10 +1,11 @@
+import re
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 from typing import List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class OrderStatus(str, Enum):
@@ -77,6 +78,8 @@ class OrderCheckoutRequest(BaseModel):
     customer_name: str = Field(..., min_length=1, max_length=150)
     customer_email: EmailStr
     customer_phone: str = Field(..., min_length=1, max_length=30)
+    # Opcional en la API para no romper clientes con el frontend anterior; el formulario lo exige
+    customer_dni: Optional[str] = Field(default=None, max_length=15)
     shipping_address: str = Field(..., min_length=1, max_length=300)
     shipping_city: str = Field(..., min_length=1, max_length=100)
     shipping_province: str = Field(..., min_length=1, max_length=100)
@@ -85,6 +88,17 @@ class OrderCheckoutRequest(BaseModel):
     notes: Optional[str] = None
     coupon_code: Optional[str] = None
     items: List[OrderCheckoutItem] = Field(..., min_length=1)
+
+    @field_validator("customer_dni")
+    @classmethod
+    def _normalize_dni(cls, value: Optional[str]) -> Optional[str]:
+        """Andreani pide el DNI del destinatario (lo verifica en el retiro en sucursal): 12.345.678 -> 12345678."""
+        if value is None or not value.strip():
+            return None
+        digits = re.sub(r"\D", "", value)
+        if not 7 <= len(digits) <= 8:
+            raise ValueError("El DNI debe tener 7 u 8 números.")
+        return digits
 
 
 class Order(OrderBase):

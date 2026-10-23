@@ -157,6 +157,7 @@ class OrderService:
             "customer_name": request.customer_name,
             "customer_email": request.customer_email,
             "customer_phone": request.customer_phone,
+            "customer_dni": request.customer_dni,
             "shipping_address": request.shipping_address,
             "shipping_city": request.shipping_city,
             "shipping_province": request.shipping_province,

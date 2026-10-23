@@ -263,3 +263,24 @@ async def test_reimport_with_empty_stock_cell_keeps_real_stock():
     assert "stock" not in update_payload
     # % del nombre escapado: busca ese producto exacto, no "Shampoo 100<cualquier cosa>"
     assert products.select.return_value.ilike.call_args.args[1] == r"Shampoo 100\% Natural"
+
+
+def test_checkout_dni_is_normalized_and_validated():
+    from pydantic import ValidationError
+
+    from app.models.order import OrderCheckoutRequest
+
+    base = {
+        "customer_name": "Laura Gomez",
+        "customer_email": "laura@example.com",
+        "customer_phone": "1144556677",
+        "shipping_address": "Calle 1",
+        "shipping_city": "CABA",
+        "shipping_province": "CABA",
+        "shipping_postal_code": "1000",
+        "items": [{"product_variant_id": str(uuid4()), "quantity": 1}],
+    }
+    assert OrderCheckoutRequest(**base, customer_dni="30.123.456").customer_dni == "30123456"
+    assert OrderCheckoutRequest(**base).customer_dni is None  # frontend anterior sin el campo
+    with pytest.raises(ValidationError):
+        OrderCheckoutRequest(**base, customer_dni="123")

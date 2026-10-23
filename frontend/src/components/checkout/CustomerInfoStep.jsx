@@ -1,4 +1,4 @@
-import { User, Mail, Phone } from "lucide-react";
+import { User, Mail, Phone, IdCard } from "lucide-react";
 
 export default function CustomerInfoStep({
   register,
@@ -35,6 +35,14 @@ export default function CustomerInfoStep({
         },
       })
     : { value: formData.customer_phone || "", onChange };
+
+  const dniProps = register
+    ? register("customer_dni", {
+        required: "El DNI es obligatorio para el envío",
+        validate: (value) =>
+          /^\d{7,8}$/.test(String(value || "").replace(/\D/g, "")) || "Ingresá un DNI válido (7 u 8 números)",
+      })
+    : { value: formData.customer_dni || "", onChange };
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
@@ -136,6 +144,41 @@ export default function CustomerInfoStep({
               {getErrorMessage("customer_phone")}
             </p>
           )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="customer_dni"
+            className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5"
+          >
+            DNI *
+          </label>
+          <div className="relative">
+            <IdCard className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
+            <input
+              id="customer_dni"
+              name="customer_dni"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="Ej: 30123456"
+              aria-describedby="customer_dni_help"
+              {...dniProps}
+              className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 text-base sm:text-sm focus:outline-none focus:ring-2 transition-all ${
+                getErrorMessage("customer_dni")
+                  ? "border-red-500 focus:ring-red-500/20"
+                  : "border-zinc-200 dark:border-zinc-700 focus:border-[#DE1B76] focus:ring-[#DE1B76]/20"
+              }`}
+            />
+          </div>
+          {getErrorMessage("customer_dni") && (
+            <p className="text-xs text-red-500 mt-1">
+              {getErrorMessage("customer_dni")}
+            </p>
+          )}
+          <span id="customer_dni_help" className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 block">
+            Lo pide Andreani para entregar el envío. Si retirás en sucursal, presentá este DNI.
+          </span>
         </div>
       </div>
     </div>

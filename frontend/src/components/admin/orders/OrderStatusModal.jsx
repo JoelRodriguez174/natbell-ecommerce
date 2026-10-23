@@ -17,6 +17,7 @@ import {
   Tag,
   Receipt,
   User,
+  IdCard,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "../../../lib/utils";
 
@@ -60,6 +61,7 @@ export default function OrderStatusModal({
     const text = [
       `Destinatario: ${selectedOrder.customer_name || ""}`,
       `Teléfono: ${selectedOrder.customer_phone || "No especificado"}`,
+      `DNI: ${selectedOrder.customer_dni || "No informado"}`,
       `Email: ${selectedOrder.customer_email || ""}`,
       `Dirección: ${selectedOrder.shipping_address || ""}`,
       `Localidad: ${selectedOrder.shipping_city || ""}`,
@@ -166,6 +168,12 @@ export default function OrderStatusModal({
                   <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
                     <Phone className="w-3 h-3 shrink-0" />
                     <span>{selectedOrder.customer_phone}</span>
+                  </div>
+                )}
+                {selectedOrder.customer_dni && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
+                    <IdCard className="w-3 h-3 shrink-0" aria-hidden="true" />
+                    <span>DNI {selectedOrder.customer_dni}</span>
                   </div>
                 )}
               </div>

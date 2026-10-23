@@ -102,6 +102,12 @@ class AndreaniService:
                 street = raw_address or "Domicilio"
                 number = "1"
 
+        customer_dni = str(order.get("customer_dni") or "").strip()
+        if not customer_dni:
+            # Pedidos anteriores al campo DNI del checkout: se usa el DNI genérico de antes
+            logger.warning("Pedido %s sin DNI del cliente: se envía DNI genérico a Andreani", order.get("order_number"))
+            customer_dni = "20246728918"
+
         # Nombre y apellido
         full_name = (order.get("customer_name") or "Cliente").strip()
         name_parts = full_name.split(" ", 1)
@@ -139,7 +145,7 @@ class AndreaniService:
                 "name": name,
                 "last_name": last_name,
                 "phone_number": str(order.get("customer_phone") or "1144556677").strip(),
-                "dni": str(order.get("customer_dni") or "20246728918").strip(),
+                "dni": customer_dni,
                 "email": str(order.get("customer_email") or "info@natbell.com.ar").strip(),
             },
             "contract": {

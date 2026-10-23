@@ -87,6 +87,9 @@ describe("Flujos Críticos de Producción Frontend (Natbell)", () => {
       fireEvent.change(screen.getByLabelText(/teléfono/i), {
         target: { value: "1144332211" },
       });
+      fireEvent.change(screen.getByLabelText(/^dni/i), {
+        target: { value: "30.123.456" },
+      });
       fireEvent.change(screen.getByLabelText(/calle y número/i), {
         target: { value: "Av. Santa Fe 1234" },
       });
@@ -111,6 +114,9 @@ describe("Flujos Críticos de Producción Frontend (Natbell)", () => {
     expect(
       await screen.findByText(/Stock insuficiente para Shampoo Profesional Reparador/i)
     ).toBeInTheDocument();
+
+    // El DNI viaja normalizado (sin puntos) para Andreani
+    expect(api.createOrder.mock.calls[0][0].customer_dni).toBe("30123456");
 
     // 6. Validar que NUNCA se redirigió a la pasarela externa de pago
     expect(assignMock).not.toHaveBeenCalled();
