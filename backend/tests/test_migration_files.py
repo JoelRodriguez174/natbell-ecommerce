@@ -20,6 +20,7 @@ def test_migration_files_exist_and_ordered():
         "009_coupons.sql",
         "010_security_and_atomic_stock.sql",
         "011_private_product_images.sql",
+        "012_atomic_coupon_usage.sql",
     ]
     for filename in expected_migrations:
         file_path = os.path.join(MIGRATIONS_DIR, filename)

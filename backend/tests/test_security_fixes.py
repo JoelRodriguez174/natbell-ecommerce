@@ -26,21 +26,23 @@ async def test_mock_payment_endpoint_disabled_with_real_provider():
             mock_mark.assert_not_awaited()
 
 
-def _paid_race_db(order_state, stock, coupon_updates):
+def _paid_race_db(order_state, stock, coupon_updates, stale_read=True, payment_rows=()):
     """BD simulada donde el SELECT puede devolver un estado viejo pero el UPDATE condicional es atómico."""
     db = MagicMock()
 
     def order_select(*_a, **_k):
         q = MagicMock()
-        # Ambas llamadas concurrentes leen 'pending' (lectura vieja)
-        q.eq.return_value.execute.return_value = MagicMock(data=[dict(order_state, status="pending")])
+        # stale_read: ambas llamadas concurrentes leen 'pending' aunque otra ya lo haya cambiado
+        row = dict(order_state, status="pending") if stale_read else dict(order_state)
+        q.eq.return_value.execute.return_value = MagicMock(data=[row])
         return q
 
     def order_update(payload):
         filters = {}
 
         def execute():
-            if order_state["status"] != filters.get("status"):
+            allowed = filters.get("status")
+            if order_state["status"] not in (allowed if isinstance(allowed, list) else [allowed]):
                 return MagicMock(data=[])
             order_state["status"] = payload["status"]
             return MagicMock(data=[dict(order_state)])
@@ -51,6 +53,7 @@ def _paid_race_db(order_state, stock, coupon_updates):
 
         chain = MagicMock(execute=execute)
         chain.eq = eq
+        chain.in_ = eq
         return chain
 
     orders = MagicMock()
@@ -61,11 +64,21 @@ def _paid_race_db(order_state, stock, coupon_updates):
     coupons.select.return_value.eq.return_value.execute.return_value = MagicMock(data=[{"id": "c1", "times_used": 0}])
     coupons.update.side_effect = lambda payload: coupon_updates.append(payload) or MagicMock()
 
-    def rpc(_name, params):
-        stock["current"] -= params["p_quantity"]
+    payments = MagicMock()
+    payments.select.return_value.eq.return_value.limit.return_value.execute.return_value = MagicMock(
+        data=list(payment_rows)
+    )
+
+    def rpc(name, params):
+        if name == "decrement_stock":
+            stock["current"] -= params["p_quantity"]
+        elif name == "increment_coupon_usage":
+            coupon_updates.append(params["p_code"])
         return MagicMock(execute=lambda: MagicMock(data=True))
 
-    db.table.side_effect = lambda name: {"orders": orders, "coupons": coupons}.get(name, MagicMock())
+    db.table.side_effect = lambda name: {"orders": orders, "coupons": coupons, "payments": payments}.get(
+        name, MagicMock()
+    )
     db.rpc.side_effect = rpc
     return db
 
@@ -91,7 +104,70 @@ async def test_concurrent_payment_confirmations_decrement_stock_once():
     )
 
     assert stock["current"] == 8
-    assert coupon_updates == [{"times_used": 1}]
+    assert coupon_updates == ["VERANO10"]
+
+
+def _order(status):
+    return {
+        "id": str(uuid4()),
+        "status": status,
+        "total": 5000.0,
+        "order_items": [{"product_variant_id": str(uuid4()), "quantity": 1}],
+    }
+
+
+@pytest.mark.anyio
+async def test_late_payment_reactivates_abandoned_order():
+    """Rapipago/Pago Fácil: el pedido se canceló por abandono y el pago llega días después."""
+    order_state = _order("cancelled")
+    stock = {"current": 5}
+    service = OrderService(db_client=_paid_race_db(order_state, stock, [], stale_read=False))
+
+    await service.mark_order_paid("ORD-2026-00020", payment_id="p-tarde")
+
+    assert order_state["status"] == "paid"
+    assert stock["current"] == 4
+
+
+@pytest.mark.anyio
+async def test_admin_cancelled_paid_order_is_not_reactivated_by_duplicate_webhook():
+    """Si el pedido ya tenía un pago (y el admin lo canceló, ej. reembolso), un aviso repetido no lo revive."""
+    order_state = _order("cancelled")
+    stock = {"current": 5}
+    db = _paid_race_db(order_state, stock, [], stale_read=False, payment_rows=[{"id": "pay-1"}])
+
+    await OrderService(db_client=db).mark_order_paid("ORD-2026-00021", payment_id="p1")
+
+    assert order_state["status"] == "cancelled"
+    assert stock["current"] == 5
+
+
+def test_coupon_usage_falls_back_when_rpc_missing():
+    """Si la migración 012 no está aplicada, el contador se sigue sumando con el método anterior."""
+    from app.services.coupon_service import CouponService
+
+    db = MagicMock()
+    db.rpc.side_effect = Exception("function increment_coupon_usage does not exist")
+    db.table.return_value.select.return_value.eq.return_value.execute.return_value = MagicMock(
+        data=[{"id": "c1", "times_used": 3}]
+    )
+    CouponService(db_client=db).increment_coupon_usage(" verano10 ")
+
+    db.table.return_value.update.assert_called_once_with({"times_used": 4})
+
+
+@pytest.mark.anyio
+async def test_shipping_email_escapes_customer_name():
+    from app.services.email_service import EmailService
+
+    service = EmailService()
+    with patch.object(service, "_dispatch_email", new_callable=AsyncMock) as mock_dispatch:
+        await service.send_shipping_notification_email(
+            "c@example.com", '<img src=x onerror="alert(1)">', "ORD-1", "TRK1", "https://andreani.com/x"
+        )
+    html = mock_dispatch.call_args.args[2]
+    assert "<img src=x" not in html
+    assert "&lt;img" in html
 
 
 @pytest.mark.anyio
@@ -162,3 +238,28 @@ def test_reset_password_wrong_code_invalidates_code():
         db.table().update.assert_any_call({"reset_password_code": None})
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.anyio
+async def test_reimport_with_empty_stock_cell_keeps_real_stock():
+    """Re-importar una planilla sin stock no debe pisar el stock real de un SKU existente con 10."""
+    from app.services.admin_import_service import AdminImportService
+
+    db = MagicMock()
+    products = MagicMock()
+    products.select.return_value.ilike.return_value.limit.return_value.execute.return_value = MagicMock(
+        data=[{"id": "prod-1"}]
+    )
+    variants = MagicMock()
+    variants.select.return_value.eq.return_value.limit.return_value.execute.return_value = MagicMock(
+        data=[{"id": "var-1", "stock": 37}]
+    )
+    db.table.side_effect = lambda name: {"products": products, "product_variants": variants}.get(name, MagicMock())
+
+    csv_bytes = "nombre,precio_base,sku_variante,stock_variante\nShampoo 100% Natural,1000,SKU-1,\n".encode()
+    await AdminImportService(db).import_from_bytes(csv_bytes, "productos.csv")
+
+    update_payload = variants.update.call_args.args[0]
+    assert "stock" not in update_payload
+    # % del nombre escapado: busca ese producto exacto, no "Shampoo 100<cualquier cosa>"
+    assert products.select.return_value.ilike.call_args.args[1] == r"Shampoo 100\% Natural"

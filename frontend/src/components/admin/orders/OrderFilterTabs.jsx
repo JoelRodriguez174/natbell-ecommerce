@@ -9,6 +9,7 @@ export const STATUS_FILTERS = [
   { label: "En camino (Enviados)", value: "shipped" },
   { label: "Entregados", value: "delivered" },
   { label: "Todos los confirmados", value: "confirmed" },
+  { label: "Cancelados / abandonados", value: "cancelled" },
 ];
 
 export default function OrderFilterTabs({

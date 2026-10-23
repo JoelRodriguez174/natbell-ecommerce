@@ -742,7 +742,8 @@ class AdminImportService:
                     existing_prod_res = (
                         self.db.table("products")
                         .select("id")
-                        .ilike("name", name)
+                        # Coincidencia exacta sin distinguir mayúsculas: % y _ del nombre no son comodines
+                        .ilike("name", name.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_"))
                         .limit(1)
                         .execute()
                     )
@@ -803,7 +804,8 @@ class AdminImportService:
                 sku_raw = str(row.get("sku_variante") or "").strip()
                 variant_name_raw = str(row.get("nombre_variante") or "").strip() or "Estándar"
                 variant_price = _to_decimal(row.get("precio_variante"))
-                stock = _to_int(row.get("stock_variante"), default=10)
+                stock_cell_empty = str(row.get("stock_variante") or "").strip() == ""
+                stock = max(0, _to_int(row.get("stock_variante"), default=10))
 
                 # Generar SKU automático si no fue especificado
                 if not sku_raw:
@@ -821,14 +823,16 @@ class AdminImportService:
                 existing_variant = _as_first_dict(var_check.data) if var_check else None
 
                 if existing_variant and existing_variant.get("id"):
-                    # Si ya existe con ese SKU, actualizamos el stock sumando o seteando
+                    # Si ya existe con ese SKU se actualiza el stock, salvo que la celda venga vacía:
+                    # re-importar una planilla sin la columna de stock no debe pisar el stock real
                     var_id = existing_variant["id"]
-                    self.db.table("product_variants").update({
-                        "stock": stock,
-                        "variant_name": variant_name_raw,
-                    }).eq("id", var_id).execute()
+                    update_fields: Dict[str, Any] = {"variant_name": variant_name_raw}
+                    if not stock_cell_empty:
+                        update_fields["stock"] = stock
+                    self.db.table("product_variants").update(update_fields).eq("id", var_id).execute()
                     warnings.append(
-                        f"Fila {row_idx}: SKU '{sku_raw}' ya existía. Se actualizó su stock a {stock} unidades."
+                        f"Fila {row_idx}: SKU '{sku_raw}' ya existía. "
+                        + (f"Se actualizó su stock a {stock} unidades." if not stock_cell_empty else "Su stock no se modificó (celda vacía).")
                     )
                 else:
                     variant_record = {
@@ -836,7 +840,7 @@ class AdminImportService:
                         "sku": sku_raw,
                         "variant_name": variant_name_raw,
                         "price_override": float(variant_price) if variant_price is not None else None,
-                        "stock": max(0, stock),
+                        "stock": stock,
                         "is_active": True,
                     }
                     self.db.table("product_variants").insert(variant_record).execute()

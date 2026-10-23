@@ -97,7 +97,7 @@ def test_dashboard_metrics_authorized(monkeypatch):
         elif table_name == "orders":
             m = MagicMock()
             m.select.return_value = orders_select
-            orders_select.order.return_value = orders_order
+            orders_select.neq.return_value.order.return_value = orders_order
             return m
         elif table_name == "product_variants":
             m = MagicMock()

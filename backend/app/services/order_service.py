@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Dict, Optional
 from uuid import UUID
@@ -42,6 +42,24 @@ def _mask_email(email: str) -> str:
 def _mask_text(text: str) -> str:
     """Av. Siempre Viva 742 -> Av. ***"""
     return f"{text.split()[0]} ***" if text.strip() else ""
+
+
+ABANDONED_ORDER_HOURS = 24
+
+
+def cancel_abandoned_orders(db) -> None:
+    """Pasa a 'cancelled' los pedidos 'pending' con más de ABANDONED_ORDER_HOURS.
+
+    Nunca se borran: un pago en efectivo (Rapipago/Pago Fácil) puede acreditarse días después,
+    y mark_order_paid reactiva el pedido cancelado si no tenía pagos.
+    """
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=ABANDONED_ORDER_HOURS)).isoformat()
+    try:
+        db.table("orders").update(
+            {"status": OrderStatus.CANCELLED.value, "updated_at": datetime.now().isoformat()}
+        ).eq("status", OrderStatus.PENDING.value).lt("created_at", cutoff).execute()
+    except Exception as exc:
+        logger.warning("No se pudieron cancelar órdenes abandonadas: %s", exc)
 
 
 class OrderService:
@@ -315,10 +333,12 @@ class OrderService:
                 f"No es posible descartar una orden con estado '{current_status}'. Solo se descartan órdenes pendientes no concretadas."
             )
 
-        order_id = str(order_data["id"])
-        self.db.table("order_items").delete().eq("order_id", order_id).execute()
-        self.db.table("orders").delete().eq("id", order_id).execute()
-        logger.info(f"Intento de compra pendiente {order_number} eliminado correctamente.")
+        # Se cancela en vez de borrar: Mercado Pago permite reintentar el pago desde la misma preferencia,
+        # y si el pago se acredita después, mark_order_paid reactiva el pedido
+        self.db.table("orders").update(
+            {"status": OrderStatus.CANCELLED.value, "updated_at": datetime.now().isoformat()}
+        ).eq("id", str(order_data["id"])).eq("status", OrderStatus.PENDING.value).execute()
+        logger.info(f"Intento de compra pendiente {order_number} cancelado.")
         return True
 
     async def mark_order_paid(
@@ -350,7 +370,13 @@ class OrderService:
 
         order_id = str(order_data["id"])
 
-        # 1. Pasar a 'paid' solo si sigue 'pending'. El UPDATE condicional es atómico: si el webhook y
+        # Un pedido cancelado por abandono (nunca tuvo pago) se reactiva: el cliente pagó tarde,
+        # por ejemplo en Rapipago/Pago Fácil. Si ya tenía un pago registrado, lo canceló el admin: no se toca.
+        claimable = [OrderStatus.PENDING.value]
+        if order_data.get("status") == OrderStatus.CANCELLED.value and not self._has_payments(order_id):
+            claimable.append(OrderStatus.CANCELLED.value)
+
+        # 1. Pasar a 'paid' solo desde esos estados. El UPDATE condicional es atómico: si el webhook y
         # /pago/exitoso llegan a la vez (o MP repite el aviso), solo uno sigue y descuenta stock.
         claim_res = (
             self.db.table("orders")
@@ -361,7 +387,7 @@ class OrderService:
                 }
             )
             .eq("id", order_id)
-            .eq("status", OrderStatus.PENDING.value)
+            .in_("status", claimable)
             .execute()
         )
         if not _as_dict_list(getattr(claim_res, "data", None)):
@@ -397,6 +423,10 @@ class OrderService:
 
         logger.info(f"Orden {order_number} marcada exitosamente como 'paid' con stock actualizado.")
         return True
+
+    def _has_payments(self, order_id: str) -> bool:
+        res = self.db.table("payments").select("id").eq("order_id", order_id).limit(1).execute()
+        return bool(_as_dict_list(getattr(res, "data", None)))
 
     def _decrement_stock(self, variant_id: str, quantity: int):
         """Resta stock de la variante en una sola sentencia SQL (función decrement_stock, migración 010)."""

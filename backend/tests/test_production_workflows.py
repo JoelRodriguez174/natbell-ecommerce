@@ -205,7 +205,8 @@ async def test_flow_2_mark_order_paid_decrements_stock_and_is_idempotent():
     def mock_order_update(update_payload):
         filters = {}
         def execute():
-            if order_state["status"] != filters.get("status"):
+            allowed = filters.get("status")
+            if order_state["status"] not in (allowed if isinstance(allowed, list) else [allowed]):
                 return MagicMock(data=[])
             order_state["status"] = update_payload["status"]
             return MagicMock(data=[dict(order_state)])
@@ -214,6 +215,7 @@ async def test_flow_2_mark_order_paid_decrements_stock_and_is_idempotent():
             return chain
         chain = MagicMock(execute=execute)
         chain.eq = mock_eq
+        chain.in_ = mock_eq
         return chain
 
     mock_orders = MagicMock()
@@ -340,8 +342,6 @@ async def test_flow_4_delete_draft_order_on_rejected_or_cancelled_payment():
 
     # Estado 'pending': permitido eliminar
     mock_orders.select().eq().execute.return_value = MagicMock(data=[{"id": order_id, "status": "pending", "customer_email": "Cliente@Example.com"}])
-    mock_order_items.delete().eq().execute.return_value = MagicMock(data=[])
-    mock_orders.delete().eq().execute.return_value = MagicMock(data=[])
 
     def router(table_name):
         if table_name == "orders":
@@ -353,16 +353,17 @@ async def test_flow_4_delete_draft_order_on_rejected_or_cancelled_payment():
     mock_supabase.table.side_effect = router
     service = OrderService(db_client=mock_supabase)
 
-    # Un tercero que solo conoce el número de pedido no puede borrarlo
-    deletes_before = mock_orders.delete.call_count
+    # Un tercero que solo conoce el número de pedido no puede descartarlo
     with pytest.raises(PermissionError):
         await service.delete_draft_order(order_number, "otro@example.com")
-    assert mock_orders.delete.call_count == deletes_before
+    mock_orders.update.assert_not_called()
 
+    # Se cancela en vez de borrarse (un pago tardío puede reactivarlo); nunca se borran ítems
     success = await service.delete_draft_order(order_number, "cliente@example.com")
     assert success is True
-    mock_order_items.delete().eq.assert_called_with("order_id", order_id)
-    mock_orders.delete().eq.assert_called_with("id", order_id)
+    assert mock_orders.update.call_args.args[0]["status"] == "cancelled"
+    mock_orders.delete.assert_not_called()
+    mock_order_items.delete.assert_not_called()
 
 
 @pytest.mark.anyio

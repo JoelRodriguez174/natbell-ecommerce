@@ -63,7 +63,7 @@ def test_admin_orders_list_and_detail():
     orders_exec = MagicMock(data=[order_data], count=1)
     orders_range.execute.return_value = orders_exec
     orders_order.range.return_value = orders_range
-    orders_sel.order.return_value = orders_order
+    orders_sel.neq.return_value.order.return_value = orders_order
 
     # Detail query
     detail_sel = MagicMock()

@@ -1,4 +1,5 @@
 import logging
+from html import escape
 
 import httpx
 
@@ -18,6 +19,7 @@ class EmailService:
     async def send_verification_email(self, to_email: str, name: str, code: str) -> bool:
         """Sends a 6-digit email verification code for new admin registration."""
         subject = f"Natbell Admin — Código de Verificación: {code}"
+        name = escape(name)
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -69,6 +71,7 @@ class EmailService:
     async def send_password_reset_email(self, to_email: str, name: str, code: str) -> bool:
         """Sends a 6-digit password reset code."""
         subject = f"Natbell Admin — Código de Recuperación: {code}"
+        name = escape(name)
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -127,6 +130,9 @@ class EmailService:
     ) -> bool:
         """Sends a notification email to the customer with their Andreani tracking code and link."""
         subject = f"¡Tu pedido {order_number} está en camino! — Natbell"
+        # Nombre del cliente (formulario) y datos de Andreani se escapan antes de ir al HTML
+        customer_name, order_number, tracking_number = map(escape, (customer_name, order_number, tracking_number))
+        tracking_url = escape(tracking_url, quote=True)
         html = f"""
         <!DOCTYPE html>
         <html>

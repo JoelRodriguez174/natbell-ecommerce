@@ -13,6 +13,7 @@ from app.models.admin_orders import (
 )
 from app.services.andreani_service import get_andreani_service
 from app.services.email_service import get_email_service
+from app.services.order_service import cancel_abandoned_orders
 from app.utils.postgrest import as_dict_list as _as_dict_list
 from app.utils.postgrest import as_first_dict as _as_first_dict
 
@@ -31,25 +32,7 @@ class AdminOrderService:
         per_page: int = 20,
     ) -> Dict[str, Any]:
         """Obtiene el listado paginado de órdenes de compra con filtros."""
-        # Limpieza automática de órdenes pendientes abandonadas (+30 minutos de antigüedad)
-        try:
-            from datetime import timedelta
-            cutoff = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
-            abandoned_res = (
-                self.db.table("orders")
-                .select("id")
-                .eq("status", "pending")
-                .lt("created_at", cutoff)
-                .execute()
-            )
-            abandoned_rows = _as_dict_list(abandoned_res.data) if abandoned_res else []
-            abandoned_ids = [str(r["id"]) for r in abandoned_rows if "id" in r]
-            if abandoned_ids:
-                self.db.table("order_items").delete().in_("order_id", abandoned_ids).execute()
-                self.db.table("orders").delete().in_("id", abandoned_ids).execute()
-                logger.info("Se purgaron %d órdenes pendientes abandonadas", len(abandoned_ids))
-        except Exception as exc:
-            logger.debug("Aviso purgando órdenes abandonadas: %s", exc)
+        cancel_abandoned_orders(self.db)
 
         page = max(1, page)
         per_page = max(1, min(100, per_page))
@@ -62,6 +45,9 @@ class AdminOrderService:
             query = query.in_("status", ["paid", "shipped", "delivered"])
         elif status and status != "all":
             query = query.eq("status", status)
+        else:
+            # Los checkouts abandonados quedan como 'cancelled': se ven solo en su pestaña
+            query = query.neq("status", "cancelled")
 
         if search:
             clean_search = search.strip()

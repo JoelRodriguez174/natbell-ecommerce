@@ -82,11 +82,19 @@ class CouponService:
 
     def increment_coupon_usage(self, code: str) -> None:
         """Incrementa el contador de usos del cupón (se llama al acreditarse el pago)."""
-        res = self.db.table("coupons").select("id, times_used").eq("code", code.strip().upper()).execute()
+        normalized = code.strip().upper()
+        try:
+            # Una sola sentencia SQL (migración 012): dos pagos simultáneos no pierden un uso
+            self.db.rpc("increment_coupon_usage", {"p_code": normalized}).execute()
+            return
+        except Exception as exc:
+            logger.warning(f"RPC increment_coupon_usage no disponible, usando fallback: {exc}")
+
+        # Fallback mientras la migración 012 no esté aplicada: lectura + escritura (no atómico)
+        res = self.db.table("coupons").select("id, times_used").eq("code", normalized).execute()
         rows = as_dict_list(res.data) if hasattr(res, "data") else []
         if not rows:
             return
-        # shortcut: lectura + escritura no atómica, alcanza con pocas ventas simultáneas; pasar a RPC si crece el volumen
         current_uses = rows[0].get("times_used", 0) or 0
         self.db.table("coupons").update({"times_used": current_uses + 1}).eq("id", rows[0]["id"]).execute()
 
