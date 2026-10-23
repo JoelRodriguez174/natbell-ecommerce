@@ -134,7 +134,10 @@ export async function getOrderStatus(orderNumber) {
 export async function deleteDraftOrder(orderNumber) {
   if (!orderNumber) return null;
   try {
-    return await apiFetch(`/api/orders/${encodeURIComponent(orderNumber)}`, {
+    // El backend exige el email del comprador; se toma del borrador que guarda el checkout
+    const draft = JSON.parse(localStorage.getItem("natbell_checkout_draft") || "{}");
+    const email = draft.customer_email || "";
+    return await apiFetch(`/api/orders/${encodeURIComponent(orderNumber)}?email=${encodeURIComponent(email)}`, {
       method: "DELETE",
     });
   } catch (err) {

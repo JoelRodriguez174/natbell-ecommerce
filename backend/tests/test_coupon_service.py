@@ -189,7 +189,7 @@ def test_validate_coupon_already_used_by_email(coupon_service, mock_supabase):
             m.select().eq().execute.return_value = MagicMock(data=[coupon_data])
             return m
         elif table_name == "orders":
-            m.select().eq().ilike().neq().execute.return_value = MagicMock(data=[{"id": "order-123"}])
+            m.select().eq().ilike().in_().execute.return_value = MagicMock(data=[{"id": "order-123"}])
             return m
         return m
 
@@ -219,7 +219,7 @@ def test_validate_coupon_with_new_email_success(coupon_service, mock_supabase):
             m.select().eq().execute.return_value = MagicMock(data=[coupon_data])
             return m
         elif table_name == "orders":
-            m.select().eq().ilike().neq().execute.return_value = MagicMock(data=[])
+            m.select().eq().ilike().in_().execute.return_value = MagicMock(data=[])
             return m
         return m
 

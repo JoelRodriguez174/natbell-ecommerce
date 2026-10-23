@@ -33,6 +33,17 @@ from app.utils.postgrest import (
 logger = logging.getLogger(__name__)
 
 
+def _mask_email(email: str) -> str:
+    """juana.perez@gmail.com -> ju***@gmail.com"""
+    local, _, domain = email.partition("@")
+    return f"{local[:2]}***@{domain}" if domain else "***"
+
+
+def _mask_text(text: str) -> str:
+    """Av. Siempre Viva 742 -> Av. ***"""
+    return f"{text.split()[0]} ***" if text.strip() else ""
+
+
 class OrderService:
     """Servicio de dominio para la gestión y ciclo de vida de órdenes en Natbell."""
 
@@ -93,19 +104,16 @@ class OrderService:
                 }
             )
 
-        # Descuento por cupón
+        # Descuento por cupón (el uso se cuenta recién al acreditarse el pago, en mark_order_paid)
         applied_coupon_code = None
         discount_amount = Decimal("0.00")
-        coupon_id_to_increment = None
-        coupon_service = CouponService(db_client=self.db)
 
         if request.coupon_code:
-            coupon = coupon_service.validate_coupon(
+            coupon = CouponService(db_client=self.db).validate_coupon(
                 request.coupon_code,
                 customer_email=request.customer_email,
             )
             applied_coupon_code = coupon["code"]
-            coupon_id_to_increment = coupon.get("id")
             discount_percent = Decimal(str(coupon.get("discount_percent") or 0))
             discount_amount = (calculated_subtotal * (discount_percent / Decimal("100"))).quantize(Decimal("0.01"))
             if discount_amount > calculated_subtotal:
@@ -124,30 +132,9 @@ class OrderService:
 
         # 2. Generar el número de orden correlativo ORD-YYYY-NNNNN
         next_seq = await self._get_next_order_sequence()
-        order_number = generate_order_number(next_seq)
-
-        # Salvaguarda activa: si por concurrencia el número ya existiera, avanzar al siguiente disponible
-        try:
-            for _ in range(20):
-                existing = (
-                    self.db.table("orders")
-                    .select("id")
-                    .eq("order_number", order_number)
-                    .limit(1)
-                    .execute()
-                )
-                existing_rows = _as_dict_list(getattr(existing, "data", None))
-                if existing_rows:
-                    next_seq += 1
-                    order_number = generate_order_number(next_seq)
-                else:
-                    break
-        except Exception as e:
-            logger.warning(f"Chequeo de colisión omitido por advertencia en BD: {e}")
 
         # 3. Guardar orden en estado 'pending'
         order_insert_payload = {
-            "order_number": order_number,
             "status": OrderStatus.PENDING.value,
             "customer_name": request.customer_name,
             "customer_email": request.customer_email,
@@ -164,18 +151,25 @@ class OrderService:
             "notes": request.notes,
         }
 
-        order_res = self.db.table("orders").insert(order_insert_payload).execute()
+        # order_number es UNIQUE en la BD: si dos compras simultáneas toman el mismo número, reintentar con el siguiente
+        for attempt in range(5):
+            order_number = generate_order_number(next_seq + attempt)
+            order_insert_payload["order_number"] = order_number
+            try:
+                order_res = self.db.table("orders").insert(order_insert_payload).execute()
+                break
+            except Exception as e:
+                if "23505" not in str(e) and "duplicate" not in str(e).lower():
+                    raise
+                logger.warning(f"Número de orden {order_number} ya existente, reintentando con el siguiente")
+        else:
+            raise RuntimeError("No se pudo asignar un número de orden único.")
+
         created_order_data = _as_first_dict(order_res.data) if order_res else {}
         if not created_order_data or not created_order_data.get("id"):
             raise RuntimeError("Error al persistir la orden en la base de datos.")
 
         order_id = str(created_order_data["id"])
-
-        if coupon_id_to_increment:
-            try:
-                coupon_service.increment_coupon_usage(coupon_id_to_increment)
-            except Exception as e:
-                logger.warning(f"No se pudo incrementar el uso del cupón {applied_coupon_code}: {e}")
 
         # 4. Insertar snapshots inmutables en order_items
         created_order_items = []
@@ -276,12 +270,13 @@ class OrderService:
         tracking_num = str(order_data["tracking_number"]).strip() if order_data.get("tracking_number") else None
         tracking_url = f"https://www.andreani.com/#!/informacionEnvio/{tracking_num}" if tracking_num else None
 
+        # Endpoint público y los números de orden son correlativos: no exponer datos personales completos
         return OrderStatusResponse(
             order_number=str(order_data["order_number"]),
             status=OrderStatus(str(order_data["status"])),
-            customer_name=str(order_data["customer_name"]),
-            customer_email=str(order_data["customer_email"]),
-            shipping_address=str(order_data["shipping_address"]),
+            customer_name=str(order_data["customer_name"]).split()[0] if order_data.get("customer_name") else "",
+            customer_email=_mask_email(str(order_data["customer_email"])),
+            shipping_address=_mask_text(str(order_data["shipping_address"])),
             shipping_city=str(order_data["shipping_city"]),
             shipping_province=str(order_data["shipping_province"]),
             shipping_postal_code=str(order_data["shipping_postal_code"]),
@@ -294,21 +289,25 @@ class OrderService:
             items=items,
         )
 
-    async def delete_draft_order(self, order_number: str) -> bool:
+    async def delete_draft_order(self, order_number: str, customer_email: str) -> bool:
         """
         Elimina un intento de compra que quedó en estado 'pending' cuando el cliente
         retrocede, cancela o no concreta el pago.
+        Exige el email del comprador para que nadie pueda borrar pedidos ajenos adivinando el número.
         Si la orden ya fue abonada o despachada, se rechaza la eliminación.
         """
         order_res = (
             self.db.table("orders")
-            .select("id, status")
+            .select("id, status, customer_email")
             .eq("order_number", order_number)
             .execute()
         )
         order_data = _as_first_dict(order_res.data) if order_res else {}
         if not order_data or not order_data.get("id"):
             return True
+
+        if str(order_data.get("customer_email") or "").strip().lower() != (customer_email or "").strip().lower():
+            raise PermissionError("El email no corresponde a este pedido.")
 
         current_status = str(order_data.get("status"))
         if current_status != OrderStatus.PENDING.value:
@@ -341,20 +340,33 @@ class OrderService:
             logger.error(f"Orden {order_number} no encontrada para marcar como pagada")
             raise KeyError(f"Orden {order_number} no encontrada")
 
-        # Idempotencia: Si ya está pagada, no volver a descontar stock ni duplicar registros
-        if order_data.get("status") == OrderStatus.PAID.value:
-            logger.info(f"Orden {order_number} ya se encontraba pagada (idempotencia verificada).")
-            return True
+        # El preference de MP redondea precios por ítem: se tolera hasta $1 de diferencia
+        paid_amount = (payment_details or {}).get("transaction_amount")
+        order_total = Decimal(str(order_data.get("total") or 0))
+        if paid_amount is not None and Decimal(str(paid_amount)) + Decimal("1.00") < order_total:
+            raise ValueError(
+                f"El monto pagado ({paid_amount}) no cubre el total del pedido {order_number} ({order_total})."
+            )
 
         order_id = str(order_data["id"])
 
-        # 1. Actualizar orden a 'paid'
-        self.db.table("orders").update(
-            {
-                "status": OrderStatus.PAID.value,
-                "updated_at": datetime.now().isoformat(),
-            }
-        ).eq("id", order_id).execute()
+        # 1. Pasar a 'paid' solo si sigue 'pending'. El UPDATE condicional es atómico: si el webhook y
+        # /pago/exitoso llegan a la vez (o MP repite el aviso), solo uno sigue y descuenta stock.
+        claim_res = (
+            self.db.table("orders")
+            .update(
+                {
+                    "status": OrderStatus.PAID.value,
+                    "updated_at": datetime.now().isoformat(),
+                }
+            )
+            .eq("id", order_id)
+            .eq("status", OrderStatus.PENDING.value)
+            .execute()
+        )
+        if not _as_dict_list(getattr(claim_res, "data", None)):
+            logger.info(f"Orden {order_number} ya procesada (estado: {order_data.get('status')}), sin cambios.")
+            return True
 
         # 2. Registrar en la tabla payments
         payment_insert = {
@@ -362,7 +374,7 @@ class OrderService:
             "mp_payment_id": payment_id,
             "mp_status": "approved",
             "mp_status_detail": (payment_details or {}).get("status_detail", "accredited"),
-            "amount": float(Decimal(str(order_data.get("total") or 0.0))),
+            "amount": float(order_total),
         }
         try:
             self.db.table("payments").insert(payment_insert).execute()
@@ -376,11 +388,31 @@ class OrderService:
             if variant_id and quantity > 0:
                 self._decrement_stock(variant_id, quantity)
 
+        # 4. Contar el uso del cupón recién ahora, así las compras abandonadas no lo agotan
+        if order_data.get("coupon_code"):
+            try:
+                CouponService(db_client=self.db).increment_coupon_usage(order_data["coupon_code"])
+            except Exception as e:
+                logger.warning(f"No se pudo incrementar el uso del cupón {order_data['coupon_code']}: {e}")
+
         logger.info(f"Orden {order_number} marcada exitosamente como 'paid' con stock actualizado.")
         return True
 
     def _decrement_stock(self, variant_id: str, quantity: int):
-        """Resta stock de la variante de forma segura."""
+        """Resta stock de la variante en una sola sentencia SQL (función decrement_stock, migración 010)."""
+        try:
+            res = self.db.rpc(
+                "decrement_stock", {"p_variant_id": variant_id, "p_quantity": quantity}
+            ).execute()
+            if res.data is False:
+                logger.error(
+                    f"SOBREVENTA: la variante {variant_id} no tenía stock para {quantity} unidades. Revisar el pedido."
+                )
+            return
+        except Exception as e:
+            # Fallback mientras la migración 010 no esté aplicada: lectura + escritura (no atómico)
+            logger.warning(f"RPC decrement_stock no disponible, usando fallback: {e}")
+
         try:
             var_res = self.db.table("product_variants").select("stock").eq("id", variant_id).execute()
             var_data = _as_first_dict(var_res.data) if var_res else {}
@@ -451,7 +483,8 @@ class OrderService:
         if mp_status != "approved":
             raise ValueError(f"El pago {payment_id} no está aprobado en Mercado Pago (estado actual: {mp_status}).")
 
-        if external_ref and str(external_ref).strip() != order_number.strip():
+        # Sin external_reference no hay forma de saber a qué pedido pertenece el pago: se rechaza
+        if str(external_ref or "").strip() != order_number.strip():
             logger.warning(
                 f"Intento de spoofing: payment {payment_id} tiene external_reference '{external_ref}', no coincide con '{order_number}'"
             )

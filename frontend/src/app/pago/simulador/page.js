@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CreditCard, CheckCircle2, Clock, XCircle, Loader2 } from "lucide-react";
 import { formatCurrency } from "../../../lib/utils";
+import { API_URL } from "@/lib/api";
 
 function PagoSimuladorContent() {
   const searchParams = useSearchParams();
@@ -21,8 +22,7 @@ function PagoSimuladorContent() {
 
     if (status === "approved") {
       try {
-        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
-        const res = await fetch(`${apiUrl}/api/webhooks/mock-payment/${encodeURIComponent(orderNumber)}`, {
+        const res = await fetch(`${API_URL}/api/webhooks/mock-payment/${encodeURIComponent(orderNumber)}`, {
           method: "POST",
         });
 

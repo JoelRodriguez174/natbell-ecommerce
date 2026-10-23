@@ -190,7 +190,8 @@ async def upload_product_image(
             detail="El archivo excede el tamaño máximo permitido de 5MB",
         )
 
-    content_type = file.content_type or f"image/{ext}"
+    # Tipo según la extensión validada, no el que manda el cliente (evita servir HTML/JS desde el bucket)
+    content_type = "image/jpeg" if ext in ("jpg", "jpeg") else f"image/{ext}"
     service = AdminCatalogService(db)
     public_url = await service.upload_image(file_bytes, file.filename, content_type)
 

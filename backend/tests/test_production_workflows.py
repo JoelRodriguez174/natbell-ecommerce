@@ -194,35 +194,31 @@ async def test_flow_2_mark_order_paid_decrements_stock_and_is_idempotent():
         mock_q.eq.return_value.execute.return_value = MagicMock(data=[dict(order_state)])
         return mock_q
 
-    # Mock variant lookup & update
-    def mock_variant_select(*args, **kwargs):
-        mock_q = MagicMock()
-        mock_q.eq.return_value.execute.return_value = MagicMock(data=[{"stock": variant_stock["current"]}])
-        return mock_q
+    # RPC decrement_stock (migración 010)
+    def mock_rpc(name, params):
+        assert name == "decrement_stock" and params["p_variant_id"] == variant_id
+        had_enough = variant_stock["current"] >= params["p_quantity"]
+        variant_stock["current"] = max(variant_stock["current"] - params["p_quantity"], 0)
+        return MagicMock(execute=lambda: MagicMock(data=had_enough))
 
-    def mock_variant_update(update_payload):
-        mock_q = MagicMock()
-        def mock_eq(col, val):
-            variant_stock["current"] = update_payload["stock"]
-            return MagicMock(execute=lambda: MagicMock(data=[]))
-        mock_q.eq = mock_eq
-        return mock_q
-
+    # UPDATE ... WHERE id = ? AND status = 'pending': solo devuelve fila si seguía pendiente
     def mock_order_update(update_payload):
-        mock_q = MagicMock()
-        def mock_eq(col, val):
+        filters = {}
+        def execute():
+            if order_state["status"] != filters.get("status"):
+                return MagicMock(data=[])
             order_state["status"] = update_payload["status"]
-            return MagicMock(execute=lambda: MagicMock(data=[]))
-        mock_q.eq = mock_eq
-        return mock_q
+            return MagicMock(data=[dict(order_state)])
+        def mock_eq(col, val):
+            filters[col] = val
+            return chain
+        chain = MagicMock(execute=execute)
+        chain.eq = mock_eq
+        return chain
 
     mock_orders = MagicMock()
     mock_orders.select.side_effect = mock_order_select
     mock_orders.update.side_effect = mock_order_update
-
-    mock_variants = MagicMock()
-    mock_variants.select.side_effect = mock_variant_select
-    mock_variants.update.side_effect = mock_variant_update
 
     mock_payments = MagicMock()
     mock_payments.insert.return_value.execute.return_value = MagicMock(data=[{"id": str(uuid4())}])
@@ -230,13 +226,12 @@ async def test_flow_2_mark_order_paid_decrements_stock_and_is_idempotent():
     def router(table_name):
         if table_name == "orders":
             return mock_orders
-        if table_name == "product_variants":
-            return mock_variants
         if table_name == "payments":
             return mock_payments
         return MagicMock()
 
     mock_supabase.table.side_effect = router
+    mock_supabase.rpc.side_effect = mock_rpc
     service = OrderService(db_client=mock_supabase)
 
     # 1era ejecución: Acreditación inicial
@@ -344,7 +339,7 @@ async def test_flow_4_delete_draft_order_on_rejected_or_cancelled_payment():
     mock_order_items = MagicMock()
 
     # Estado 'pending': permitido eliminar
-    mock_orders.select().eq().execute.return_value = MagicMock(data=[{"id": order_id, "status": "pending"}])
+    mock_orders.select().eq().execute.return_value = MagicMock(data=[{"id": order_id, "status": "pending", "customer_email": "Cliente@Example.com"}])
     mock_order_items.delete().eq().execute.return_value = MagicMock(data=[])
     mock_orders.delete().eq().execute.return_value = MagicMock(data=[])
 
@@ -358,7 +353,13 @@ async def test_flow_4_delete_draft_order_on_rejected_or_cancelled_payment():
     mock_supabase.table.side_effect = router
     service = OrderService(db_client=mock_supabase)
 
-    success = await service.delete_draft_order(order_number)
+    # Un tercero que solo conoce el número de pedido no puede borrarlo
+    deletes_before = mock_orders.delete.call_count
+    with pytest.raises(PermissionError):
+        await service.delete_draft_order(order_number, "otro@example.com")
+    assert mock_orders.delete.call_count == deletes_before
+
+    success = await service.delete_draft_order(order_number, "cliente@example.com")
     assert success is True
     mock_order_items.delete().eq.assert_called_with("order_id", order_id)
     mock_orders.delete().eq.assert_called_with("id", order_id)
@@ -371,12 +372,12 @@ async def test_flow_4_delete_draft_order_blocks_paid_or_shipped_orders():
     """
     mock_supabase = MagicMock()
     mock_supabase.table().select().eq().execute.return_value = MagicMock(
-        data=[{"id": str(uuid4()), "status": "paid"}]
+        data=[{"id": str(uuid4()), "status": "paid", "customer_email": "c@example.com"}]
     )
 
     service = OrderService(db_client=mock_supabase)
     with pytest.raises(ValueError, match="Solo se descartan órdenes pendientes"):
-        await service.delete_draft_order("ORD-2026-00042")
+        await service.delete_draft_order("ORD-2026-00042", "c@example.com")
 
 
 # ==============================================================================

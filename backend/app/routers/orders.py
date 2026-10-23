@@ -102,11 +102,16 @@ async def confirm_order_payment(order_number: str, payment_id: str):
     summary="Descartar un intento de compra no concretado",
     description="Elimina la orden y sus items si aún se encuentra en estado 'pending'.",
 )
-async def delete_draft_order(order_number: str):
+async def delete_draft_order(order_number: str, email: str):
     service = OrderService()
     try:
-        await service.delete_draft_order(order_number)
+        await service.delete_draft_order(order_number, customer_email=email)
         return {"status": "deleted", "order_number": order_number}
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from uuid import UUID
 
@@ -10,6 +11,7 @@ from app.models.admin import AdminUserResponse
 from app.utils.postgrest import as_dict_list as _as_dict_list
 from app.utils.security import decode_access_token
 
+logger = logging.getLogger(__name__)
 security_scheme = HTTPBearer(
     auto_error=False,
     description="Ingrese el token JWT de administrador (formato: Bearer <token>)",
@@ -67,9 +69,10 @@ async def get_current_admin(
             .execute()
         )
     except Exception as exc:
+        logger.error("Error consultando usuario administrador: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error consultando usuario administrador: {exc}",
+            detail="Error consultando usuario administrador",
         )
 
     rows = _as_dict_list(res.data) if res else []

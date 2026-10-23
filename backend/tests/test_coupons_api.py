@@ -240,7 +240,7 @@ def test_validate_coupon_endpoint_already_used_by_email():
             m.select().eq().execute.return_value = MagicMock(data=[mock_coupon])
             return m
         elif table_name == "orders":
-            m.select().eq().ilike().neq().execute.return_value = MagicMock(data=[{"id": "existing-order"}])
+            m.select().eq().ilike().in_().execute.return_value = MagicMock(data=[{"id": "existing-order"}])
             return m
         return m
 
@@ -297,7 +297,7 @@ async def test_order_creation_blocked_when_coupon_already_used_by_email():
             return m
         elif table_name == "orders":
             # Simular que ya existe una orden activa con este cupón y email
-            m.select().eq().ilike().neq().execute.return_value = MagicMock(data=[{"id": "ord-prev"}])
+            m.select().eq().ilike().in_().execute.return_value = MagicMock(data=[{"id": "ord-prev"}])
             return m
         return m
 

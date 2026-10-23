@@ -18,6 +18,7 @@ def test_migration_files_exist_and_ordered():
         "007_add_tracking_number_to_orders.sql",
         "008_admin_email_verification.sql",
         "009_coupons.sql",
+        "010_security_and_atomic_stock.sql",
     ]
     for filename in expected_migrations:
         file_path = os.path.join(MIGRATIONS_DIR, filename)

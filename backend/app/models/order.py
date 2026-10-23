@@ -115,7 +115,7 @@ class OrderStatusResponse(BaseModel):
     order_number: str
     status: OrderStatus
     customer_name: str
-    customer_email: EmailStr
+    customer_email: str  # enmascarado (ju***@gmail.com): endpoint público
     shipping_address: str
     shipping_city: str
     shipping_province: str

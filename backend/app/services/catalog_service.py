@@ -155,6 +155,40 @@ class CatalogService:
             in_stock=in_stock,
         )
 
+    @staticmethod
+    def _apply_name_search(query, term: str):
+        """Filtra por nombre tolerando acentos y plurales simples. Devuelve None si el término queda vacío."""
+        clean = re.sub(r"[^\w\s\-\.]", "", term[:100], flags=re.UNICODE).strip()
+        if not clean:
+            return None
+
+        unaccented = "".join(
+            c for c in unicodedata.normalize("NFD", clean)
+            if unicodedata.category(c) != "Mn"
+        )
+        raw_words = [t for t in clean.split() if len(t) >= 2] or [clean]
+        norm_words = [t for t in unaccented.split() if len(t) >= 2] or [unaccented]
+
+        for i, word in enumerate(raw_words[:6]):
+            norm_w = norm_words[i] if i < len(norm_words) else word
+            word_l = word.lower()
+            norm_w_l = norm_w.lower()
+
+            variations = {word_l, norm_w_l}
+            if word_l.endswith("s") and len(word_l) > 3:
+                variations.add(word_l[:-1])
+            if norm_w_l.endswith("s") and len(norm_w_l) > 3:
+                variations.add(norm_w_l[:-1])
+            if word_l.endswith("es") and len(word_l) > 4:
+                variations.add(word_l[:-2])
+
+            var_list = list(variations)
+            if len(var_list) == 1:
+                query = query.ilike("name", f"%{var_list[0]}%")
+            else:
+                query = query.or_(",".join(f"name.ilike.%{v}%" for v in var_list))
+        return query
+
     @classmethod
     def _get_products_impl(
         cls, client: Client, filters: ProductFilters, admin_mode: bool = False
@@ -290,34 +324,9 @@ class CatalogService:
         # 6. Filtro por búsqueda de texto (soporta search y alias q)
         search_term = (filters.search or filters.q or "").strip()
         if search_term:
-            clean = re.sub(r"[^\w\s\-\.]", "", search_term[:100], flags=re.UNICODE).strip()
-            if clean:
-                unaccented = "".join(
-                    c for c in unicodedata.normalize("NFD", clean)
-                    if unicodedata.category(c) != "Mn"
-                )
-                raw_words = [t for t in clean.split() if len(t) >= 2] or [clean]
-                norm_words = [t for t in unaccented.split() if len(t) >= 2] or [unaccented]
-
-                for i, word in enumerate(raw_words[:6]):
-                    norm_w = norm_words[i] if i < len(norm_words) else word
-                    word_l = word.lower()
-                    norm_w_l = norm_w.lower()
-
-                    variations = {word_l, norm_w_l}
-                    if word_l.endswith("s") and len(word_l) > 3:
-                        variations.add(word_l[:-1])
-                    if norm_w_l.endswith("s") and len(norm_w_l) > 3:
-                        variations.add(norm_w_l[:-1])
-                    if word_l.endswith("es") and len(word_l) > 4:
-                        variations.add(word_l[:-2])
-
-                    var_list = list(variations)
-                    if len(var_list) == 1:
-                        query = query.ilike("name", f"%{var_list[0]}%")
-                    else:
-                        or_conds = ",".join(f"name.ilike.%{v}%" for v in var_list)
-                        query = query.or_(or_conds)
+            searched = cls._apply_name_search(query, search_term)
+            if searched is not None:
+                query = searched
 
         # 6. Ordenamiento
         if filters.sort == "price_asc":
@@ -463,36 +472,9 @@ class CatalogService:
                 .eq("is_active", True)
             )
 
-            clean = re.sub(r"[^\w\s\-\.]", "", query[:100], flags=re.UNICODE).strip()
-            if not clean:
+            query_obj = cls._apply_name_search(query_obj, query)
+            if query_obj is None:
                 return []
-
-            unaccented = "".join(
-                c for c in unicodedata.normalize("NFD", clean)
-                if unicodedata.category(c) != "Mn"
-            )
-            raw_words = [t for t in clean.split() if len(t) >= 2] or [clean]
-            norm_words = [t for t in unaccented.split() if len(t) >= 2] or [unaccented]
-
-            for i, word in enumerate(raw_words[:6]):
-                norm_w = norm_words[i] if i < len(norm_words) else word
-                word_l = word.lower()
-                norm_w_l = norm_w.lower()
-
-                variations = {word_l, norm_w_l}
-                if word_l.endswith("s") and len(word_l) > 3:
-                    variations.add(word_l[:-1])
-                if norm_w_l.endswith("s") and len(norm_w_l) > 3:
-                    variations.add(norm_w_l[:-1])
-                if word_l.endswith("es") and len(word_l) > 4:
-                    variations.add(word_l[:-2])
-
-                var_list = list(variations)
-                if len(var_list) == 1:
-                    query_obj = query_obj.ilike("name", f"%{var_list[0]}%")
-                else:
-                    or_conds = ",".join(f"name.ilike.%{v}%" for v in var_list)
-                    query_obj = query_obj.or_(or_conds)
 
             res = query_obj.limit(safe_limit * 2).execute()
             rows = _as_dict_list(res.data)

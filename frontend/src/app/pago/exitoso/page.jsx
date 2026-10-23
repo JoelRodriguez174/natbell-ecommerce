@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight, Package, Loader2 } from "lucide-react";
 import { useCartStore } from "../../../store/useCartStore";
+import { API_URL } from "@/lib/api";
 
 function PagoExitosoContent() {
   const searchParams = useSearchParams();
@@ -30,7 +31,6 @@ function PagoExitosoContent() {
     if (orderNumber && paymentId) {
       let isMounted = true;
       setSyncStatus("syncing");
-      const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
 
       fetch(`${API_URL}/api/orders/${orderNumber}/confirm-payment?payment_id=${paymentId}`, {
         method: "POST",

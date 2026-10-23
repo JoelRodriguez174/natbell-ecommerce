@@ -9,6 +9,7 @@ import * as api from "../src/lib/api";
 
 // Mocks
 vi.mock("../src/lib/api", () => ({
+  API_URL: "http://localhost:8000",
   createOrder: vi.fn(),
   deleteDraftOrder: vi.fn().mockResolvedValue({ status: "deleted" }),
   getShippingQuote: vi.fn().mockResolvedValue({

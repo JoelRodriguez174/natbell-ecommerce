@@ -165,12 +165,12 @@ async def test_delete_draft_order_endpoint_success():
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            res = await client.delete("/api/orders/ORD-2026-00001")
+            res = await client.delete("/api/orders/ORD-2026-00001?email=c@example.com")
             assert res.status_code == 200
             data = res.json()
             assert data["status"] == "deleted"
             assert data["order_number"] == "ORD-2026-00001"
-            mock_del.assert_awaited_once_with("ORD-2026-00001")
+            mock_del.assert_awaited_once_with("ORD-2026-00001", customer_email="c@example.com")
 
 
 @pytest.mark.anyio
@@ -180,7 +180,7 @@ async def test_delete_draft_order_endpoint_already_paid_fails():
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            res = await client.delete("/api/orders/ORD-2026-00001")
+            res = await client.delete("/api/orders/ORD-2026-00001?email=c@example.com")
             assert res.status_code == 400
             assert "No es posible descartar" in res.json()["detail"]
 

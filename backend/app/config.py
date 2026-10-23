@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "natbell-ecommerce-secret-key-2026-production-min-32-chars-long"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 480  # 8 horas de sesión admin
-    admin_invite_code: str = "NatbellAdmin2026!"
+    admin_invite_code: str = ""  # Sin valor por defecto: el repo es público. Vacío = registro deshabilitado
 
     # Email Service Configuration (Resend)
     resend_api_key: str = ""

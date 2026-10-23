@@ -4,6 +4,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.main import app
+from app.services.payment_service import MockPaymentProvider
 
 
 @pytest.mark.anyio
@@ -65,7 +66,7 @@ async def test_mercadopago_webhook_payment_approved_success():
 async def test_mock_payment_simulation_endpoint():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        with patch("app.routers.webhooks.OrderService.mark_order_paid", new_callable=AsyncMock) as mock_mark_paid:
+        with patch("app.routers.webhooks.OrderService.mark_order_paid", new_callable=AsyncMock) as mock_mark_paid,              patch("app.routers.webhooks.get_payment_provider", return_value=MockPaymentProvider()):
             mock_mark_paid.return_value = True
 
             res = await client.post("/api/webhooks/mock-payment/ORD-2026-00042")

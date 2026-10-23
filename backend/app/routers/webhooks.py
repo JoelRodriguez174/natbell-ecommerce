@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, HTTPException, Request, status
 
 from app.services.order_service import OrderService
-from app.services.payment_service import get_payment_provider
+from app.services.payment_service import MockPaymentProvider, get_payment_provider
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,6 @@ async def mercadopago_webhook(
             pass
 
     # 3. Extraer el payment_id (puede venir en data.id, query param o id directo)
-    query_data_id = request.query_params.get("data.id")
     body_data_id = (payload.get("data") or {}).get("id") if isinstance(payload.get("data"), dict) else None
     payment_id = query_data_id or body_data_id or id or payload.get("id")
 
@@ -81,6 +80,10 @@ async def mercadopago_webhook(
     description="Permite simular el pago aprobado para una orden en entorno de desarrollo o tests.",
 )
 async def mock_payment_simulation(order_number: str):
+    # Solo existe con el proveedor simulado: en producción permitiría marcar pedidos como pagados sin pagar
+    if not isinstance(get_payment_provider(), MockPaymentProvider):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
+
     order_service = OrderService()
     try:
         await order_service.mark_order_paid(

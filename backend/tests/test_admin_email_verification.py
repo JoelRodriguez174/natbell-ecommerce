@@ -16,8 +16,23 @@ client = TestClient(app)
 TEST_ADMIN_ID = str(uuid4())
 TEST_EMAIL = "nuevo.admin@natbell.com"
 TEST_PASSWORD = "Password123!"
-VALID_INVITE_CODE = settings.admin_invite_code
+VALID_INVITE_CODE = "test-invite-code"
 INVALID_INVITE_CODE = "WrongCode123!"
+
+
+@pytest.fixture(autouse=True)
+def configured_invite_code(monkeypatch):
+    monkeypatch.setattr(settings, "admin_invite_code", VALID_INVITE_CODE)
+
+
+def test_register_rejected_when_invite_code_not_configured(monkeypatch):
+    """Sin ADMIN_INVITE_CODE configurado el registro queda deshabilitado (incluso con clave vacía)."""
+    monkeypatch.setattr(settings, "admin_invite_code", "")
+    response = client.post(
+        "/api/admin/auth/register",
+        json={"email": TEST_EMAIL, "password": TEST_PASSWORD, "name": "X", "invite_code": ""},
+    )
+    assert response.status_code in (400, 422)
 
 
 @pytest.fixture

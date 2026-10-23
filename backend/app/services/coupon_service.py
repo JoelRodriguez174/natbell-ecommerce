@@ -67,7 +67,8 @@ class CouponService:
                     .select("id")
                     .eq("coupon_code", normalized_code)
                     .ilike("customer_email", normalized_email)
-                    .neq("status", "cancelled")
+                    # Solo compras concretadas: un checkout abandonado no consume el cupón
+                    .in_("status", ["paid", "shipped", "delivered"])
                     .execute()
                 )
                 used_orders = as_dict_list(orders_res.data) if hasattr(orders_res, "data") else []
@@ -79,13 +80,15 @@ class CouponService:
 
         return coupon
 
-    def increment_coupon_usage(self, coupon_id: Union[str, UUID]) -> None:
-        """Incrementa el contador de usos del cupón."""
-        str_id = str(coupon_id)
-        res = self.db.table("coupons").select("times_used").eq("id", str_id).execute()
+    def increment_coupon_usage(self, code: str) -> None:
+        """Incrementa el contador de usos del cupón (se llama al acreditarse el pago)."""
+        res = self.db.table("coupons").select("id, times_used").eq("code", code.strip().upper()).execute()
         rows = as_dict_list(res.data) if hasattr(res, "data") else []
-        current_uses = rows[0].get("times_used", 0) if rows else 0
-        self.db.table("coupons").update({"times_used": current_uses + 1}).eq("id", str_id).execute()
+        if not rows:
+            return
+        # shortcut: lectura + escritura no atómica, alcanza con pocas ventas simultáneas; pasar a RPC si crece el volumen
+        current_uses = rows[0].get("times_used", 0) or 0
+        self.db.table("coupons").update({"times_used": current_uses + 1}).eq("id", rows[0]["id"]).execute()
 
     def list_coupons(self) -> List[Dict[str, Any]]:
         """Lista todos los cupones ordenados por fecha de creación desc."""

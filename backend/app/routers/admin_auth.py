@@ -1,3 +1,4 @@
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Dict
@@ -23,6 +24,7 @@ from app.services.email_service import EmailService, get_email_service
 from app.utils.postgrest import as_dict_list as _as_dict_list
 from app.utils.security import create_access_token, hash_password, verify_password
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/admin/auth", tags=["Admin Auth"])
 
 
@@ -42,7 +44,10 @@ async def admin_register(
     db: Client = Depends(get_supabase_client),
     email_service: EmailService = Depends(get_email_service),
 ) -> Dict[str, str]:
-    if payload.invite_code.strip() != settings.admin_invite_code.strip():
+    expected_code = settings.admin_invite_code.strip()
+    if not expected_code or not secrets.compare_digest(
+        payload.invite_code.strip().encode(), expected_code.encode()
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Clave de empresa inválida o no autorizada",
@@ -58,9 +63,10 @@ async def admin_register(
             .execute()
         )
     except Exception as exc:
+        logger.error("Error al verificar correo existente: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error al verificar correo existente: {exc}",
+            detail="Error al verificar correo existente",
         )
 
     rows = _as_dict_list(res.data) if res else []
@@ -84,9 +90,10 @@ async def admin_register(
                 "verification_code_expires_at": expires_at.isoformat(),
             }).eq("id", existing["id"]).execute()
         except Exception as exc:
+            logger.error("Error actualizando registro pendiente: %s", exc)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error actualizando registro pendiente: {exc}",
+                detail="Error actualizando registro pendiente",
             )
     else:
         # Nuevo registro
@@ -100,9 +107,10 @@ async def admin_register(
                 "verification_code_expires_at": expires_at.isoformat(),
             }).execute()
         except Exception as exc:
+            logger.error("Error registrando nuevo administrador: %s", exc)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error registrando nuevo administrador: {exc}",
+                detail="Error registrando nuevo administrador",
             )
 
     await email_service.send_verification_email(
@@ -137,9 +145,10 @@ async def admin_verify_email(
             .execute()
         )
     except Exception as exc:
+        logger.error("Error consultando usuario: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error consultando usuario: {exc}",
+            detail="Error consultando usuario",
         )
 
     rows = _as_dict_list(res.data) if res else []
@@ -158,6 +167,9 @@ async def admin_verify_email(
 
     stored_code = admin_row.get("verification_code")
     if not stored_code or stored_code.strip() != payload.code.strip():
+        # Un solo intento por código: evita adivinar los 6 dígitos por fuerza bruta
+        if stored_code:
+            db.table("admin_users").update({"verification_code": None}).eq("id", admin_row["id"]).execute()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Código de verificación incorrecto",
@@ -183,9 +195,10 @@ async def admin_verify_email(
             "verification_code_expires_at": None,
         }).eq("id", admin_id_str).execute()
     except Exception as exc:
+        logger.error("Error actualizando estado de verificación: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error actualizando estado de verificación: {exc}",
+            detail="Error actualizando estado de verificación",
         )
 
     access_token = create_access_token(
@@ -227,9 +240,10 @@ async def admin_resend_code(
             .execute()
         )
     except Exception as exc:
+        logger.error("Error consultando usuario: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error consultando usuario: {exc}",
+            detail="Error consultando usuario",
         )
 
     rows = _as_dict_list(res.data) if res else []
@@ -271,9 +285,10 @@ async def admin_forgot_password(
             .execute()
         )
     except Exception as exc:
+        logger.error("Error consultando usuario: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error consultando usuario: {exc}",
+            detail="Error consultando usuario",
         )
 
     rows = _as_dict_list(res.data) if res else []
@@ -316,9 +331,10 @@ async def admin_reset_password(
             .execute()
         )
     except Exception as exc:
+        logger.error("Error consultando usuario: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error consultando usuario: {exc}",
+            detail="Error consultando usuario",
         )
 
     rows = _as_dict_list(res.data) if res else []
@@ -331,9 +347,12 @@ async def admin_reset_password(
     admin_row = rows[0]
     stored_code = admin_row.get("reset_password_code")
     if not stored_code or stored_code.strip() != payload.code.strip():
+        # Un solo intento por código: evita adivinar los 6 dígitos por fuerza bruta
+        if stored_code:
+            db.table("admin_users").update({"reset_password_code": None}).eq("id", admin_row["id"]).execute()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Código de recuperación inválido o incorrecto",
+            detail="Código de recuperación inválido o incorrecto. Solicitá uno nuevo.",
         )
 
     expires_at_str = admin_row.get("reset_password_expires_at")
@@ -355,9 +374,10 @@ async def admin_reset_password(
             "reset_password_expires_at": None,
         }).eq("id", admin_row["id"]).execute()
     except Exception as exc:
+        logger.error("Error actualizando contraseña: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error actualizando contraseña: {exc}",
+            detail="Error actualizando contraseña",
         )
 
     return {
@@ -380,14 +400,15 @@ async def admin_login(
     try:
         res = (
             db.table("admin_users")
-            .select("id, email, password_hash, name, created_at")
+            .select("id, email, password_hash, name, is_verified, created_at")
             .eq("email", email_clean)
             .execute()
         )
     except Exception as exc:
+        logger.error("Error consultando base de datos: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error consultando base de datos: {exc}",
+            detail="Error consultando base de datos",
         )
 
     rows = _as_dict_list(res.data) if res else []
@@ -399,19 +420,19 @@ async def admin_login(
 
     admin_row = rows[0]
 
-    # Verificar si la cuenta ha completado la verificación por email (default True para cuentas semilla)
-    if admin_row.get("is_verified") is False:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tu cuenta aún no ha sido verificada. Revisá tu correo electrónico o ingresá tu código de verificación.",
-        )
-
     stored_hash = str(admin_row.get("password_hash", ""))
 
     if not verify_password(payload.password, stored_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales inválidas: correo electrónico o contraseña incorrectos",
+        )
+
+    # Verificar si la cuenta ha completado la verificación por email (default True para cuentas semilla)
+    if admin_row.get("is_verified") is False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tu cuenta aún no ha sido verificada. Revisá tu correo electrónico o ingresá tu código de verificación.",
         )
 
     admin_id_str = str(admin_row["id"])
