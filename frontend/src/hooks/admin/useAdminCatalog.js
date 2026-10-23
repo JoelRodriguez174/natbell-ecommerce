@@ -2,17 +2,22 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAdminAuthStore } from "../../store/useAdminAuthStore";
 import { API_URL } from "@/lib/api";
 
-
 // --- FETCHERS ---
 const fetchProducts = async (search = "", token) => {
-  const params = new URLSearchParams({ per_page: 1000 });
-  if (search) params.append("search", search);
-
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const res = await fetch(`${API_URL}/api/admin/products?${params.toString()}`, { headers });
-  if (!res.ok) throw new Error("Error fetching admin products");
-  const data = await res.json();
-  return data.items || [];
+  const items = [];
+  // La API devuelve máx. 1000 por página y el catálogo ya supera eso: se recorren todas
+  for (let page = 1; page <= 20; page++) {
+    const params = new URLSearchParams({ per_page: 1000, page });
+    if (search) params.append("search", search);
+
+    const res = await fetch(`${API_URL}/api/admin/products?${params.toString()}`, { headers });
+    if (!res.ok) throw new Error("Error fetching admin products");
+    const data = await res.json();
+    items.push(...(data.items || []));
+    if (!data.pagination?.has_next) break;
+  }
+  return items;
 };
 
 const fetchCategories = async () => {
@@ -35,7 +40,10 @@ export function useCatalogData(search = "") {
   const productsQuery = useQuery({
     queryKey: ["admin_products", search],
     queryFn: () => fetchProducts(search, token),
-    staleTime: 0,
+    // El catálogo completo pesa ~1-2MB de egress de Supabase: no re-pedirlo en cada foco de pestaña.
+    // Crear/editar/borrar ya invalidan "admin_products".
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
     enabled: !!token,
   });
 

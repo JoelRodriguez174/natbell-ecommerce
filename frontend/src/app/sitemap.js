@@ -1,7 +1,7 @@
 import { getProducts } from "@/lib/api";
 import { SITE_URL } from "@/lib/constants";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export default async function sitemap() {
   const staticPages = ["", "/productos", "/sobre-nosotros"].map((path) => ({ url: `${SITE_URL}${path}` }));
