@@ -2,7 +2,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { ShieldCheck, ArrowRight, Loader2, X } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
-import { formatPrice, productImageSrc } from "../../lib/utils";
+import { formatPrice, productImageSrc, productImageLoader } from "../../lib/utils";
 
 export default function OrderSummary({
   items = [],
@@ -122,6 +122,7 @@ function OrderSummaryItem({ item }) {
         {!imageError && item.image ? (
           <Image
             src={productImageSrc(item.image)}
+            loader={productImageLoader}
             alt={item.name}
             width={48}
             height={48}

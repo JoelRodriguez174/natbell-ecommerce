@@ -10,10 +10,9 @@ export async function generateMetadata({ params }) {
     const title = `${product.name} — Natbell`;
     const description = (product.description || `${product.name} en Natbell, cosmética profesional.`).slice(0, 160);
     const original = product.image_urls?.[0];
-    // La foto de vista previa pasa por el optimizador de Vercel (cacheada) en vez de bajarse directo de Supabase
-    const image = original
-      ? `${SITE_URL}/_next/image?url=${encodeURIComponent(productImageSrc(original))}&w=1200&q=75`
-      : undefined;
+    // La foto original vía el proxy /img (cacheada en Vercel): sin WebP, que algunas apps no muestran en la vista previa
+    const src = original ? productImageSrc(original) : undefined;
+    const image = src?.startsWith("/") ? `${SITE_URL}${src}` : src;
     return {
       title,
       description,

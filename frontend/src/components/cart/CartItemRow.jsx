@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
-import { formatCurrency, skipImageOptimization, productImageSrc } from "../../lib/utils";
+import { formatCurrency, skipImageOptimization, productImageSrc, productImageLoader } from "../../lib/utils";
 
 export default function CartItemRow({ item, onUpdateQuantity, onRemoveItem }) {
   const handleQuantityInput = (e) => {
@@ -34,6 +34,7 @@ export default function CartItemRow({ item, onUpdateQuantity, onRemoveItem }) {
           {item.image ? (
             <Image
               src={productImageSrc(item.image)}
+              loader={productImageLoader}
               alt={item.name}
               width={80}
               height={80}

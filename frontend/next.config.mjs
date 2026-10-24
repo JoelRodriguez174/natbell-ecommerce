@@ -1,3 +1,5 @@
+import { DEVICE_SIZES, IMAGE_SIZES } from "./src/lib/imageSizes.mjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -5,8 +7,9 @@ const nextConfig = {
     // Las imágenes subidas tienen nombre único y no cambian: cachear 31 días evita re-bajarlas de Supabase (cached egress)
     minimumCacheTTL: 2678400,
     // Pocos anchos = menos variantes por foto (1254 productos): menos transformaciones en Vercel y menos descargas desde Supabase
-    deviceSizes: [640, 828, 1200],
-    imageSizes: [64, 128, 256, 384],
+    // Las fotos de productos (/img) no pasan por acá: las achica el propio proxy con sharp (ver productImageLoader)
+    deviceSizes: DEVICE_SIZES,
+    imageSizes: IMAGE_SIZES,
     remotePatterns: [
       {
         protocol: "https",

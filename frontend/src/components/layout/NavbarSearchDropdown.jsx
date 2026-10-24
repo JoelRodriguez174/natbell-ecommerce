@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@heroui/react";
 import { ChevronRight, Package } from "lucide-react";
-import { formatCurrency, productImageSrc } from "@/lib/utils";
+import { formatCurrency, productImageSrc, productImageLoader } from "@/lib/utils";
 
 /**
  * Dropdown flotante para los resultados de la búsqueda predictiva en Navbar.
@@ -69,6 +69,7 @@ function SearchResultItem({ item, onSelectResult }) {
         {!imageError && img ? (
           <Image
             src={productImageSrc(img)}
+            loader={productImageLoader}
             alt={item.name}
             width={40}
             height={40}

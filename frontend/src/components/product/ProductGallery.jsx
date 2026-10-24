@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Package } from "lucide-react";
-import { cn, skipImageOptimization, productImageSrc } from "@/lib/utils";
+import { cn, skipImageOptimization, productImageSrc, productImageLoader } from "@/lib/utils";
 
 export default function ProductGallery({ images = [], productName = "Producto" }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -30,6 +30,7 @@ export default function ProductGallery({ images = [], productName = "Producto" }
         {currentImage && !hasCurrentError ? (
           <Image
             src={productImageSrc(currentImage)}
+            loader={productImageLoader}
             alt={`${productName} - Vista ${selectedIndex + 1}`}
             fill
             priority
@@ -71,6 +72,7 @@ export default function ProductGallery({ images = [], productName = "Producto" }
                 {!isError ? (
                   <Image
                     src={productImageSrc(img)}
+                    loader={productImageLoader}
                     alt={`${productName} miniatura ${idx + 1}`}
                     width={64}
                     height={64}

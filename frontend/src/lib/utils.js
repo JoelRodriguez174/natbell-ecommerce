@@ -93,3 +93,12 @@ export function productImageSrc(src) {
   const idx = typeof src === "string" ? src.indexOf(SUPABASE_PRODUCTS_PATH) : -1;
   return idx >= 0 ? `/img/${src.slice(idx + SUPABASE_PRODUCTS_PATH.length).split("?")[0]}` : src;
 }
+
+/**
+ * Loader de next/image para las fotos de productos: las de /img las achica el propio proxy (?w=)
+ * en vez de /_next/image, así no consumen transformaciones de Vercel. El resto usa el optimizador normal.
+ */
+export function productImageLoader({ src, width, quality }) {
+  if (src.startsWith("/img/")) return `${src}?w=${width}`;
+  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=${quality || 75}`;
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatCurrency, formatDate, sanitizeQuery, buildQueryString, cn, skipImageOptimization, productImageSrc } from "../src/lib/utils";
+import { formatCurrency, formatDate, sanitizeQuery, buildQueryString, cn, skipImageOptimization, productImageSrc, productImageLoader } from "../src/lib/utils";
 
 describe("Frontend Utils", () => {
   describe("formatDate", () => {
@@ -86,6 +86,15 @@ describe("Frontend Utils", () => {
       expect(productImageSrc("https://http2.mlstatic.com/foto.jpg")).toBe("https://http2.mlstatic.com/foto.jpg");
       expect(productImageSrc("/products/shampoo.webp")).toBe("/products/shampoo.webp");
       expect(productImageSrc(undefined)).toBe(undefined);
+    });
+  });
+
+  describe("productImageLoader", () => {
+    it("las fotos de /img las achica el proxy y el resto va al optimizador de Next", () => {
+      expect(productImageLoader({ src: "/img/a1_foto.jpg", width: 640, quality: 90 })).toBe("/img/a1_foto.jpg?w=640");
+      expect(productImageLoader({ src: "/products/shampoo.webp", width: 128 })).toBe(
+        "/_next/image?url=%2Fproducts%2Fshampoo.webp&w=128&q=75"
+      );
     });
   });
 });

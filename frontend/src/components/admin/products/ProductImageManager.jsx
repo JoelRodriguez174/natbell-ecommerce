@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Upload, X, Loader2, Plus } from "lucide-react";
-import { skipImageOptimization, productImageSrc } from "@/lib/utils";
+import { skipImageOptimization, productImageSrc, productImageLoader } from "@/lib/utils";
 
 export default function ProductImageManager({
   images = [],
@@ -37,6 +37,7 @@ export default function ProductImageManager({
             >
               <Image
                 src={productImageSrc(imgUrl)}
+                loader={productImageLoader}
                 alt={`Foto ${idx + 1}`}
                 width={80}
                 height={80}

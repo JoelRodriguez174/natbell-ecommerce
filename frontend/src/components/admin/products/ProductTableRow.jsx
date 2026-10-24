@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Pencil, Trash2, AlertCircle, Package } from "lucide-react";
-import { formatCurrency, skipImageOptimization, productImageSrc } from "../../../lib/utils";
+import { formatCurrency, skipImageOptimization, productImageSrc, productImageLoader } from "../../../lib/utils";
 
 export default function ProductTableRow({ product: p, isSelected, onSelect, onEdit, onAddVariant, onDelete }) {
   const [imageError, setImageError] = useState(false);
@@ -45,6 +45,7 @@ export default function ProductTableRow({ product: p, isSelected, onSelect, onEd
             {firstImg ? (
               <Image
                 src={productImageSrc(firstImg)}
+                loader={productImageLoader}
                 alt={p.name}
                 width={40}
                 height={40}
