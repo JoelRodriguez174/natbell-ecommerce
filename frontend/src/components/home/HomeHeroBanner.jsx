@@ -58,10 +58,12 @@ export default function HomeHeroBanner() {
       {/* 1. Fotografía de salón de belleza de fondo */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <Image
-          src="/img/hero-salon-bg.jpg"
+          src="/img/hero-salon-bg.webp"
           alt="Ambiente de salón de peluquería profesional Natbell"
           fill
           priority
+          // WebP ya achicado (46KB): unoptimized para no gastar transformaciones de Vercel (límite Hobby)
+          unoptimized
           sizes="100vw"
           className="object-cover object-center opacity-25 mix-blend-luminosity"
         />

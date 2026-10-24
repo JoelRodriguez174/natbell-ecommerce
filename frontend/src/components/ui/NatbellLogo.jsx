@@ -47,8 +47,10 @@ export default function NatbellLogo({
             currentSize.imgClass
           )}
         >
+          {/* WebP ya achicado (160px): unoptimized para no gastar transformaciones de Vercel (límite Hobby) */}
           <Image
-            src="/img/logo-natbell.jpeg"
+            src="/img/logo-natbell-sm.webp"
+            unoptimized
             alt="Natbell Logo"
             width={currentSize.imgSize}
             height={currentSize.imgSize}
