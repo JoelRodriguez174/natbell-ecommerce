@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -78,3 +80,16 @@ async def test_negative_price_filter_defense():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/api/products?min_price=-50.00")
         assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_public_products_per_page_is_capped_at_100():
+    """Un scraper que pide per_page=1000 recibe como máximo 100 por página (el admin conserva su tope de 1000)."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        with patch("app.routers.products.CatalogService.get_products") as mock_get:
+            mock_get.return_value = {"items": [], "pagination": {
+                "page": 1, "per_page": 100, "total_items": 0, "total_pages": 0, "has_next": False, "has_prev": False}}
+            res = await client.get("/api/products?per_page=1000")
+            assert res.status_code == 200
+            assert mock_get.call_args.args[1].per_page == 100

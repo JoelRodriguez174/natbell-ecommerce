@@ -12,6 +12,8 @@ from app.models.catalog import (
 )
 from app.services.catalog_service import CatalogService
 
+MAX_PUBLIC_PER_PAGE = 100
+
 router = APIRouter(prefix="/api/products", tags=["Productos"])
 
 
@@ -28,9 +30,12 @@ async def list_products(
     - subcategory: slug de subcategoría específica
     - min_price / max_price: rango de precios
     - sort: price_asc, price_desc, newest, featured
-    - page / per_page: paginación defensiva (máximo 50 por página)
+    - page / per_page: paginación defensiva (máximo 100 por página)
     """
     response.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=120"
+    # Endpoint público: un scraper no puede bajar el catálogo de a 1000 (cada pedido consume egress de Supabase).
+    # El admin usa su propio endpoint, que sí admite hasta 1000.
+    filters.per_page = min(filters.per_page, MAX_PUBLIC_PER_PAGE)
     return CatalogService.get_products(client, filters)
 
 
