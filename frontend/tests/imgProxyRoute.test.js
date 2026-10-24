@@ -41,7 +41,8 @@ describe("Proxy de imágenes /img", () => {
   it("con ?w= achica la foto a WebP en el servidor (sin usar /_next/image)", async () => {
     const sharp = (await import("sharp")).default;
     const jpg = await sharp({ create: { width: 1000, height: 500, channels: 3, background: "#fff" } }).jpeg().toBuffer();
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(jpg, { headers: { "content-type": "image/jpeg" } })));
+    const fetchMock = vi.fn().mockResolvedValue(new Response(jpg, { headers: { "content-type": "image/jpeg" } }));
+    vi.stubGlobal("fetch", fetchMock);
     const { GET } = await loadRoute({ SUPABASE_ANON_KEY: "k" });
 
     const res = await call(GET, ["foto.jpg"], "?w=256");
@@ -51,6 +52,26 @@ describe("Proxy de imágenes /img", () => {
     expect(res.headers.get("cache-control")).toContain("s-maxage=31536000");
     const meta = await sharp(Buffer.from(await res.arrayBuffer())).metadata();
     expect(meta.width).toBe(256);
+    // El original sale de la copia cacheada de /img, sin pedirle nada a Supabase
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe("http://test/img/foto.jpg");
+  });
+
+  it("si la copia cacheada de /img falla, achica el original pedido a Supabase", async () => {
+    const sharp = (await import("sharp")).default;
+    const jpg = await sharp({ create: { width: 800, height: 400, channels: 3, background: "#fff" } }).jpeg().toBuffer();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("protegido", { status: 401 }))
+      .mockResolvedValueOnce(new Response(jpg, { headers: { "content-type": "image/jpeg" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { GET } = await loadRoute({ SUPABASE_URL: "https://x.supabase.co", SUPABASE_ANON_KEY: "k" });
+
+    const res = await call(GET, ["foto.jpg"], "?w=128");
+
+    expect(res.status).toBe(200);
+    expect((await sharp(Buffer.from(await res.arrayBuffer())).metadata()).width).toBe(128);
+    expect(fetchMock.mock.calls[1][0]).toBe("https://x.supabase.co/storage/v1/object/authenticated/products/foto.jpg");
   });
 
   it("rechaza anchos que no están en la lista para no generar variantes infinitas", async () => {

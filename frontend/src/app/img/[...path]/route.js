@@ -10,6 +10,20 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || "";
 const WEBP_QUALITY = 80;
 const CACHE_1_YEAR = "public, max-age=31536000, s-maxage=31536000, immutable";
 
+function fetchFromSupabase(objectPath) {
+  const headers = {};
+  if (SUPABASE_KEY) {
+    headers.apikey = SUPABASE_KEY;
+    // Las claves anon "legacy" son JWT y van también como Bearer; las nuevas sb_publishable_ solo como apikey
+    if (SUPABASE_KEY.startsWith("eyJ")) headers.Authorization = `Bearer ${SUPABASE_KEY}`;
+  }
+  // Sin clave configurada se usa la ruta pública (sirve mientras el bucket siga público)
+  const url = SUPABASE_KEY
+    ? `${SUPABASE_URL}/storage/v1/object/authenticated/products/${objectPath}`
+    : `${SUPABASE_URL}/storage/v1/object/public/products/${objectPath}`;
+  return fetch(url, { headers, cache: "no-store" });
+}
+
 export async function GET(request, { params }) {
   const { path = [] } = await params;
   if (!path.length || path.some((seg) => seg === "." || seg === ".." || seg.includes("/") || seg.includes("\\"))) {
@@ -23,18 +37,14 @@ export async function GET(request, { params }) {
   }
 
   const objectPath = path.map(encodeURIComponent).join("/");
-  const headers = {};
-  if (SUPABASE_KEY) {
-    headers.apikey = SUPABASE_KEY;
-    // Las claves anon "legacy" son JWT y van también como Bearer; las nuevas sb_publishable_ solo como apikey
-    if (SUPABASE_KEY.startsWith("eyJ")) headers.Authorization = `Bearer ${SUPABASE_KEY}`;
+  let upstream = null;
+  if (width !== null) {
+    // Para achicar, el original sale de la copia de /img ya cacheada en Vercel: así Supabase no lo entrega
+    // de nuevo por cada ancho. Si falla (no está en caché de esa región, deploy protegido, etc.) se va a Supabase.
+    const cached = await fetch(`${new URL(request.url).origin}/img/${objectPath}`, { cache: "no-store" }).catch(() => null);
+    if (cached?.ok) upstream = cached;
   }
-  // Sin clave configurada se usa la ruta pública (sirve mientras el bucket siga público)
-  const url = SUPABASE_KEY
-    ? `${SUPABASE_URL}/storage/v1/object/authenticated/products/${objectPath}`
-    : `${SUPABASE_URL}/storage/v1/object/public/products/${objectPath}`;
-
-  const upstream = await fetch(url, { headers, cache: "no-store" });
+  upstream ??= await fetchFromSupabase(objectPath);
   if (!upstream.ok) {
     return new Response("Not found", { status: 404, headers: { "Cache-Control": "public, s-maxage=60" } });
   }
